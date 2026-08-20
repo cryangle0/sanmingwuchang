@@ -1,0 +1,45 @@
+﻿工程字段	唯一值 / 执行语义
+connection.machine.states	CONNECTED / DEGRADED / DISCONNECTED_GRACE / BOT_TAKEOVER / RECONNECT_SYNC / RETURNED_TO_PLAYER / SESSION_ENDED
+connection.machine.transitions[0].from_states	CONNECTED
+connection.machine.transitions[0].to	DEGRADED
+connection.machine.transitions[0].guard	PACKET_HEALTH_THRESHOLD
+connection.machine.transitions[1].from_states	CONNECTED / DEGRADED / RETURNED_TO_PLAYER
+connection.machine.transitions[1].to	DISCONNECTED_GRACE
+connection.machine.transitions[1].guard	FIRST_TICK_AFTER_LAST_VALID_PACKET
+connection.machine.transitions[2].from_states	DISCONNECTED_GRACE
+connection.machine.transitions[2].to	CONNECTED
+connection.machine.transitions[2].guard	VALID_PACKET_BEFORE_LAST_VALID_PACKET_PLUS_3S
+connection.machine.transitions[3].from_states	DISCONNECTED_GRACE
+connection.machine.transitions[3].to	BOT_TAKEOVER
+connection.machine.transitions[3].guard	SERVER_TIME_REACHES_LAST_VALID_PACKET_PLUS_3S
+connection.machine.transitions[4].from_states	BOT_TAKEOVER
+connection.machine.transitions[4].to	RECONNECT_SYNC
+connection.machine.transitions[4].guard	VALID_MATCH_TOKEN_BEFORE_OR_AT_BOT_TAKEOVER_TICK_PLUS_120S
+connection.machine.transitions[5].from_states	RECONNECT_SYNC
+connection.machine.transitions[5].to	RETURNED_TO_PLAYER
+connection.machine.transitions[5].guard	FULL_SNAPSHOT_ACK_AND_INPUT_SEQUENCE_RESET
+connection.machine.transitions[6].from_states	RETURNED_TO_PLAYER
+connection.machine.transitions[6].to	CONNECTED
+connection.machine.transitions[6].guard	NEXT_SERVER_TICK
+connection.machine.transitions[7].from_states	CONNECTED / DEGRADED / DISCONNECTED_GRACE / BOT_TAKEOVER / RECONNECT_SYNC / RETURNED_TO_PLAYER
+connection.machine.transitions[7].to	SESSION_ENDED
+connection.machine.transitions[7].guard	PLAYER_ELIMINATED_OR_MATCH_SETTLED_OR_ABORTED
+bot_difficulty	D2
+bot_has_no_extra_information	是
+all_state_and_rng_preserved	是
+new_device	REVOKE_OLD_SESSION_AFTER_NEW_DEVICE_AUTH_AND_SNAPSHOT_READY; NEVER_DUPLICATE_ENTITY
+reconnect_input	DROP_OLD_CLIENT_INPUTS_AT_OR_BEFORE_SNAPSHOT_ACK_SEQUENCE
+timers.bot_takeover_from_last_valid_packet_s	3
+timers.player_reconnect_deadline_from_bot_takeover_s	120
+timers.after_deadline	BOT_REMAINS_CONTROLLER_UNTIL_ENTITY_ELIMINATED_OR_MATCH_ENDS
+timers.exact_deadline_is_inclusive	是
+transition_encoding.from_states	NONEMPTY_ARRAY_OF_DECLARED_STATE_IDS
+transition_encoding.to	ONE_DECLARED_STATE_ID
+transition_encoding.guard	ONE_CLOSED_GUARD_ID_OR_SEMICOLON_AND_OF_GUARD_IDS
+snapshot.chunked	是；快照分块编号0..N-1，附整包BLAKE3哈希
+snapshot.chunk_ack_required	逐块ACK；缺块重发；整包哈希校验失败则整体重传
+snapshot.bot_until_full_ack	确认完成前BOT继续接管
+snapshot.handover	整包ACK后自下一tick交还控制，并按序补发快照tick之后的增量事件
+version_mismatch.force_update	是；内容版本不符强制更新
+version_mismatch.reconnect_if_seat_alive	更新完成且席位仍存在则重连入局；超时前BOT接管
+version_mismatch.no_desertion_penalty	是；版本不符导致的离线不计逃跑处罚

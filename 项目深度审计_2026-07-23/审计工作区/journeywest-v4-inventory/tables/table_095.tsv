@@ -1,0 +1,140 @@
+﻿工程字段	唯一值 / 执行语义
+product_id	SANMING_WUCHANG
+title_zh_cn	三命无常
+match.players	30
+match.mode	SOLO
+match.lives_per_player	3
+match.winner_condition	EXACTLY_ONE_PARTICIPANT_NOT_IN_ELIMINATED
+match.alive_body_count_is_not_winner_condition	是
+match.simultaneous_tie_requires_all_candidates_eliminated_after_lethal_chain	是
+match.co_champion.placement	1
+match.co_champion.next_placement_skips_tied_places	是
+match.co_champion.mmr_placement_value	AVERAGE_ORDINAL_OF_TIED_SLOTS
+match.co_champion.each_gets_full_out_of_match_champion_reward	是
+match.co_champion.does_not_duplicate_in_match_economy	是
+match.server_anomaly_insurance_s	1800
+match.insurance_is_not_player_facing_sudden_death	是
+match.insurance_result	ABORT_AND_MANUAL_REVIEW_IF_NO_WINNER
+life_transaction.idempotency_key	MATCH_ID+PLAYER_ID+TRUE_DEATH_ORDINAL
+life_transaction.commit_order	RESOLVE_LETHAL_PROTECTION / CONSUME_ONE_LIFE_IF_AVAILABLE / COMMIT_DEATH_CREDIT_AND_DROPS / RESET_TRUE_DEATH_STATE / ASSIGN_REVIVE_POINT / ENTER_SOUL_FLIGHT_OR_ELIMINATED
+life_transaction.projectile_owner_eliminated	CONTINUE_AND_CREDIT_OWNER_WITH_ALL_NORMAL_KILL_REWARDS
+life_transaction.monster_final_blow.credit	MONSTER
+life_transaction.monster_final_blow.player_kill_rewards	否
+life_transaction.monster_final_blow.break_victim_kill_streak	是
+life_transaction.monster_final_blow.B41_without_player_target	DESTROY_WITHOUT_REWARD
+life_transaction.monster_final_blow.D12_on_target_true_death	CLEAR
+life_transaction.victim_wallet_snapshot	LAST_COMMITTED_BALANCE_BEFORE_LETHAL_DAMAGE_APPLICATION
+true_death_reset.authority	§2及附录A英雄成长规则
+aborted_match.mmr	NO_CHANGE
+aborted_match.xiuwei	FIXED_PARTICIPATION_COMPENSATION_20
+aborted_match.tasks_progress	否
+aborted_match.in_match_gold_carries_out	否
+aborted_match.diagnostic_replay_retained	是
+aborted_match.report_entry_available	是
+storm.authority	§10天劫规则
+storm.freedom_invariant	APOCALYPSE_DOES_NOT_DISABLE_STEALTH_OR_FORCE_REVEAL
+lethal_resolution.atomic_scope	ONE_LETHAL_DAMAGE_INSTANCE_PER_TARGET_PER_SERVER_TICK_ORDER
+lethal_resolution.priority	DAMAGE_IMMUNITY_OR_DODGE / SHIELD_ABSORPTION / HP_DAMAGE_COMMIT / B19_FEIGN_DEATH_ROLL / G1_NINE_TURN_PILL_IF_OWNED / B20_PASSIVE_REVIVE_IF_CHARGE_AVAILABLE / CONSUME_ONE_LIFE_AND_COMMIT_TRUE_DEATH / ELIMINATE_IF_NO_LIFE_REMAINS
+lethal_resolution.H032_KASAYA	PREVENTS_DAMAGE_BEFORE_LETHAL_CHAIN; IT_IS_NOT_A_LETHAL_PROTECTION
+lethal_resolution.B19_success	SET_HP_BY_LEVEL; DO_NOT_CONSUME_LIFE; DO_NOT_DROP; DO_NOT_RESET_COOLDOWNS
+lethal_resolution.G1_success	CONSUME_ITEM_INSTANCE; SET_FULL_HP; INVULNERABLE_2S; DO_NOT_CONSUME_LIFE
+lethal_resolution.B20_success	CONSUME_MATCH_CHARGE; SET_HP_BY_LEVEL; DO_NOT_CONSUME_LIFE; DO_NOT_DROP; DO_NOT_RESET_COOLDOWNS
+lethal_resolution.true_death_only_after_all_protections_fail	是
+lethal_resolution.same_tick_new_damage_after_protection	NEW_DAMAGE_INSTANCE_REENTERS_CHAIN; INVULNERABILITY_APPLIES_IF_ACTIVE
+machine_authorities.heroes	§2及附录A英雄成长规则
+machine_authorities.active_skills	§6主动技能规则
+machine_authorities.passives	§7被动技能规则
+machine_authorities.equipment	§8装备规则
+machine_authorities.combat	§5战斗规则
+machine_authorities.elements	§5战斗规则
+machine_authorities.storm	§10天劫规则
+machine_authorities.map	§9及附录D地图规则
+machine_authorities.monsters	§11怪物规则
+machine_authorities.monster_ai	§11怪物规则
+machine_authorities.monster_visuals	§11怪物规则
+machine_authorities.directed_books	§12及附录C经济掉落规则
+machine_authorities.directed_equipment	§8装备规则
+machine_authorities.shops	§12.3及§E.17商店规则
+machine_authorities.shop_bags	§12.3及§E.17商店规则
+machine_authorities.black_mountain	§12.5及§E.18黑山规则
+machine_authorities.economy	§12及附录C经济掉落规则
+machine_authorities.transactions	§15工程运行规则
+machine_authorities.ground_loot	§12地面物与空投规则
+machine_authorities.movement	RULE-MAP-001
+machine_authorities.dynamic_solids	RULE-MAP-001
+machine_authorities.summons	RULE-CORE-001
+machine_authorities.input	§3输入与界面规则
+machine_authorities.ui_flow	§3输入与界面规则
+machine_authorities.rng	§15工程运行规则
+machine_authorities.determinism	§15工程运行规则
+machine_authorities.network	§15工程运行规则
+machine_authorities.connection	附录E工程契约
+machine_authorities.backend	§15工程运行规则
+machine_authorities.bots	RULE-MATCH-001
+machine_authorities.matchmaking	RULE-MATCH-001
+machine_authorities.release_gates	§16至§17资产与发布规则
+machine_authorities.units_ids	RULE-CORE-001
+machine_authorities.authority_schema	RULE-CORE-001
+machine_authorities.player_combat	§5战斗规则
+machine_authorities.life_progression	§2及附录A英雄成长规则
+machine_authorities.vision_information	RULE-COMBAT-001
+machine_authorities.economy_drops	§12及附录C经济掉落规则
+machine_authorities.monster_combat	§5战斗规则
+machine_authorities.airdrop	§12及附录C经济掉落规则
+machine_authorities.state_machines	附录E工程契约
+machine_authorities.event_order	附录E工程契约
+machine_authorities.closed_enums	附录E工程契约
+machine_authorities.analytics	附录E工程契约
+machine_authorities.security_replay	§15工程运行规则
+machine_authorities.settings	附录E工程契约
+machine_authorities.metagame	§14局外规则
+machine_authorities.collections	§14局外规则
+machine_authorities.ui_layout	§3输入与界面规则
+machine_authorities.monetization	§14局外规则
+machine_authorities.completion_matrix	RULE-RELEASE-001
+machine_authorities.codegen	RULE-CORE-001
+machine_authorities.audio_slots	§16至§17资产与发布规则
+machine_authorities.content_acceptance_vectors	RULE-RELEASE-001
+machine_authorities.requirements_traceability	RULE-RELEASE-001
+machine_authorities.equipment_catalog	§8装备规则
+natural_language_is_non_authoritative	是
+authority_loading.order	VERIFY_MANIFEST_DELIVERY_HASH / VERIFY_RUNTIME_RULESET_HASH / LOAD_CLOSED_ENUMS_AND_SCHEMA / LOAD_MACHINE_AUTHORITIES / RESOLVE_TYPED_CONTENT_REFS / RUN_CROSS_FILE_ASSERTIONS
+authority_loading.any_failure	REFUSE_SERVER_START_OR_CLIENT_JOIN
+authority_loading.hot_swap_during_match	否
+authority_classes.MATCH_RULESET	units_ids / authority_schema / heroes / active_skills / passives / equipment / player_combat / combat / elements / storm / map / monsters / monster_ai / monster_combat / directed_books / directed_equipment / shops / shop_bags / black_mountain / economy / economy_drops / transactions / ground_loot / movement / dynamic_solids / summons / input / ui_flow / rng / determinism / bots / matchmaking / life_progression / vision_information / airdrop / state_machines / event_order / closed_enums
+authority_classes.SERVICE_CONTRACT	network / connection / backend / analytics / security_replay / settings / metagame / collections / ui_layout / monetization
+authority_classes.DEVELOPMENT_ONLY	monster_visuals / release_gates / completion_matrix / codegen / audio_slots / content_acceptance_vectors / requirements_traceability / equipment_catalog
+authority_classes.rule	MATCH_RULESET_HASH_ONLY_USES_MATCH_RULESET; SERVICE_HASH_USES_SERVICE_CONTRACT; DELIVERY_HASH_USES_ALL_DELIVERED_FILES
+content_counts.heroes	38
+content_counts.active	57
+content_counts.passive	44
+content_counts.equipment	48
+content_counts.monster_archetypes	22
+round22_clean_rebuild_and_3d_closure_integrated	是
+release_pipeline_must_be_single_writer_and_rebuild_artifacts	是
+ruleset_semver	3.0.0
+service_contract_version	3.0.0
+ruleset_hash_algorithm	SHA256_UTF8_CANONICAL_RULE_EXPORT_EXCLUDING_RULESET_HASH_FIELD
+compatibility_policy	MATCH_BINDS_EXACT_RULESET_HASH; NO_HOT_SWAP; REPLAY_REQUIRES_EXACT_HASH
+replay.genesis_prev_hash_32	771807ee94b4c493fb7cfb4eec41e8e3a87847542140eec4e9cbda5b7ceff7d3
+replay.genesis_domain	SANMING_WUCHANG|REPLAY|GENESIS|3.0.0
+rule_projection.authority	APPENDIX_E_FULLY_NAMESPACED_ENGINEERING_KEYS
+rule_projection.body_and_player_text	GENERATED_READ_ONLY_PROJECTION; NEVER_RUNTIME_INPUT
+empty_field_policy	FORBID_BLANK; USE_NONE_OR_EMPTY_ARRAY_OR_NOT_APPLICABLE_OR_INHERIT_DEFAULT
+aborted_match.client_result_code	VOID_MATCH_SERVER_INTEGRITY_OR_30M_TIMEOUT
+aborted_match.player_message_key	settlement_void_match_retry
+aborted_match.requeue_action	ONE_TAP_AVAILABLE_AFTER_RESULT_ACK
+aborted_match.settlement_idempotent	是
+map.wall_polygon_simplification_tolerance_m	0.05
+map.wall_polygon_orientation	CLOCKWISE
+map.wall_polygon_explicit_closing_vertex	否
+map.wall_polygon_geometry_sha256	73cb6bbe7de36c9b371924bdaff6d5a518295448c707b4dd50defab159e04573
+ruleset_hash	97e97296640c35d9c9e2ed0962d30246fa66dd3b1a41b86201562022873c49cb
+map.region_polygon_sha256	11918269d7f585be1b829e38100d194028e80e9692e9868814996690a7339d8d
+active.runtime_authority	E.26_STRONG_TYPED_PAYLOAD_TABLE
+active.natural_language_runtime_parse	FORBIDDEN
+H009.runtime_authority	E.27_EXACT_FIELD_WHITELIST
+passive.runtime_authority	E.31_STRONG_TYPED_PAYLOAD_TABLE
+equipment.effect_runtime_authority	E.32_STRONG_TYPED_PAYLOAD_TABLE
+monster_skill.runtime_authority	E.33_STRONG_TYPED_PAYLOAD_TABLE
+summon.runtime_authority	E.34_STRONG_TYPED_PAYLOAD_TABLE

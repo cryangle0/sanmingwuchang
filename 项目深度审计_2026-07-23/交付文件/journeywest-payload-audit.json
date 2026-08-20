@@ -1,0 +1,765 @@
+{
+  "record_counts": {
+    "active": 57,
+    "passive": 44,
+    "equipment": 48,
+    "monster_skill": 14,
+    "summon": 7
+  },
+  "total_records": 170,
+  "parse_errors": [],
+  "hash_failures": [],
+  "schema_failures": [],
+  "id_failures": [],
+  "duplicate_ids": {
+    "active": [],
+    "summon": [],
+    "monster_skill": [],
+    "passive": [],
+    "equipment": []
+  },
+  "type_counts": {
+    "ENUM": 1322,
+    "INT64": 669,
+    "BOOL": 264,
+    "HASH": 170,
+    "ARRAY": 167,
+    "Q4": 129,
+    "SET": 52,
+    "FORMULA": 37,
+    "REF": 6
+  },
+  "unit_counts": {
+    "m": 272,
+    "s": 194,
+    "scalar": 113,
+    "gold": 94,
+    "pct": 67,
+    "hp": 63,
+    "ratio": 55,
+    "m/s": 12,
+    "hp/s": 11,
+    "deg": 5,
+    "1/s": 5,
+    "hz": 1
+  },
+  "typed_issues": [],
+  "array_contract_violations": {
+    "missing_ordered_true_count": 87,
+    "items": [
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B01",
+        "path": "chance",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B01",
+        "path": "slow_percent",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B01",
+        "path": "duration_s",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B02",
+        "path": "chance",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B02",
+        "path": "silence_s",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B03",
+        "path": "chance",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B03",
+        "path": "knockback_m",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B04",
+        "path": "chance",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B04",
+        "path": "basic_miss_percent",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B04",
+        "path": "duration_s",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B05",
+        "path": "chance",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B05",
+        "path": "stun_s",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B06",
+        "path": "chance",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B06",
+        "path": "critical_damage_percent",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B07",
+        "path": "chance",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B07",
+        "path": "splash_damage_percent",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B08",
+        "path": "stacks_required",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B08",
+        "path": "lost_hp_damage_percent",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B09",
+        "path": "damage_per_stack_s",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B09",
+        "path": "max_stacks",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B09",
+        "path": "duration_s",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B10",
+        "path": "hp_threshold_percent",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B10",
+        "path": "damage_multiplier",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B11",
+        "path": "chance",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B11",
+        "path": "max_extra_basics",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B12",
+        "path": "chance",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B12",
+        "path": "summon_hp",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B12",
+        "path": "summon_attack",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B12",
+        "path": "max_instances",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B13",
+        "path": "chance",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B13",
+        "path": "contact_damage",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B13",
+        "path": "max_instances",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B13",
+        "path": "burn_damage_per_s",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B14",
+        "path": "chance",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B14",
+        "path": "damage",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B15",
+        "path": "chance",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B16",
+        "path": "reduction",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B17",
+        "path": "chance",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B17",
+        "path": "shield",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B18",
+        "path": "attack_percent_per_missing_10pct_hp",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B19",
+        "path": "chance",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B19",
+        "path": "heal_max_hp_percent",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B20",
+        "path": "heal_max_hp_percent",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B21",
+        "path": "delay_s",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B21",
+        "path": "hp_per_s",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B22",
+        "path": "actual_hp_plus_shield_damage_percent",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B23",
+        "path": "chance",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B23",
+        "path": "counter_damage_attack_coefficient",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B24",
+        "path": "heal_percent_actual_hp_plus_shield_damage",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B25",
+        "path": "next_basic_damage_multiplier",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B26",
+        "path": "damage_multiplier",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B27",
+        "path": "chance",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B27",
+        "path": "move_speed_percent",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B27",
+        "path": "duration_s",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B28",
+        "path": "detect_range_m",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B28",
+        "path": "move_speed_toward_target_percent",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B29",
+        "path": "qualification_gap_s",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B29",
+        "path": "damage_multiplier",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B30",
+        "path": "spawn_interval_s",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B30",
+        "path": "slow_percent",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B30",
+        "path": "slow_duration_s",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B31",
+        "path": "chance",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B31",
+        "path": "gold",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B32",
+        "path": "monster_gold",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B33",
+        "path": "chest_chance",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B33",
+        "path": "chest_gold",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B33",
+        "path": "gem_chance",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B33",
+        "path": "gold_equipment_chance",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B34",
+        "path": "percent",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B34",
+        "path": "cap_gold",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B35",
+        "path": "sell_bonus_percent",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B36",
+        "path": "move_speed_percent_per_stack",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B36",
+        "path": "max_stacks",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B37",
+        "path": "heal",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B37",
+        "path": "aoe_damage",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B38",
+        "path": "incoming_damage_remaining_multiplier",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B39",
+        "path": "delay_s",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B39",
+        "path": "statue_hp",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B40",
+        "path": "hp_per_kill",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B41",
+        "path": "payout_gold",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B41",
+        "path": "duration_s",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B42",
+        "path": "active_cd_reduce_s",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B43",
+        "path": "normal_hit_probability",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B43",
+        "path": "move_speed_percent",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B44",
+        "path": "chance",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B44",
+        "path": "damage",
+        "type": "ARRAY"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B44",
+        "path": "radius_m",
+        "type": "ARRAY"
+      }
+    ]
+  },
+  "set_contract_violations": [],
+  "formula_issues": [],
+  "active_effect_matrix": {
+    "declared_effect_type_count": 55,
+    "used_effect_type_count": 55,
+    "used_counts": {
+      "DAMAGE_SLOW_ZONE": 2,
+      "SPAWN_SUMMON": 2,
+      "WIND_WALL": 1,
+      "FIRE_WALL": 1,
+      "CONDITIONAL_POISON_DETONATE": 1,
+      "PETRIFY_TARGET": 1,
+      "CONTAGIOUS_DAMAGE_ZONE": 1,
+      "DELAYED_AREA_DAMAGE": 1,
+      "SELF_COMBAT_BUFF": 1,
+      "ARM_NEXT_BASIC": 1,
+      "DASH_STOP_FIRST": 1,
+      "SPAWN_DECOYS": 1,
+      "TARGET_BEHIND_BLINK_AND_ARM_CRIT": 1,
+      "BLINK_LEAVE_DELAYED_DECOY": 1,
+      "CONE_DAMAGE_SLOW": 1,
+      "PIERCING_DASH": 1,
+      "RADIAL_DAMAGE_KNOCK_TO_EDGE": 1,
+      "MOBILE_CHANNEL_AOE": 1,
+      "DELAYED_SILENCE_ZONE": 1,
+      "CHARGED_RADIAL_PULL": 1,
+      "SPEND_GOLD_TRUE_DAMAGE": 1,
+      "TARGET_DOT_REVEAL": 1,
+      "GLOBAL_LINE_PROJECTILE": 1,
+      "BASIC_LIFESTEAL_AND_DAMAGE_AURA": 1,
+      "TARGET_DAMAGE_HARD_CONTROL": 1,
+      "VISIBLE_ANY_HERO_HEAL": 1,
+      "TARGET_DAMAGE_AMP_MARK": 1,
+      "DELAYED_AREA_DAMAGE_SLOW": 1,
+      "ANY_HERO_HEAL_ZONE": 1,
+      "PAGODA_RING_SOLID": 1,
+      "MOBILE_INVULNERABILITY": 1,
+      "DAMAGE_SLOW_ANTIMOBILITY_ZONE": 1,
+      "SELF_REDUCTION_SPEED_BUFF": 1,
+      "PROJECTILE_ROOT": 1,
+      "DESTRUCTIBLE_ICE_WALL": 1,
+      "DUAL_PETRIFY": 1,
+      "SMOKE_VISION_ZONE": 1,
+      "PROJECTILE_PULL": 1,
+      "LOCKED_DAMAGE_STUN": 1,
+      "PROJECTILE_POLYMORPH": 1,
+      "CAPSULE_SWEEP_BLINK": 1,
+      "SELF_STEALTH_SPEED": 1,
+      "AERIAL_DELAYED_AREA_DAMAGE": 1,
+      "CHAIN_DAMAGE": 1,
+      "UNIFORM_RANDOM_DAMAGE": 1,
+      "TARGET_REVEAL_BOUNTY_MARK": 1,
+      "ATOMIC_SWAP_TWO_VISIBLE_UNITS": 1,
+      "SELF_REWIND": 1,
+      "MONSTER_EXECUTE_OR_PLAYER_GOLD_STEAL": 1,
+      "CREATE_GOLD": 1,
+      "TOGGLE_PLAYER_BOUNTY": 1,
+      "SCAN_OLD_EQUIPMENT": 1,
+      "VISIBLE_TRAP_OR_REMOTE_DETONATE": 1,
+      "SELF_LOCK_INVULNERABILITY": 1,
+      "SELF_SHIELD": 1
+    },
+    "unused_declared_types": [],
+    "issues": []
+  },
+  "projection_id_diffs": {
+    "active": {
+      "summary_count": 57,
+      "payload_count": 57,
+      "missing_payload_ids": [],
+      "extra_payload_ids": []
+    },
+    "passive": {
+      "summary_count": 44,
+      "payload_count": 44,
+      "missing_payload_ids": [],
+      "extra_payload_ids": []
+    },
+    "equipment": {
+      "summary_count": 48,
+      "payload_count": 48,
+      "missing_payload_ids": [],
+      "extra_payload_ids": []
+    }
+  },
+  "contract_note": {
+    "declared_unit_list": [
+      "deg",
+      "gold",
+      "hp",
+      "hz",
+      "m",
+      "m/s",
+      "mm",
+      "pct",
+      "ratio",
+      "s",
+      "scalar"
+    ],
+    "derived_units_used_but_omitted_from_declared_unit_list": [
+      "1/s",
+      "hp/s"
+    ]
+  }
+}

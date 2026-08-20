@@ -1,0 +1,13 @@
+{
+  "name": "@jwgb/sim",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@jwgb/content": "0.1.0",
+    "@jwgb/core": "0.1.0"
+  }
+}

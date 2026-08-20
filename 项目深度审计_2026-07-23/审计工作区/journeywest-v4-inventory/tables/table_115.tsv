@@ -1,0 +1,96 @@
+﻿工程字段	唯一值 / 执行语义
+machines.MATCH.states	LOBBY / PICKING / LOADING / PLAYING / FINAL_STORM / SETTLED / ABORTED
+machines.MATCH.winner_guard	count(participant.life_state != ELIMINATED) == 1
+machines.MATCH.tie_guard	all_remaining_candidates_commit_ELIMINATED_in_same_tick
+machines.MATCH.terminal	SETTLED / ABORTED
+machines.MATCH.transitions[0].to	PICKING
+machines.MATCH.transitions[0].guard	PARTICIPANT_SLOTS_COMMITTED_30
+machines.MATCH.transitions[0].from_states	LOBBY
+machines.MATCH.transitions[1].to	LOADING
+machines.MATCH.transitions[1].guard	ALL_CONFIRMED_OR_PICK_TIMER_15S_EXPIRED
+machines.MATCH.transitions[1].from_states	PICKING
+machines.MATCH.transitions[2].to	PLAYING
+machines.MATCH.transitions[2].guard	SERVER_WORLD_READY; CLIENT_LATE_LOAD_DOES_NOT_DELAY_MATCH
+machines.MATCH.transitions[2].from_states	LOADING
+machines.MATCH.transitions[3].to	FINAL_STORM
+machines.MATCH.transitions[3].guard	PRE_TICK_FINAL_STORM_GATE_AT_SAFE_RADIUS_ZERO
+machines.MATCH.transitions[3].from_states	PLAYING
+machines.MATCH.transitions[4].to	SETTLED
+machines.MATCH.transitions[4].guard	WINNER_OR_COCHAMPION_GUARD_AFTER_ALL_COMMITTED_LETHAL_CHAINS
+machines.MATCH.transitions[4].from_states	PLAYING / FINAL_STORM
+machines.MATCH.transitions[5].to	ABORTED
+machines.MATCH.transitions[5].guard	SERVER_INTEGRITY_ABORT
+machines.MATCH.transitions[5].from_states	LOBBY / PICKING / LOADING / PLAYING / FINAL_STORM
+machines.PLAYER_LIFE.states	ALIVE / TRUE_DEATH_RESOLVING / SOUL_FLIGHT / REVIVE_PROTECTION / ELIMINATED
+machines.PLAYER_LIFE.remaining_lives_decrement_at	LIFE_CONSUME_COMMIT
+machines.PLAYER_LIFE.soul_or_protection_counts_as_not_eliminated	是
+machines.PLAYER_LIFE.transitions[0].to	TRUE_DEATH_RESOLVING
+machines.PLAYER_LIFE.transitions[0].guard	LETHAL_CHAIN_REACHES_CONSUME_LIFE
+machines.PLAYER_LIFE.transitions[0].from_states	ALIVE / REVIVE_PROTECTION
+machines.PLAYER_LIFE.transitions[1].to	SOUL_FLIGHT
+machines.PLAYER_LIFE.transitions[1].guard	AFTER_1S_AND_REMAINING_LIVES_GT_0
+machines.PLAYER_LIFE.transitions[1].from_states	TRUE_DEATH_RESOLVING
+machines.PLAYER_LIFE.transitions[2].to	ELIMINATED
+machines.PLAYER_LIFE.transitions[2].guard	REMAINING_LIVES_EQ_0
+machines.PLAYER_LIFE.transitions[2].from_states	TRUE_DEATH_RESOLVING
+machines.PLAYER_LIFE.transitions[3].to	REVIVE_PROTECTION
+machines.PLAYER_LIFE.transitions[3].guard	ARRIVE_REVALIDATED_REVIVE_POINT
+machines.PLAYER_LIFE.transitions[3].from_states	SOUL_FLIGHT
+machines.PLAYER_LIFE.transitions[4].to	ALIVE
+machines.PLAYER_LIFE.transitions[4].guard	3S_EXPIRES_OR_OFFENSIVE_OR_INTERACTION_INTENT
+machines.PLAYER_LIFE.transitions[4].from_states	REVIVE_PROTECTION
+machines.PLAYER_LIFE.revive_protection_input_transition	EARLY_END_AND_SAME_REQUEST_REVALIDATION_IS_ONE_ATOMIC_INPUT_VALIDATION_STEP
+machines.ACTIVE_SLOT.states	READY / CASTING / CHANNELING / COOLDOWN
+machines.ACTIVE_SLOT.true_death	CLEAR_OWNER_ENTITIES_THEN_CURRENT_ID_READY
+machines.ACTIVE_SLOT.transitions[0].to	CASTING
+machines.ACTIVE_SLOT.transitions[0].guard	INPUT_AND_CONTEXT_LEGAL
+machines.ACTIVE_SLOT.transitions[0].from_states	READY
+machines.ACTIVE_SLOT.transitions[1].to	READY
+machines.ACTIVE_SLOT.transitions[1].guard	CANCEL_BEFORE_COMMIT; NO_CD
+machines.ACTIVE_SLOT.transitions[1].from_states	CASTING
+machines.ACTIVE_SLOT.transitions[2].to	CHANNELING
+machines.ACTIVE_SLOT.transitions[2].guard	CHANNEL_CAST_COMMITS; CD_STARTS
+machines.ACTIVE_SLOT.transitions[2].from_states	CASTING
+machines.ACTIVE_SLOT.transitions[3].to	COOLDOWN
+machines.ACTIVE_SLOT.transitions[3].guard	INSTANT_OR_WINDUP_CAST_COMMITS; CD_STARTS
+machines.ACTIVE_SLOT.transitions[3].from_states	CASTING
+machines.ACTIVE_SLOT.transitions[4].to	COOLDOWN
+machines.ACTIVE_SLOT.transitions[4].guard	ENDS_OR_INTERRUPTED; EXISTING_CD_CONTINUES
+machines.ACTIVE_SLOT.transitions[4].from_states	CHANNELING
+machines.ACTIVE_SLOT.transitions[5].to	READY
+machines.ACTIVE_SLOT.transitions[5].guard	REMAINING_CD_REACHES_ZERO_OR_TRUE_DEATH_RESET
+machines.ACTIVE_SLOT.transitions[5].from_states	COOLDOWN
+machines.ACTIVE_SLOT.true_death_global_transition.from_states	READY / CASTING / CHANNELING / COOLDOWN
+machines.ACTIVE_SLOT.true_death_global_transition.when_remaining_lives_gt_zero	CLEAR_OWNER_ENTITIES_AND_SET_READY
+machines.ACTIVE_SLOT.true_death_global_transition.when_remaining_lives_eq_zero	DESTROY_RUNTIME_SLOT_WITH_NO_FURTHER_CAST_OR_COOLDOWN
+machines.ACTIVE_SLOT.true_death_global_transition.priority	AFTER_LETHAL_COMMIT_BEFORE_OTHER_ACTIVE_TRANSITIONS
+machines.MODAL.states	CLOSED / OPEN_VALID / SUBMITTING / FAILED_ITEM_GONE / COMMITTED
+machines.MODAL.world_not_paused	是
+machines.MODAL.transitions[0].from_states	CLOSED
+machines.MODAL.transitions[0].to	OPEN_VALID
+machines.MODAL.transitions[0].guard	SERVER_VALIDATED_ITEM_INSTANCE_AND_CONTEXT
+machines.MODAL.transitions[1].from_states	OPEN_VALID
+machines.MODAL.transitions[1].to	SUBMITTING
+machines.MODAL.transitions[1].guard	ONE_CONFIRM_INPUT_COMMITS_REQUEST_ID
+machines.MODAL.transitions[2].from_states	OPEN_VALID
+machines.MODAL.transitions[2].to	CLOSED
+machines.MODAL.transitions[2].guard	CANCEL_INPUT_OR_DAMAGE_CLOSE_RULE
+machines.MODAL.transitions[3].from_states	OPEN_VALID / SUBMITTING
+machines.MODAL.transitions[3].to	FAILED_ITEM_GONE
+machines.MODAL.transitions[3].guard	ITEM_INSTANCE_NO_LONGER_AVAILABLE
+machines.MODAL.transitions[4].from_states	SUBMITTING
+machines.MODAL.transitions[4].to	COMMITTED
+machines.MODAL.transitions[4].guard	ATOMIC_TRANSACTION_COMMITTED
+machines.MODAL.transitions[5].from_states	FAILED_ITEM_GONE / COMMITTED
+machines.MODAL.transitions[5].to	CLOSED
+machines.MODAL.transitions[5].guard	ONE_UI_FRAME_RESULT_PRESENTED
+machines.CORE_BOSS.states	ACTIVE_COURT / DEAD_TIMER / MIGRATION_WARNING / MIGRATING / LANDING_INVULNERABLE / FINAL_ACTIVE / FINAL_DEAD
+machines.CORE_BOSS.migration_warning_killed	DEAD_TIMER
+machines.CORE_BOSS.respawn_due_before_19_00	FINAL_COURT
+machines.CORE_BOSS.respawn_due_at_or_after_19_00	FINAL_DEAD
+machines.CORE_BOSS.death_before_14_00	START_300S_TIMER
+machines.CORE_BOSS.death_at_or_after_14_00	NO_RESPAWN_TIMER
+transition_encoding.from_states	NONEMPTY_ARRAY_OF_DECLARED_STATE_IDS
+transition_encoding.to	ONE_DECLARED_STATE_ID
+transition_encoding.guard	ONE_CLOSED_GUARD_ID_OR_SEMICOLON_AND_OF_GUARD_IDS
+transition_encoding.wildcard_state_tokens	FORBIDDEN

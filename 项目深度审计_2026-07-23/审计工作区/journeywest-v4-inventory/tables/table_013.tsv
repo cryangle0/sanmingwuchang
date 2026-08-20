@@ -1,0 +1,70 @@
+﻿工程字段	唯一值 / 执行语义
+logical_canvas.width	1280
+logical_canvas.height	720
+logical_canvas.aspect	16:9
+logical_canvas.min_safe_inset	24
+fair_viewport.interactive_aspect	16:9
+fair_viewport.ultrawide_extra_gameplay_information	否
+common.player_block.anchor	TOP_LEFT
+common.player_block.x	32
+common.player_block.y	28
+common.player_block.portrait	72
+common.player_block.hp_w	240
+common.player_block.hp_h	28
+common.storm_block.anchor	TOP_CENTER
+common.storm_block.x	490
+common.storm_block.y	24
+common.storm_block.w	300
+common.storm_block.h	42
+common.minimap.anchor	TOP_RIGHT
+common.minimap.x	32
+common.minimap.y	28
+common.minimap.w	188
+common.minimap.h	188
+common.minimap.expanded	480
+common.passive_slot	52
+common.equipment_slot	48
+common.status_icon	32
+mobile.joystick.x	150
+mobile.joystick.y	585
+mobile.joystick.outer_radius	92
+mobile.joystick.drag_radius	76
+mobile.joystick.deadzone	12
+mobile.joystick.floating_zone_w	280
+mobile.joystick.floating_zone_h	250
+mobile.attack.x	1120
+mobile.attack.y	590
+mobile.attack.radius	58
+mobile.active.x	995
+mobile.active.y	620
+mobile.active.radius	50
+mobile.interact.x	1170
+mobile.interact.y	465
+mobile.interact.radius	46
+mobile.cancel.x	885
+mobile.cancel.y	470
+mobile.cancel.radius	64
+mobile.min_touch_target	72
+mobile.critical_touch_target	96
+mobile.min_gap	12
+mobile.drawer_width	420
+mobile.drawer_max_height	560
+pc.move	W / A / S / D
+pc.basic_attack	MOUSE_LEFT
+pc.active_skill	MOUSE_RIGHT
+pc.precision_aim_hold_s	0.22
+pc.interact	E
+pc.cancel	ESC
+pc.map	M
+pc.inventory_panel_hold	TAB
+pc.camera_center	SPACE
+pc.drawer_width	360
+controller_supported	否
+responsive.safe_area	OS_SAFE_INSETS_PLUS_24_LOGICAL_PX
+responsive.aspect_policy	16_9_GAMEPLAY_VIEW; EXTRA_WIDTH_DECORATIVE_ONLY; NO_EXTRA_WORLD_INFORMATION
+responsive.ui_scale_user_percent	80 / 90 / 100 / 110 / 120 / 130
+responsive.text_scale_user_percent	90 / 100 / 110 / 120 / 130
+responsive.tablet	ANCHOR_RELAYOUT_WITH_SAME_GAMEPLAY_INFORMATION_DENSITY
+responsive.pc_ultrawide	LETTERBOX_OR_DECORATIVE_SIDEBARS; NO_GAMEPLAY_CAMERA_GAIN
+accessibility.subtitles	ON_BY_DEFAULT; SIZE_FOLLOWS_TEXT_SCALE
+accessibility.windows_key_rebind	ALL_GAMEPLAY_KEYS_EXCEPT_SYSTEM_ESCAPE; CONFLICT_VALIDATION_REQUIRED

@@ -1,0 +1,153 @@
+﻿工程字段	唯一值 / 执行语义
+statuses	DESIGN_PASS / BLOCKING_PRERELEASE_ENGINE / BLOCKING_PRERELEASE_DEVICE / BLOCKING_PRERELEASE_EXTERNAL / BLOCKING_PREDEVELOPMENT_FORMULA / MONITOR_ONLY / TOOL_PASS / TOOL_PENDING
+gates[0].id	G_DATA_CONSISTENCY
+gates[0].level	P0
+gates[0].status	TOOL_PASS
+gates[0].pass	unified_checker_fail_count==0
+gates[1].id	G_MAP_RUNTIME
+gates[1].level	L3
+gates[1].status	BLOCKING_PRERELEASE_ENGINE
+gates[1].pass	first_encounter_p50_s in [60,90] and spawn_face_violation==0
+gates[2].id	G_COMBAT_RUNTIME
+gates[2].level	L3
+gates[2].status	BLOCKING_PRERELEASE_ENGINE
+gates[2].pass	five_element_error<=0.01 and dragon_4p_ttk_s in [17,26]
+gates[3].id	G_INPUT_RUNTIME
+gates[3].level	L3
+gates[3].status	BLOCKING_PRERELEASE_ENGINE
+gates[3].pass	touch_error<0.03 and aim_mode_error<0.02
+gates[4].id	G_LOW_MOBILE_PERF
+gates[4].level	L3
+gates[4].status	BLOCKING_PRERELEASE_ENGINE
+gates[4].pass	fps_sustained>=30 and frame_p99_ms<=50 and memory_peak_mb<=850
+gates[5].id	G_NETWORK
+gates[5].level	L3
+gates[5].status	BLOCKING_PRERELEASE_ENGINE
+gates[5].pass	tick_hz==20 and rtt_p95_ms<=80 and duplication_count==0
+gates[6].id	G_NEW_PLAYER_COMPREHENSION
+gates[6].level	L4
+gates[6].status	BLOCKING_PRERELEASE_DEVICE
+gates[6].pass	core_controls_without_help>=0.85
+gates[7].id	G_CROSS_INPUT_FAIRNESS
+gates[7].level	LIVE
+gates[7].status	MONITOR_ONLY
+gates[7].pass	adjusted_win_index in [0.45,0.55] with n>=2000 per input
+gates[8].id	G_ASSET_RIGHTS
+gates[8].level	EXTERNAL
+gates[8].status	BLOCKING_PRERELEASE_EXTERNAL
+gates[8].pass	owner_signoff==true
+gates[9].id	G_REGION_COMPLIANCE
+gates[9].level	EXTERNAL
+gates[9].status	BLOCKING_PRERELEASE_EXTERNAL
+gates[9].pass	regional_legal_signoff==true
+gates[10].id	G_ECONOMY_EXPLOIT
+gates[10].level	P0
+gates[10].status	TOOL_PENDING
+gates[10].pass	conservation_ledger_zero_diff and P10_P50_P90_in_band and extreme_build_sims_pass and shop_sellout_assert_pass and no_repeat_pickup_gold and no_recursive_attack_loop
+gates[11].id	G_FINAL_STORM
+gates[11].level	L1
+gates[11].status	TOOL_PENDING
+gates[11].pass	all_extreme_builds_have_finite_P99_and_no_hidden_reveal
+gates[12].id	G_REPLAY_HASH
+gates[12].level	L3
+gates[12].status	BLOCKING_PRERELEASE_ENGINE
+gates[12].pass	same_ruleset_replay_hash_exact
+gates[13].id	G_ACCOUNT_MERGE
+gates[13].level	L3
+gates[13].status	BLOCKING_PRERELEASE_ENGINE
+gates[13].pass	all_merge_cases_preserve_entitlements_and_progress
+gates[14].id	G_TRANSACTION_INTEGRITY
+gates[14].level	L3
+gates[14].status	BLOCKING_PRERELEASE_ENGINE
+gates[14].pass	zero_duplicate_or_partial_commit_under_disconnect_and_same_tick_contention
+gameplay_monetization_enabled	否
+release_candidate_requires_all_blocking_prerelease_gates	是
+cross_input_fairness.warning_min_matches_per_input	2000
+cross_input_fairness.decision_min_matches_per_input	10000
+predevelopment_blueprint_required	G_DATA_CONSISTENCY / G_ECONOMY_EXPLOIT / G_FINAL_STORM / G_NO_EMPTY_CELLS / G_PROJECTION_DRIFT
+release_candidate_required	G_DATA_CONSISTENCY / G_MAP_RUNTIME / G_COMBAT_RUNTIME / G_INPUT_RUNTIME / G_LOW_MOBILE_PERF / G_NETWORK / G_NEW_PLAYER_COMPREHENSION / G_ASSET_RIGHTS / G_REGION_COMPLIANCE / G_ECONOMY_EXPLOIT / G_FINAL_STORM / G_REPLAY_HASH / G_ACCOUNT_MERGE / G_TRANSACTION_INTEGRITY
+live_monitor_only	G_CROSS_INPUT_FAIRNESS
+release_candidate_requires_all_in_release_candidate_required	是
+blocking_predevelopment	DESIGN_PASS_REQUIRED / SCHEMA_AND_ENUM_GENERATION / MAP_PHYSICAL_GEOMETRY_VALIDATION / ECONOMY_CONSERVATION / CONTENT_REFERENCE_CLOSURE
+blocking_prerelease	L3_ENGINE_TEST / L4_REAL_DEVICE / EXTERNAL_ASSET_DELIVERY / SECURITY_REPLAY / PERFORMANCE_BUDGET
+monitor_only_after_launch	LIVE_BALANCE / INPUT_FAIRNESS / RETENTION / SHOP_SELL_THROUGH / ABUSE_DETECTION
+release_candidate_rule	ALL_BLOCKING_PRERELEASE_ITEMS_PASS; MONITOR_ONLY_ITEMS_DO_NOT_BLOCK
+gates[10].assertions.conservation	金币产生/转移/销毁三账本每tick守恒，全局差额==0
+gates[10].assertions.distribution	18分钟标准局P10/P50/P90个人金币在[2200,4200]/[4800,7800]/[9500,15500]带内
+gates[10].assertions.extreme_builds	B34利息流/B31+D15偷窃流/G5+D16铸币流/B33宝箱流四类极端构筑单独模拟，无指数增长
+gates[10].assertions.shop_sellout	六商店全售罄情形下无死锁、无负库存、无重复扣款
+gates[15].id	G_NO_EMPTY_CELLS
+gates[15].level	P0
+gates[15].status	TOOL_PASS
+gates[15].pass	document_empty_cell_count==0
+gates[16].id	G_PROJECTION_DRIFT
+gates[16].level	P0
+gates[16].status	TOOL_PASS
+gates[16].pass	prose_vs_payload_drift_count==0
+gates[17].id	G_CONCEPT_ASSET_MANIFEST
+gates[17].level	EXTERNAL
+gates[17].status	BLOCKING_PRERELEASE_EXTERNAL
+gates[17].pass	all_38_concepts_have_sha256_and_rights_cleared
+gates[18].id	G_LOW_FLASH_ALTERNATES
+gates[18].level	L3
+gates[18].status	BLOCKING_PRERELEASE_ENGINE
+gates[18].pass	every_strong_flash_telegraph_has_lowflash_variant
+gate_evidence.binding	每个门槛必须绑定evidence_id + checker_version + result_hash；状态只能由构建器写入，手工编辑状态即构建失败
+gate_evidence.pending_value	未运行的检查器统一记TOOL_PENDING；不允许手写PASS
+gates[0].evidence_id	CCK_V4_2_RUN_20260721
+gates[0].checker_version	CCK_V4_2
+gates[0].result_hash	见交付包v4_final_check_report.json（哈希在报告尾部）
+gates[10].evidence_id	PENDING_BUILD
+gates[10].checker_version	PENDING_BUILD
+gates[10].result_hash	PENDING_BUILD
+gates[11].evidence_id	PENDING_BUILD
+gates[11].checker_version	PENDING_BUILD
+gates[11].result_hash	PENDING_BUILD
+gates[12].evidence_id	PENDING_BUILD
+gates[12].checker_version	PENDING_BUILD
+gates[12].result_hash	PENDING_BUILD
+gates[13].evidence_id	PENDING_BUILD
+gates[13].checker_version	PENDING_BUILD
+gates[13].result_hash	PENDING_BUILD
+gates[14].evidence_id	PENDING_BUILD
+gates[14].checker_version	PENDING_BUILD
+gates[14].result_hash	PENDING_BUILD
+gates[15].evidence_id	CCK_V4_2_RUN_20260721
+gates[15].checker_version	CCK_V4_2
+gates[15].result_hash	同gates[0]报告：no_empty_cells断言
+gates[16].evidence_id	CCK_V4_2_RUN_20260721
+gates[16].checker_version	CCK_V4_2
+gates[16].result_hash	同gates[0]报告：projection_drift断言
+gates[17].evidence_id	PENDING_BUILD
+gates[17].checker_version	PENDING_BUILD
+gates[17].result_hash	PENDING_BUILD
+gates[18].evidence_id	PENDING_BUILD
+gates[18].checker_version	PENDING_BUILD
+gates[18].result_hash	PENDING_BUILD
+gates[1].evidence_id	PENDING_BUILD
+gates[1].checker_version	PENDING_BUILD
+gates[1].result_hash	PENDING_BUILD
+gates[2].evidence_id	PENDING_BUILD
+gates[2].checker_version	PENDING_BUILD
+gates[2].result_hash	PENDING_BUILD
+gates[3].evidence_id	PENDING_BUILD
+gates[3].checker_version	PENDING_BUILD
+gates[3].result_hash	PENDING_BUILD
+gates[4].evidence_id	PENDING_BUILD
+gates[4].checker_version	PENDING_BUILD
+gates[4].result_hash	PENDING_BUILD
+gates[5].evidence_id	PENDING_BUILD
+gates[5].checker_version	PENDING_BUILD
+gates[5].result_hash	PENDING_BUILD
+gates[6].evidence_id	PENDING_BUILD
+gates[6].checker_version	PENDING_BUILD
+gates[6].result_hash	PENDING_BUILD
+gates[7].evidence_id	PENDING_BUILD
+gates[7].checker_version	PENDING_BUILD
+gates[7].result_hash	PENDING_BUILD
+gates[8].evidence_id	PENDING_BUILD
+gates[8].checker_version	PENDING_BUILD
+gates[8].result_hash	PENDING_BUILD
+gates[9].evidence_id	PENDING_BUILD
+gates[9].checker_version	PENDING_BUILD
+gates[9].result_hash	PENDING_BUILD

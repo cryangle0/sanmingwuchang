@@ -1,0 +1,6 @@
+﻿工程字段	唯一值 / 执行语义
+B11.closed_candidate_pool	B01 / B02 / B03 / B04 / B05 / B07 / B08 / B09 / B12 / B13 / B14 / B44
+B11.pool_rule	入池标准：原生触发为出手普攻事件且效果可在连击最后一刀命中时刻作为一次原子事件结算
+B11.excluded_with_reason	B06=作用于命中本身已结算 / B31=仅主普攻合格 / B19 B20=致死上下文 / B34=分钟利息 / B40=永久成长 / 其余=受击、状态机、经济或位置上下文
+B11.draw_semantics	候选=已装备其他3被动∩closed_candidate_pool；空集则不触发；命中候选后无视其概率、按当前等级结算一次；内置CD仍生效，CD中则本次触发落空且不重抽
+B11.rng_stream	COMBAT_PROC

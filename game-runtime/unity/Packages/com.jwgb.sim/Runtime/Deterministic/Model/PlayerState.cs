@@ -1,0 +1,112 @@
+using System.Collections.Generic;
+using Jwgb.Content;
+using Jwgb.Core;
+
+namespace Jwgb.Sim.Deterministic
+{
+    internal sealed class PlayerState
+    {
+        public int EntityId;
+        public string PlayerId;
+        public string HeroId;
+        public BasicAttackKind BasicAttackKind;
+        public FiveElement Element;
+        public string ActiveAbilityId;
+        public Int2Mm Position;
+        public Int2Mm Facing;
+        public int Hp;
+        public int MaxHp;
+        public int AttackPower;
+        public int MoveSpeedMmPerSecond;
+        public int AttackRangeMm;
+        public int AttacksPerSecondMilli;
+        public int AttackPeriodTicks;
+        public int AttackCooldownTicks;
+        public int ActiveCooldownTicks;
+        public int ActiveBuffTicks;
+        public int ArmedCriticalTicks;
+        public int ArmedMissingHpDamagePercent;
+        public string ArmedActiveId;
+        public int ActiveLifestealTicks;
+        public int ActiveLifestealPercent;
+        public int ActiveDamageReductionTicks;
+        public int ActiveDamageReductionBasisPoints = 10_000;
+        public int ActiveSpeedBonusTicks;
+        public int ActiveSpeedBonusPercent;
+        public int WorldInteractionLockTicks;
+        public int PolymorphTicks;
+        public int PolymorphSpeedBonusPercent;
+        public int StealthTicks;
+        public int DormantBootsSpeedTicks;
+        public int DormantBootsCooldownTicks;
+        public bool DormantBootsStealthEpisodeActive;
+        public bool DormantBootsTriggeredThisEpisode;
+        public int DisplacementLockTicks;
+        public int TreasureSenseTicks;
+        public int ActiveBountyStreak;
+        public int HardControlTicks;
+        public int SlowTicks;
+        public int SlowBasisPoints = 10_000;
+        public int SilenceTicks;
+        public int SilenceCooldownPenaltyTicks;
+        public int BlindTicks;
+        public int BlindMissPercent;
+        public bool BlindPreventsCritical;
+        public int B15SpeedBoostTicks;
+        public int B15SpeedBonusPercent;
+        public bool B21FirstHitReady;
+        public int B25NextBasicBonusPercent;
+        public int B25AttackSpeedBoostTicks;
+        public int B25AttackSpeedBonusPercent;
+        public int B27SpeedBoostTicks;
+        public int B27SpeedBonusPercent;
+        public int B30NextAfterimageTick;
+        public int B36Stacks;
+        public int B36MovingTicks;
+        public int B38NextHealTick;
+        public int B40KillCount;
+        public int B40BonusMaxHp;
+        public int B42SpeedBoostTicks;
+        public int B42SpeedBonusPercent;
+        public int LastCombatTick;
+        public int PvpCombatTicks;
+        public int WhirlwindTicks;
+        public int WhirlwindNextPulseTick;
+        public int B19RetriggerLockTicks;
+        public int B20ReviveBuffTicks;
+        public int InvulnerableTicks;
+        public int IceCoffinTicks;
+        public int NightCloakStillTicks;
+        public bool NightCloakStealthed;
+        public bool FlightActive;
+        public int TaibaiChannelTicks;
+        public string TaibaiTargetHeroId;
+        public int TaibaiCooldownTicks;
+        public int HeishanGambleCount;
+        public int ConsumableVisionTicks;
+        public int ConsumableRevealTicks;
+        public readonly List<PassiveLoadoutEntry> Passives =
+            new List<PassiveLoadoutEntry>();
+        public readonly List<EquippedEquipmentInstance> Equipment =
+            new List<EquippedEquipmentInstance>();
+        public readonly List<EquippedEquipmentInstance> InventoryEquipment =
+            new List<EquippedEquipmentInstance>();
+        public int Gold = 500;
+        public int Experience;
+        public int Level = 1;
+        public int SkillBooks;
+        public int Gems;
+        public readonly List<ShieldState> Shields = new List<ShieldState>();
+        public int LivesRemaining;
+        public int TrueDeaths;
+        public LifeState LifeState;
+        public Int2Mm? RespawnTarget;
+        public int RespawnFlightDeadlineTick;
+        public int RespawnRetryUntilTick;
+        public int RespawnAttemptCount;
+        public int ReviveProtectionTicks;
+        public int MoveRemainderX;
+        public int MoveRemainderZ;
+        public PlayerIntent Intent;
+    }
+}

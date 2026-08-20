@@ -1,0 +1,17 @@
+﻿规则域ID	唯一责任	运行时权威
+RULE-CORE-001	版本、ID、单位、空值、投影与冲突政策	E.1/E.23
+RULE-LIFE-001	三命、致死、掉落、复活、奖励	E.1/E.2
+RULE-INPUT-001	三端输入与HUD	E.6/E.20/E.24
+RULE-COMBAT-001	普攻、伤害、控制、五行、视野	E.3—E.7
+RULE-ACTIVE-001	57主动与类型化效果	§6/E.23
+RULE-PASSIVE-001	44被动与替换	§7/E.15
+RULE-EQUIP-001	48装备、格位和效果	§8/E.15
+RULE-MAP-001	区域、地表、路网、墙体、POI	§9/附录D/E.8—E.9
+RULE-STORM-001	天劫与灭世雷暴	§10/E.11
+RULE-PVE-001	怪物AI、战斗、重生和视觉	§11/E.12—E.13
+RULE-ECON-001	掉落、地面物、商店、黑山、空投	§12/E.14—E.19
+RULE-MATCH-001	匹配、BOT、断线、MMR	§13/E.21
+RULE-META-001	局外、商业化与设置	§14/E.24
+RULE-NET-001	网络、后端、事务、随机、回放	§15/E.21—E.22
+RULE-ASSET-001	美术、音频、本地化、资产	§16
+RULE-RELEASE-001	AI开发顺序、性能和发布门槛	§17/E.25

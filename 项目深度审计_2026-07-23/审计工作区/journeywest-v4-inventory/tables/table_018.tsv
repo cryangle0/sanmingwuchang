@@ -1,0 +1,8 @@
+﻿类型	暴击	五行	比例减伤	固定减伤	护盾	无敌
+BASIC	是	是	是	是	是	是
+SKILL	否	是	是	是	是	是
+DOT	否	是	是	否	是	是
+PERCENT	否	否	是	否	是	是
+REFLECT	否	否	是	否	是	是
+TRUE	否	否	否	否	是	是
+STORM	否	否	否	否	是	是

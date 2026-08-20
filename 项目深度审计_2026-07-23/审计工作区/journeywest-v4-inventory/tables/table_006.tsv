@@ -1,0 +1,10 @@
+﻿术语	工程键	唯一含义
+R点	revive_point	系统在当前阶段合法候选池中确定的复活目的地
+宏区	macro_zone	用于分散出生或商店抽取的一组互斥微点
+微点	micro_point	具备精确XYZ、朝向和物理合法性的单个锚点
+实际伤害	actual_hp_or_shield_damage	经过无敌、闪避、减伤与护盾流程后提交的正生命或护盾损失
+破隐	stealth_break	隐身状态结束；不等同于获得隔墙锁定
+现形	revealed	被指定真视来源持续追踪；锁定仍需墙体与射程合法
+真视	true_sight	可把范围内隐身目标置为REVEALED的信息效果
+末击	final_damage_owner	把目标推进合法死亡/怪物死亡的最后伤害归属者
+真死	true_death	所有致死保护失败后消耗一条命并提交的死亡

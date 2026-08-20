@@ -1,0 +1,16 @@
+﻿工程字段	唯一值 / 执行语义
+H009.instance_snapshot	被动效果在触发瞬间按当时倍率快照；H009结束不回退已生成的护盾/DOT/召唤物/永久层
+H009.new_instance_reads_live	是；H009结束后新触发实例读取实时值
+H009.permanent_layers	PERMANENT_GROWTH类字段被排除，永不受H009影响（E.27白名单已排除）
+H009.saturation.pct_chance_cap	任何概率/命中类pct字段翻倍后CLAMP到[0,100]
+H009.saturation.remaining_multiplier_floor	任何remaining_multiplier类字段按transform_remaining_from_one后CLAMP到[0,1]
+H009.saturation.slow_percent_cap	减速百分比翻倍后CLAMP到[0,90]；90为全局减速硬上限
+H009.saturation.knockback_cap_m	击退距离翻倍后CLAMP到[0,10]
+H009.saturation.damage_heal_no_cap	伤害/治疗幅度字段不设额外上限，仅受SIGNED_INT64_SATURATING保护
+H009.saturation.per_field_authority	E.27列出的每个允许字段按其unit自动匹配上述饱和规则；未匹配者默认无上限
+periodic_refresh.extends_end_time_only	是；刷新只延长结束时间
+periodic_refresh.tick_phase_preserved	是；不重置下一跳时间，刷新瞬间禁止双跳
+zone_stacking.same_caster_same_skill	REFRESH_DURATION_NO_MAGNITUDE_STACK（H003/H006/H007/H025/H030/H033）
+zone_stacking.different_casters.damage_heal	独立并行结算
+zone_stacking.different_casters.slow	只取最强减速（TAKE_STRONGEST）
+zone_stacking.different_casters.antimobility	任一H033生效即禁止位移施放（OR语义）

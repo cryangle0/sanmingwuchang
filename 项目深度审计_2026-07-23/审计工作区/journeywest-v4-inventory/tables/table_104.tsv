@@ -1,0 +1,56 @@
+﻿工程字段	唯一值 / 执行语义
+global.inherit	OWNER_FACTION / OWNER_ELEMENT / OWNER_FATAL_CREDIT
+global.does_not_inherit_by_default	CRIT / BASIC_ATTACK_PASSIVES / OWNER_EQUIPMENT_STATS / EXTRA_FOG_VISION
+global.no_gold_or_xp_on_death	是
+global.monster_legal_target	是
+global.target_selection.recompute_s	0.25
+global.target_selection.must_be_directly_visible	是
+global.target_selection.must_be_nav_reachable_for_melee	是
+global.target_selection.within_aggro_range	是
+global.target_selection.priority_then_tie_break	PRIORITY_INDEX_ASC / NAV_PATH_DISTANCE_MM_ASC / ENTITY_ID_ASC
+global.hit_and_movement_volume_required	是
+STONE_ARHAT.hp	500
+STONE_ARHAT.attack	30
+STONE_ARHAT.attack_speed_per_s	0.7
+STONE_ARHAT.range_m	1.5
+STONE_ARHAT.move_speed_mps	2.2
+STONE_ARHAT.aggro_range_m	8
+STONE_ARHAT.leash_m	12
+STONE_ARHAT.threat_bonus	300
+STONE_ARHAT.target_priority	MONSTER_ATTACKING_OWNER / NEAREST_MONSTER / NEAREST_ENEMY_PLAYER
+STONE_ARHAT.collision_radius_m	0.5
+STONE_ARHAT.collision_height_m	1.6
+STONE_ARHAT.movement_collision	是
+BEAN_SOLDIER.hp	150
+BEAN_SOLDIER.attack	15
+BEAN_SOLDIER.attack_speed_per_s	1
+BEAN_SOLDIER.range_m	1.5
+BEAN_SOLDIER.move_speed_mps	2.8
+BEAN_SOLDIER.aggro_range_m	8
+BEAN_SOLDIER.leash_m	15
+BEAN_SOLDIER.target_priority	VISIBLE_ENEMY_PLAYER / MONSTER_ATTACKING_OWNER / NEAREST_LEGAL_ENEMY
+BEAN_SOLDIER.collision_radius_m	0.35
+BEAN_SOLDIER.collision_height_m	1.2
+BEAN_SOLDIER.movement_collision	是
+SIX_EAR_DECOY.attack	0
+SIX_EAR_DECOY.damage_enabled	否
+SIX_EAR_DECOY.ai.owner_history_delay_s_by_spawn_index	0.2 / 0.35
+SIX_EAR_DECOY.ai.lateral_offset_m_by_spawn_index	-1.2 / 1.2
+SIX_EAR_DECOY.ai.position_target	OWNER_HISTORY_POSITION_PLUS_NAV_PROJECTED_LATERAL_OFFSET
+SIX_EAR_DECOY.ai.movement_speed_mps	OWNER_CURRENT_MOVE_SPEED_MPS
+SIX_EAR_DECOY.ai.fake_basic_interval_s	1.25
+SIX_EAR_DECOY.ai.fake_basic_target	OWNER_COMMITTED_BASIC_TARGET_IF_VISIBLE_ELSE_NONE
+SIX_EAR_DECOY.ai.fake_basic_deals_damage	否
+SIX_EAR_DECOY.ai.rng_draws	0
+SIX_EAR_DECOY.collision_radius_m	0.45
+SIX_EAR_DECOY.collision_height_m	1.8
+SIX_EAR_DECOY.movement_collision	否
+SIX_EAR_DECOY.damageable_hit_volume	是
+B37.eligible_destroy_causes	HOSTILE_PLAYER_DAMAGE / HOSTILE_MONSTER_DAMAGE
+B37.ineligible_removal_causes	WORLD_DAMAGE / NATURAL_EXPIRY / REPLACEMENT / OWNER_TRUE_DEATH_CLEANUP / OWNER_ELIMINATION_CLEANUP
+B39.move_speed_mps	3
+B39.collision	RADIUS_0_6M_HEIGHT_1_8M
+B39.aggro	NONE
+B39.targetable	YES_NO_REWARD
+summon.runtime_authority	E.34_STRONG_TYPED_PAYLOAD_TABLE
+summon.stat_duplication_rule	第7章/E.26/11.3中出现的召唤物数值仅为投影；构建器逐字段比对其与E.34（B12↔WOLF_SPIRIT / B13↔FIRE_SPIRIT / B39↔STONE_STATUE / H020↔STONE_ARHAT / D19↔BEAN_SOLDIER / CORE_V6↔CORE_MIRROR），任何不一致即构建失败

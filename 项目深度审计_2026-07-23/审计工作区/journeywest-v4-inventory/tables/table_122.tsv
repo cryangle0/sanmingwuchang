@@ -1,0 +1,13 @@
+﻿工程字段	唯一值 / 执行语义
+type_system.closed_types	INT64 / Q4 / BOOL / ENUM / SET / ARRAY / FORMULA / HASH / REF
+type_system.REF	只读章节交叉引用（含§的规则指针）；运行时不解析REF求值，仅供构建器与人读定位权威条目
+type_system.INT64	64位有符号整数；饱和运算SIGNED_INT64_SATURATING；构建阶段拒绝任何浮点字面量
+type_system.Q4	定点数：value_scaled_1e4=实际值×10000后取整存为INT64；权威模拟只使用缩放整数，human字段仅供人读
+type_system.float_forbidden_runtime	是；出现FLOAT/NUMBER/STRING类型即构建失败
+type_system.unit_required	是；每个数值字段必须携带unit：m / mm / s / m/s / pct / deg / hz / gold / hp / ratio / scalar
+type_system.unit_source	字段名单向推导，优先级：速率（attack_speed_per_s→1/s；*_per_s与*_per_stack_s→hp/s）＞后缀（_m→m，_s→s，_mps→m/s，_percent→pct，_deg→deg，_gold→gold，_hp→hp）＞乘数/系数→ratio＞概率→pct＞伤害/治疗/护盾量→hp＞纯计数→scalar
+type_system.ARRAY	有序同质容器；必须声明element与ordered=是；per_level=是表示按L1–L5索引
+type_system.SET	无序去重容器；必须声明element=ENUM与unique=是；序列化时按字典序排序保证回放哈希稳定
+type_system.q4_mul	MUL(a,b)=FLOOR(a*b/10000)；逐步截断，禁止先聚合后取整
+type_system.q4_div	DIV_FLOOR(a,b)=FLOOR(a*10000/b)；b=0时构建期公式直接拒绝，运行期饱和为0并记录断言事件
+type_system.final_rounding	任何伤害/治疗/护盾落地前最后一步FLOOR到整数HP；中间过程保持Q4

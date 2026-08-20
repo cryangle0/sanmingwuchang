@@ -1,0 +1,6 @@
+﻿信息态	可锁定	表现与边界
+UNKNOWN	否	无世界或小地图敌人位置
+VISIBLE	是	直接视线+视野范围；世界渲染并可合法锁定
+DIRECTION	否	只给模糊区域/方向
+POSITION_SNAPSHOT	否	记录快照tick的小地图点，不跟随
+REVEALED	是	持续精确位置；仍需满足技能射程与墙体规则

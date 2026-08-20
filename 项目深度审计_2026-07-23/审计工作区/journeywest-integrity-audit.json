@@ -1,0 +1,1456 @@
+{
+  "source_docx": "journeywest_master_v4.docx",
+  "source_docx_sha256": "874d2b84debd069cbd10ae16761aa2b410415fc728d575f2ab06e71c1d6343d9",
+  "structural_docx": {
+    "raw_word_cell_count": 26601,
+    "raw_word_blank_cell_count": 0,
+    "raw_word_blank_cell_indices": []
+  },
+  "rule_conflicts": {
+    "passive_cd": {
+      "chapter_2_projection": "CONTINUE_REMAINING; NEVER_RESET_BY_TRUE_DEATH",
+      "chapter_7_projection": "RESET_INTERNAL_COOLDOWN",
+      "appendix_A_engine_key": "CONTINUE_REMAINING; NEVER_RESET_BY_TRUE_DEATH",
+      "authority": "§2及附录A英雄成长规则",
+      "verdict": "APPENDIX_A_AND_CHAPTER_2_AGREE; CHAPTER_7_IS_STALE_PROJECTION"
+    },
+    "rounding": {
+      "chapter_0": "伤害内部使用有符号64位Q4；生命提交四舍五入且远离0；金币向下取整；位置取最近毫米且中点远离0。",
+      "combat_engine_key": "ROUND_HALF_AWAY_FROM_ZERO_TO_INTEGER",
+      "typed_payload_engine_key": "任何伤害/治疗/护盾落地前最后一步FLOOR到整数HP；中间过程保持Q4",
+      "verdict": "CONFLICT_OR_UNSPECIFIED_ORDER"
+    },
+    "projection_policy": {
+      "conflict": "本文的规则表、内容表和工程字段同时由同一份定稿数据生成；如展示文字与工程字段冲突，停止构建并修正文档，不允许开发者自行选一边。",
+      "generation": "TRUTH_TO_PROSE_GENERATOR_V1为唯一投影通道：正文机制列、玩家文案与所有汇总表由附录E工程键单向生成，产物携带source_hash；手工编辑投影即构建失败。",
+      "validation": "构建器逐字段比对投影与工程键；漂移即G_PROJECTION_DRIFT失败，禁止人工二选一（与冲突条款同源）。"
+    }
+  },
+  "enum_closure": {
+    "checked_typed_enum_nodes": 767,
+    "typed_enum_failures": [
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B07",
+        "path": "damage_events.value[0].owner_credit",
+        "enum": "OwnerCredit",
+        "value": "OWNER"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B08",
+        "path": "damage_events.value[0].owner_credit",
+        "enum": "OwnerCredit",
+        "value": "OWNER"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B09",
+        "path": "damage_events.value[0].owner_credit",
+        "enum": "OwnerCredit",
+        "value": "OWNER"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B13",
+        "path": "damage_events.value[0].owner_credit",
+        "enum": "OwnerCredit",
+        "value": "OWNER"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B13",
+        "path": "damage_events.value[1].owner_credit",
+        "enum": "OwnerCredit",
+        "value": "OWNER"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B14",
+        "path": "damage_events.value[0].owner_credit",
+        "enum": "OwnerCredit",
+        "value": "OWNER"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B17",
+        "path": "damage_events.value[0].owner_credit",
+        "enum": "OwnerCredit",
+        "value": "OWNER"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B22",
+        "path": "damage_events.value[0].owner_credit",
+        "enum": "OwnerCredit",
+        "value": "OWNER"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B23",
+        "path": "damage_events.value[0].owner_credit",
+        "enum": "OwnerCredit",
+        "value": "OWNER"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B24",
+        "path": "damage_events.value[0].owner_credit",
+        "enum": "OwnerCredit",
+        "value": "OWNER"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B30",
+        "path": "damage_events.value[0].owner_credit",
+        "enum": "OwnerCredit",
+        "value": "OWNER"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B36",
+        "path": "damage_events.value[0].owner_credit",
+        "enum": "OwnerCredit",
+        "value": "OWNER"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B37",
+        "path": "damage_events.value[0].owner_credit",
+        "enum": "OwnerCredit",
+        "value": "OWNER"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B39",
+        "path": "damage_events.value[0].owner_credit",
+        "enum": "OwnerCredit",
+        "value": "OWNER"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B44",
+        "path": "damage_events.value[0].owner_credit",
+        "enum": "OwnerCredit",
+        "value": "OWNER"
+      }
+    ],
+    "typed_enum_failure_count": 15,
+    "gate_statuses_used": [
+      "BLOCKING_PRERELEASE_DEVICE",
+      "BLOCKING_PRERELEASE_ENGINE",
+      "BLOCKING_PRERELEASE_EXTERNAL",
+      "MONITOR_ONLY",
+      "TOOL_PASS",
+      "TOOL_PENDING"
+    ],
+    "gate_statuses_declared": [
+      "BLOCKING_PREDEVELOPMENT_FORMULA",
+      "BLOCKING_PRERELEASE_DEVICE",
+      "BLOCKING_PRERELEASE_ENGINE",
+      "BLOCKING_PRERELEASE_EXTERNAL",
+      "DESIGN_PASS",
+      "MONITOR_ONLY",
+      "TOOL_PASS",
+      "TOOL_PENDING"
+    ],
+    "rule_status_registered": [
+      "BLOCKING_PRERELEASE_DEVICE",
+      "BLOCKING_PRERELEASE_ENGINE",
+      "BLOCKING_PRERELEASE_EXTERNAL",
+      "DESIGN_PASS",
+      "EXECUTION_REQUIRED",
+      "MONITOR_ONLY"
+    ],
+    "gate_statuses_missing_from_registry": [
+      "TOOL_PASS",
+      "TOOL_PENDING"
+    ],
+    "declared_gate_statuses_missing_from_registry": [
+      "BLOCKING_PREDEVELOPMENT_FORMULA",
+      "TOOL_PASS",
+      "TOOL_PENDING"
+    ],
+    "registered_rule_statuses_unused_by_gates": [
+      "DESIGN_PASS",
+      "EXECUTION_REQUIRED"
+    ],
+    "registered_rule_statuses_absent_from_gate_vocabulary": [
+      "EXECUTION_REQUIRED"
+    ]
+  },
+  "unit_contract": {
+    "declared_units": [
+      "deg",
+      "gold",
+      "hp",
+      "hz",
+      "m",
+      "m/s",
+      "mm",
+      "pct",
+      "ratio",
+      "s",
+      "scalar"
+    ],
+    "observed_unit_counts": {
+      "m": 272,
+      "s": 194,
+      "scalar": 113,
+      "gold": 94,
+      "pct": 67,
+      "hp": 63,
+      "ratio": 55,
+      "m/s": 12,
+      "hp/s": 11,
+      "deg": 5,
+      "1/s": 5,
+      "hz": 1
+    },
+    "observed_units_not_declared": [
+      "1/s",
+      "hp/s"
+    ],
+    "formula_nodes_missing_unit_count": 37,
+    "formula_nodes_missing_unit": [
+      {
+        "table": 120,
+        "kind": "active",
+        "id": "H002",
+        "path": "damage_events.value[0].damage",
+        "src": "fixed=100"
+      },
+      {
+        "table": 120,
+        "kind": "active",
+        "id": "H003",
+        "path": "damage",
+        "src": "fixed=40"
+      },
+      {
+        "table": 120,
+        "kind": "active",
+        "id": "H006",
+        "path": "damage",
+        "src": "fixed=40"
+      },
+      {
+        "table": 120,
+        "kind": "active",
+        "id": "H007",
+        "path": "damage",
+        "src": "fixed=60"
+      },
+      {
+        "table": 120,
+        "kind": "active",
+        "id": "H008",
+        "path": "damage",
+        "src": "fixed=400"
+      },
+      {
+        "table": 120,
+        "kind": "active",
+        "id": "H009",
+        "path": "transform_additive",
+        "src": "VALUE*2"
+      },
+      {
+        "table": 120,
+        "kind": "active",
+        "id": "H009",
+        "path": "transform_delta_from_one",
+        "src": "1+(VALUE-1)*2"
+      },
+      {
+        "table": 120,
+        "kind": "active",
+        "id": "H009",
+        "path": "transform_remaining_from_one",
+        "src": "MAX(0,1-(1-VALUE)*2)"
+      },
+      {
+        "table": 120,
+        "kind": "active",
+        "id": "H011",
+        "path": "damage",
+        "src": "fixed=100"
+      },
+      {
+        "table": 120,
+        "kind": "active",
+        "id": "H012",
+        "path": "decoy_max_hp",
+        "src": "FLOOR(OWNER_CURRENT_MAX_HP*0.3)"
+      },
+      {
+        "table": 120,
+        "kind": "active",
+        "id": "H012",
+        "path": "decoy_current_hp",
+        "src": "FLOOR(DECOY_MAX_HP*OWNER_CURRENT_HP/OWNER_CURRENT_MAX_HP)"
+      },
+      {
+        "table": 120,
+        "kind": "active",
+        "id": "H014",
+        "path": "damage",
+        "src": "fixed=120"
+      },
+      {
+        "table": 120,
+        "kind": "active",
+        "id": "H015",
+        "path": "damage",
+        "src": "fixed=160"
+      },
+      {
+        "table": 120,
+        "kind": "active",
+        "id": "H016",
+        "path": "damage",
+        "src": "fixed=100"
+      },
+      {
+        "table": 120,
+        "kind": "active",
+        "id": "H017",
+        "path": "damage",
+        "src": "fixed=150"
+      },
+      {
+        "table": 120,
+        "kind": "active",
+        "id": "H018",
+        "path": "damage_per_tick",
+        "src": "fixed=100"
+      },
+      {
+        "table": 120,
+        "kind": "active",
+        "id": "H021",
+        "path": "damage",
+        "src": "fixed=120"
+      },
+      {
+        "table": 120,
+        "kind": "active",
+        "id": "H022",
+        "path": "cost",
+        "src": "FLOOR(CLAMP(CURRENT_GOLD*0.20,500,5000))"
+      },
+      {
+        "table": 120,
+        "kind": "active",
+        "id": "H022",
+        "path": "damage",
+        "src": "FLOOR(COST*0.10)"
+      },
+      {
+        "table": 120,
+        "kind": "active",
+        "id": "H024",
+        "path": "damage",
+        "src": "fixed=150"
+      },
+      {
+        "table": 120,
+        "kind": "active",
+        "id": "H026",
+        "path": "damage",
+        "src": "fixed=60"
+      },
+      {
+        "table": 120,
+        "kind": "active",
+        "id": "H029",
+        "path": "damage",
+        "src": "fixed=300"
+      },
+      {
+        "table": 120,
+        "kind": "active",
+        "id": "H033",
+        "path": "damage",
+        "src": "fixed=50"
+      },
+      {
+        "table": 120,
+        "kind": "active",
+        "id": "D1",
+        "path": "damage",
+        "src": "fixed=80"
+      },
+      {
+        "table": 120,
+        "kind": "active",
+        "id": "D3",
+        "path": "damage",
+        "src": "fixed=140"
+      },
+      {
+        "table": 120,
+        "kind": "active",
+        "id": "D9",
+        "path": "damage",
+        "src": "fixed=130"
+      },
+      {
+        "table": 120,
+        "kind": "active",
+        "id": "D10",
+        "path": "damage",
+        "src": "fixed=300"
+      },
+      {
+        "table": 120,
+        "kind": "active",
+        "id": "D14",
+        "path": "hp_result",
+        "src": "MAX(CURRENT_HP,HISTORICAL_HP_CLAMPED_TO_CURRENT_MAX_HP)"
+      },
+      {
+        "table": 120,
+        "kind": "active",
+        "id": "D17",
+        "path": "on_each_credited_player_true_death",
+        "src": "MIN(500*2^COUNT,32000)"
+      },
+      {
+        "table": 120,
+        "kind": "active",
+        "id": "D20",
+        "path": "trigger_damage",
+        "src": "fixed=180"
+      },
+      {
+        "table": 120,
+        "kind": "active",
+        "id": "D20",
+        "path": "remote_damage",
+        "src": "fixed=100"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B18",
+        "path": "step_rounding",
+        "src": "FLOOR(MISSING_HP_PERCENT/10)"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B24",
+        "path": "l5_reflect_amount",
+        "src": "FLOOR(PRE_OVERHEAL_AMOUNT*0.5)"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B36",
+        "path": "l5_extra_damage_formula",
+        "src": "FLOOR(CURRENT_GAME_MOVE_SPEED*0.20)"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B41",
+        "path": "sector_formula",
+        "src": "FLOOR(MOD(ATAN2_DEG(target_y-viewer_y,target_x-viewer_x)+22.5+360,360)/45)"
+      },
+      {
+        "table": 128,
+        "kind": "equipment",
+        "id": "P18",
+        "path": "effect.duration_order",
+        "src": "MAX(0.3,(BASE_DURATION + SOURCE_FLAT_EXTENSION) * TARGET_STRONGEST_MULTIPLIER)"
+      },
+      {
+        "table": 131,
+        "kind": "summon",
+        "id": "SIX_EAR_DECOY",
+        "path": "hp_rule",
+        "src": "FLOOR(OWNER_CURRENT_MAX_HP*0.3)"
+      }
+    ],
+    "semantic_unit_mismatch_count": 21,
+    "semantic_unit_mismatches": [
+      {
+        "table": 120,
+        "kind": "active",
+        "id": "H004",
+        "path": "damage_events.value[1].damage_target_max_hp_percent_per_stack",
+        "actual": "hp",
+        "expected": "pct"
+      },
+      {
+        "table": 120,
+        "kind": "active",
+        "id": "H024",
+        "path": "distance_bonus_percent_per_10m",
+        "actual": "scalar",
+        "expected": "pct"
+      },
+      {
+        "table": 120,
+        "kind": "active",
+        "id": "D16",
+        "path": "amount",
+        "actual": "scalar",
+        "expected": "gold"
+      },
+      {
+        "table": 120,
+        "kind": "active",
+        "id": "D17",
+        "path": "base_bounty",
+        "actual": "scalar",
+        "expected": "gold"
+      },
+      {
+        "table": 120,
+        "kind": "active",
+        "id": "D17",
+        "path": "cap",
+        "actual": "scalar",
+        "expected": "gold"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B11",
+        "path": "l5_last_hit_other_passive_chance",
+        "actual": "scalar",
+        "expected": "pct"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B16",
+        "path": "l5_full_block_chance",
+        "actual": "scalar",
+        "expected": "pct"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B18",
+        "path": "attack_percent_per_missing_10pct_hp",
+        "actual": "hp",
+        "expected": "pct"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B24",
+        "path": "heal_percent_actual_hp_plus_shield_damage",
+        "actual": "hp",
+        "expected": "pct"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B31",
+        "path": "gold",
+        "actual": "scalar",
+        "expected": "gold"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B31",
+        "path": "l5_heal_percent_transferred_gold",
+        "actual": "gold",
+        "expected": "pct"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B33",
+        "path": "chest_chance",
+        "actual": "scalar",
+        "expected": "pct"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B33",
+        "path": "gem_chance",
+        "actual": "scalar",
+        "expected": "pct"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B33",
+        "path": "gold_equipment_chance",
+        "actual": "scalar",
+        "expected": "pct"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B34",
+        "path": "percent",
+        "actual": "scalar",
+        "expected": "pct"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B36",
+        "path": "move_speed_percent_per_stack",
+        "actual": "scalar",
+        "expected": "pct"
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B44",
+        "path": "l5_zone_chance",
+        "actual": "scalar",
+        "expected": "pct"
+      },
+      {
+        "table": 128,
+        "kind": "equipment",
+        "id": "B6",
+        "path": "effect.add_percentage_points",
+        "actual": "scalar",
+        "expected": "pct"
+      },
+      {
+        "table": 128,
+        "kind": "equipment",
+        "id": "P16",
+        "path": "effect.attack_speed_percent_per_stack",
+        "actual": "scalar",
+        "expected": "pct"
+      },
+      {
+        "table": 128,
+        "kind": "equipment",
+        "id": "P16",
+        "path": "effect.each_damage_event_maximum_stack_gain",
+        "actual": "hp",
+        "expected": "scalar"
+      },
+      {
+        "table": 130,
+        "kind": "monster_skill",
+        "id": "CORE_V5_THUNDERCHAIN",
+        "path": "decay_percent_per_jump",
+        "actual": "scalar",
+        "expected": "pct"
+      }
+    ],
+    "unsupported_dimensions": [
+      {
+        "table": 126,
+        "id": "B38",
+        "path": "l5_heal_max_hp_percent_per_s",
+        "actual": "hp/s",
+        "semantic_dimension": "pct/s",
+        "allowed_by_E28": false
+      },
+      {
+        "table": 131,
+        "id": "FIRE_SPIRIT",
+        "path": "orbit_angular_speed_deg_s",
+        "actual": "s",
+        "semantic_dimension": "deg/s",
+        "allowed_by_E28": false
+      }
+    ]
+  },
+  "ref_closure": {
+    "ref_count": 6,
+    "refs": [
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B12",
+        "path": "summon_stat_authority",
+        "value": "E.34唯一权威；本载荷内数值须与E.34字节级一致",
+        "section_tokens": [
+          "E.34",
+          "E.34"
+        ],
+        "section_hits": {
+          "E.34": true
+        },
+        "malformed_bracket": false
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B13",
+        "path": "summon_stat_authority",
+        "value": "E.34唯一权威；本载荷内数值须与E.34字节级一致",
+        "section_tokens": [
+          "E.34",
+          "E.34"
+        ],
+        "section_hits": {
+          "E.34": true
+        },
+        "malformed_bracket": false
+      },
+      {
+        "table": 126,
+        "kind": "passive",
+        "id": "B39",
+        "path": "summon_stat_authority",
+        "value": "E.34唯一权威；本载荷内数值须与E.34字节级一致",
+        "section_tokens": [
+          "E.34",
+          "E.34"
+        ],
+        "section_hits": {
+          "E.34": true
+        },
+        "malformed_bracket": false
+      },
+      {
+        "table": 128,
+        "kind": "equipment",
+        "id": "P10",
+        "path": "effect.probability_authority",
+        "value": "§12.5及§E.18黑山规则",
+        "section_tokens": [
+          "12.5",
+          "E.18"
+        ],
+        "section_hits": {
+          "12.5": true,
+          "E.18": true
+        },
+        "malformed_bracket": false
+      },
+      {
+        "table": 128,
+        "kind": "equipment",
+        "id": "P10",
+        "path": "effect.time_authority",
+        "value": "§12.3及§E.17商店规则=HEISHAN].windows_s_half_open",
+        "section_tokens": [
+          "12.3",
+          "E.17"
+        ],
+        "section_hits": {
+          "12.3": true,
+          "E.17": true
+        },
+        "malformed_bracket": true
+      },
+      {
+        "table": 130,
+        "kind": "monster_skill",
+        "id": "CORE_V6_MIRRORSHADOW",
+        "path": "mirror_basic_damage_spec",
+        "value": "E.34_CORE_MIRROR载荷",
+        "section_tokens": [
+          "E.34"
+        ],
+        "section_hits": {
+          "E.34": true
+        },
+        "malformed_bracket": false
+      }
+    ],
+    "malformed_ref_count": 1,
+    "all_section_tokens_found": true,
+    "typed_summon_target_checks": [
+      {
+        "source_id": "B12",
+        "source_exists": true,
+        "target_id": "WOLF_SPIRIT",
+        "target_exists": true
+      },
+      {
+        "source_id": "B13",
+        "source_exists": true,
+        "target_id": "FIRE_SPIRIT",
+        "target_exists": true
+      },
+      {
+        "source_id": "B39",
+        "source_exists": true,
+        "target_id": "STONE_STATUE",
+        "target_exists": true
+      },
+      {
+        "source_id": "CORE_V6_MIRRORSHADOW",
+        "source_exists": true,
+        "target_id": "CORE_MIRROR",
+        "target_exists": true
+      }
+    ]
+  },
+  "release_gates": {
+    "gate_count": 19,
+    "status_counts": {
+      "TOOL_PASS": 3,
+      "BLOCKING_PRERELEASE_ENGINE": 9,
+      "BLOCKING_PRERELEASE_DEVICE": 1,
+      "MONITOR_ONLY": 1,
+      "BLOCKING_PRERELEASE_EXTERNAL": 3,
+      "TOOL_PENDING": 2
+    },
+    "self_declared_tool_pass": [
+      "G_DATA_CONSISTENCY",
+      "G_NO_EMPTY_CELLS",
+      "G_PROJECTION_DRIFT"
+    ],
+    "expected_evidence_file": "v4_final_check_report.json",
+    "expected_evidence_file_present": false,
+    "checker_or_generator_files": [],
+    "gates": [
+      {
+        "index": 0,
+        "id": "G_DATA_CONSISTENCY",
+        "status": "TOOL_PASS",
+        "evidence_id": "CCK_V4_2_RUN_20260721",
+        "checker_version": "CCK_V4_2",
+        "result_hash": "见交付包v4_final_check_report.json（哈希在报告尾部）"
+      },
+      {
+        "index": 1,
+        "id": "G_MAP_RUNTIME",
+        "status": "BLOCKING_PRERELEASE_ENGINE",
+        "evidence_id": "PENDING_BUILD",
+        "checker_version": "PENDING_BUILD",
+        "result_hash": "PENDING_BUILD"
+      },
+      {
+        "index": 2,
+        "id": "G_COMBAT_RUNTIME",
+        "status": "BLOCKING_PRERELEASE_ENGINE",
+        "evidence_id": "PENDING_BUILD",
+        "checker_version": "PENDING_BUILD",
+        "result_hash": "PENDING_BUILD"
+      },
+      {
+        "index": 3,
+        "id": "G_INPUT_RUNTIME",
+        "status": "BLOCKING_PRERELEASE_ENGINE",
+        "evidence_id": "PENDING_BUILD",
+        "checker_version": "PENDING_BUILD",
+        "result_hash": "PENDING_BUILD"
+      },
+      {
+        "index": 4,
+        "id": "G_LOW_MOBILE_PERF",
+        "status": "BLOCKING_PRERELEASE_ENGINE",
+        "evidence_id": "PENDING_BUILD",
+        "checker_version": "PENDING_BUILD",
+        "result_hash": "PENDING_BUILD"
+      },
+      {
+        "index": 5,
+        "id": "G_NETWORK",
+        "status": "BLOCKING_PRERELEASE_ENGINE",
+        "evidence_id": "PENDING_BUILD",
+        "checker_version": "PENDING_BUILD",
+        "result_hash": "PENDING_BUILD"
+      },
+      {
+        "index": 6,
+        "id": "G_NEW_PLAYER_COMPREHENSION",
+        "status": "BLOCKING_PRERELEASE_DEVICE",
+        "evidence_id": "PENDING_BUILD",
+        "checker_version": "PENDING_BUILD",
+        "result_hash": "PENDING_BUILD"
+      },
+      {
+        "index": 7,
+        "id": "G_CROSS_INPUT_FAIRNESS",
+        "status": "MONITOR_ONLY",
+        "evidence_id": "PENDING_BUILD",
+        "checker_version": "PENDING_BUILD",
+        "result_hash": "PENDING_BUILD"
+      },
+      {
+        "index": 8,
+        "id": "G_ASSET_RIGHTS",
+        "status": "BLOCKING_PRERELEASE_EXTERNAL",
+        "evidence_id": "PENDING_BUILD",
+        "checker_version": "PENDING_BUILD",
+        "result_hash": "PENDING_BUILD"
+      },
+      {
+        "index": 9,
+        "id": "G_REGION_COMPLIANCE",
+        "status": "BLOCKING_PRERELEASE_EXTERNAL",
+        "evidence_id": "PENDING_BUILD",
+        "checker_version": "PENDING_BUILD",
+        "result_hash": "PENDING_BUILD"
+      },
+      {
+        "index": 10,
+        "id": "G_ECONOMY_EXPLOIT",
+        "status": "TOOL_PENDING",
+        "evidence_id": "PENDING_BUILD",
+        "checker_version": "PENDING_BUILD",
+        "result_hash": "PENDING_BUILD"
+      },
+      {
+        "index": 11,
+        "id": "G_FINAL_STORM",
+        "status": "TOOL_PENDING",
+        "evidence_id": "PENDING_BUILD",
+        "checker_version": "PENDING_BUILD",
+        "result_hash": "PENDING_BUILD"
+      },
+      {
+        "index": 12,
+        "id": "G_REPLAY_HASH",
+        "status": "BLOCKING_PRERELEASE_ENGINE",
+        "evidence_id": "PENDING_BUILD",
+        "checker_version": "PENDING_BUILD",
+        "result_hash": "PENDING_BUILD"
+      },
+      {
+        "index": 13,
+        "id": "G_ACCOUNT_MERGE",
+        "status": "BLOCKING_PRERELEASE_ENGINE",
+        "evidence_id": "PENDING_BUILD",
+        "checker_version": "PENDING_BUILD",
+        "result_hash": "PENDING_BUILD"
+      },
+      {
+        "index": 14,
+        "id": "G_TRANSACTION_INTEGRITY",
+        "status": "BLOCKING_PRERELEASE_ENGINE",
+        "evidence_id": "PENDING_BUILD",
+        "checker_version": "PENDING_BUILD",
+        "result_hash": "PENDING_BUILD"
+      },
+      {
+        "index": 15,
+        "id": "G_NO_EMPTY_CELLS",
+        "status": "TOOL_PASS",
+        "evidence_id": "CCK_V4_2_RUN_20260721",
+        "checker_version": "CCK_V4_2",
+        "result_hash": "同gates[0]报告：no_empty_cells断言"
+      },
+      {
+        "index": 16,
+        "id": "G_PROJECTION_DRIFT",
+        "status": "TOOL_PASS",
+        "evidence_id": "CCK_V4_2_RUN_20260721",
+        "checker_version": "CCK_V4_2",
+        "result_hash": "同gates[0]报告：projection_drift断言"
+      },
+      {
+        "index": 17,
+        "id": "G_CONCEPT_ASSET_MANIFEST",
+        "status": "BLOCKING_PRERELEASE_EXTERNAL",
+        "evidence_id": "PENDING_BUILD",
+        "checker_version": "PENDING_BUILD",
+        "result_hash": "PENDING_BUILD"
+      },
+      {
+        "index": 18,
+        "id": "G_LOW_FLASH_ALTERNATES",
+        "status": "BLOCKING_PRERELEASE_ENGINE",
+        "evidence_id": "PENDING_BUILD",
+        "checker_version": "PENDING_BUILD",
+        "result_hash": "PENDING_BUILD"
+      }
+    ]
+  },
+  "embedded_media": [
+    {
+      "rid": "rId11",
+      "part": "word/media/image1.png",
+      "file": "journeywest-word-media-context\\image1.png",
+      "preceding_context": [
+        "9.1a 六区可计算边界",
+        "共享边界路径为唯一权威几何；六区多边形仅由外边界段与下表路径拼接生成。构建器必须验证：每条路径顶点在两侧多边形中按序完整出现、六区并集覆盖全图无缝隙、任意两区交集面积为0。",
+        "9.1b 三维地表与物体行为矩阵",
+        "9.2 地图总图与分层图"
+      ],
+      "width": 1925,
+      "height": 1491,
+      "sha256": "5fd2e05edaa3fd16905ccbf34414423ca27e96812fe91380a521a004242c3662",
+      "nearest_old_maps": [
+        {
+          "old_file": "分层_伏石.png",
+          "phash_distance": 10
+        },
+        {
+          "old_file": "分层_出生.png",
+          "phash_distance": 10
+        },
+        {
+          "old_file": "分层_商店.png",
+          "phash_distance": 10
+        }
+      ]
+    },
+    {
+      "rid": "rId12",
+      "part": "word/media/image2.png",
+      "file": "journeywest-word-media-context\\image2.png",
+      "preceding_context": [
+        "共享边界路径为唯一权威几何；六区多边形仅由外边界段与下表路径拼接生成。构建器必须验证：每条路径顶点在两侧多边形中按序完整出现、六区并集覆盖全图无缝隙、任意两区交集面积为0。",
+        "9.1b 三维地表与物体行为矩阵",
+        "9.2 地图总图与分层图",
+        "百眼迷城840米灰盒总图：道路、墙体、区块、资源和三庭的统一空间关系。"
+      ],
+      "width": 1925,
+      "height": 1544,
+      "sha256": "d8e88cd7ec7673b5c36588083942baf960d872a4433622877453856bb94cc728",
+      "nearest_old_maps": [
+        {
+          "old_file": "分层_伏石.png",
+          "phash_distance": 4
+        },
+        {
+          "old_file": "分层_出生.png",
+          "phash_distance": 4
+        },
+        {
+          "old_file": "分层_商店.png",
+          "phash_distance": 4
+        }
+      ]
+    },
+    {
+      "rid": "rId13",
+      "part": "word/media/image3.png",
+      "file": "journeywest-word-media-context\\image3.png",
+      "preceding_context": [
+        "9.1b 三维地表与物体行为矩阵",
+        "9.2 地图总图与分层图",
+        "百眼迷城840米灰盒总图：道路、墙体、区块、资源和三庭的统一空间关系。",
+        "路网与墙体层：所有道路可走边与实体墙共同定义NavMesh。"
+      ],
+      "width": 1925,
+      "height": 1544,
+      "sha256": "824ae219c1999f5e4aaf525dd3d577c57ec12c38bc3ef1422dca02d55a46be9e",
+      "nearest_old_maps": [
+        {
+          "old_file": "分层_伏石.png",
+          "phash_distance": 4
+        },
+        {
+          "old_file": "分层_出生.png",
+          "phash_distance": 4
+        },
+        {
+          "old_file": "分层_商店.png",
+          "phash_distance": 4
+        }
+      ]
+    },
+    {
+      "rid": "rId14",
+      "part": "word/media/image4.png",
+      "file": "journeywest-word-media-context\\image4.png",
+      "preceding_context": [
+        "9.2 地图总图与分层图",
+        "百眼迷城840米灰盒总图：道路、墙体、区块、资源和三庭的统一空间关系。",
+        "路网与墙体层：所有道路可走边与实体墙共同定义NavMesh。",
+        "资源层：普通怪槽、猪窝、龙宫、首领场、核心庭与宝箱池。"
+      ],
+      "width": 1925,
+      "height": 1544,
+      "sha256": "03144a3db6b0e6d1786c0fdab1f9d0c845f90fe178e0c4a0d378f798fdd7eea9",
+      "nearest_old_maps": [
+        {
+          "old_file": "分层_伏石.png",
+          "phash_distance": 2
+        },
+        {
+          "old_file": "分层_出生.png",
+          "phash_distance": 2
+        },
+        {
+          "old_file": "分层_商店.png",
+          "phash_distance": 2
+        }
+      ]
+    },
+    {
+      "rid": "rId15",
+      "part": "word/media/image5.png",
+      "file": "journeywest-word-media-context\\image5.png",
+      "preceding_context": [
+        "百眼迷城840米灰盒总图：道路、墙体、区块、资源和三庭的统一空间关系。",
+        "路网与墙体层：所有道路可走边与实体墙共同定义NavMesh。",
+        "资源层：普通怪槽、猪窝、龙宫、首领场、核心庭与宝箱池。",
+        "商店层：16宏区与48微锚点。"
+      ],
+      "width": 1925,
+      "height": 1544,
+      "sha256": "3b20d1cb4ba36c940623e59fa55ff28772ddda07d0000642885c662be6fca4c0",
+      "nearest_old_maps": [
+        {
+          "old_file": "分层_伏石.png",
+          "phash_distance": 2
+        },
+        {
+          "old_file": "分层_出生.png",
+          "phash_distance": 2
+        },
+        {
+          "old_file": "分层_商店.png",
+          "phash_distance": 2
+        }
+      ]
+    },
+    {
+      "rid": "rId16",
+      "part": "word/media/image6.png",
+      "file": "journeywest-word-media-context\\image6.png",
+      "preceding_context": [
+        "路网与墙体层：所有道路可走边与实体墙共同定义NavMesh。",
+        "资源层：普通怪槽、猪窝、龙宫、首领场、核心庭与宝箱池。",
+        "商店层：16宏区与48微锚点。",
+        "出生层：40宏区与80微位。"
+      ],
+      "width": 1925,
+      "height": 1544,
+      "sha256": "67fa230e6aa0cbb2fe9fa0d850f4888d2ea353ef4af21aa44ab4abe8218ef969",
+      "nearest_old_maps": [
+        {
+          "old_file": "分层_伏石.png",
+          "phash_distance": 4
+        },
+        {
+          "old_file": "分层_出生.png",
+          "phash_distance": 4
+        },
+        {
+          "old_file": "分层_商店.png",
+          "phash_distance": 4
+        }
+      ]
+    },
+    {
+      "rid": "rId17",
+      "part": "word/media/image7.png",
+      "file": "journeywest-word-media-context\\image7.png",
+      "preceding_context": [
+        "商店层：16宏区与48微锚点。",
+        "出生层：40宏区与80微位。",
+        "伏石层：世界与三庭备选伏石关系。",
+        "10 天劫、雷眼、决赛庭与灭世雷暴"
+      ],
+      "width": 1925,
+      "height": 1656,
+      "sha256": "a8e69abfb077a60e63239a21d964a0ebfe32dfa9d6d1460caced1f248b8f6e8b",
+      "nearest_old_maps": [
+        {
+          "old_file": "天劫阶段覆盖图_v2.png",
+          "phash_distance": 2
+        },
+        {
+          "old_file": "百眼迷城_840米灰盒总图_v2.png",
+          "phash_distance": 12
+        },
+        {
+          "old_file": "决赛庭圈心_惊蛰庭.png",
+          "phash_distance": 14
+        }
+      ]
+    },
+    {
+      "rid": "rId18",
+      "part": "word/media/image8.png",
+      "file": "journeywest-word-media-context\\image8.png",
+      "preceding_context": [
+        "中文为首发权威文本；UI字符串使用稳定key；禁止运行时解析展示文案；任何本地化必须保持数值、单位、五行符号和预警等级一致。",
+        "16.1 怪物视觉映射",
+        "16.1.1 38套怪物概念形象",
+        "以下概念图与MVS资产ID一一对应，只锁定轮廓、气质、五行辨识和角色归属；最终3D模型仍须服从碰撞体、攻击前摇、受击体与LOD预算。"
+      ],
+      "width": 1668,
+      "height": 1298,
+      "sha256": "074b5351c190bd57c301d80c4e4ed8c3f4d173f6677a7f613e32179066b7d842",
+      "nearest_old_maps": [
+        {
+          "old_file": "分层_伏石.png",
+          "phash_distance": 26
+        },
+        {
+          "old_file": "分层_出生.png",
+          "phash_distance": 26
+        },
+        {
+          "old_file": "分层_商店.png",
+          "phash_distance": 26
+        }
+      ]
+    },
+    {
+      "rid": "rId19",
+      "part": "word/media/image9.png",
+      "file": "journeywest-word-media-context\\image9.png",
+      "preceding_context": [
+        "中文为首发权威文本；UI字符串使用稳定key；禁止运行时解析展示文案；任何本地化必须保持数值、单位、五行符号和预警等级一致。",
+        "16.1 怪物视觉映射",
+        "16.1.1 38套怪物概念形象",
+        "以下概念图与MVS资产ID一一对应，只锁定轮廓、气质、五行辨识和角色归属；最终3D模型仍须服从碰撞体、攻击前摇、受击体与LOD预算。"
+      ],
+      "width": 1668,
+      "height": 1298,
+      "sha256": "a2dd82ce907ecfae6fb33afcf73d665b50da3df2b03a4a9dba05c70c133e3455",
+      "nearest_old_maps": [
+        {
+          "old_file": "决赛庭圈心_焚天庭.png",
+          "phash_distance": 28
+        },
+        {
+          "old_file": "天劫阶段覆盖图_v2.png",
+          "phash_distance": 28
+        },
+        {
+          "old_file": "百眼迷城_840米灰盒总图_v2.png",
+          "phash_distance": 28
+        }
+      ]
+    },
+    {
+      "rid": "rId20",
+      "part": "word/media/image10.png",
+      "file": "journeywest-word-media-context\\image10.png",
+      "preceding_context": [
+        "中文为首发权威文本；UI字符串使用稳定key；禁止运行时解析展示文案；任何本地化必须保持数值、单位、五行符号和预警等级一致。",
+        "16.1 怪物视觉映射",
+        "16.1.1 38套怪物概念形象",
+        "以下概念图与MVS资产ID一一对应，只锁定轮廓、气质、五行辨识和角色归属；最终3D模型仍须服从碰撞体、攻击前摇、受击体与LOD预算。"
+      ],
+      "width": 1668,
+      "height": 1298,
+      "sha256": "37850acb0880d1a1a6dc186e1c533158cf8a0e1c03cdc86a7753f51e60719b82",
+      "nearest_old_maps": [
+        {
+          "old_file": "分层_伏石.png",
+          "phash_distance": 22
+        },
+        {
+          "old_file": "分层_出生.png",
+          "phash_distance": 22
+        },
+        {
+          "old_file": "分层_商店.png",
+          "phash_distance": 22
+        }
+      ]
+    },
+    {
+      "rid": "rId21",
+      "part": "word/media/image11.png",
+      "file": "journeywest-word-media-context\\image11.png",
+      "preceding_context": [
+        "中文为首发权威文本；UI字符串使用稳定key；禁止运行时解析展示文案；任何本地化必须保持数值、单位、五行符号和预警等级一致。",
+        "16.1 怪物视觉映射",
+        "16.1.1 38套怪物概念形象",
+        "以下概念图与MVS资产ID一一对应，只锁定轮廓、气质、五行辨识和角色归属；最终3D模型仍须服从碰撞体、攻击前摇、受击体与LOD预算。"
+      ],
+      "width": 1668,
+      "height": 1298,
+      "sha256": "23e742228d56a7355ca94d768e327450affcfdb196f20ae4ecea5895e3cdfb09",
+      "nearest_old_maps": [
+        {
+          "old_file": "区块放大_万劫三庭_v2.png",
+          "phash_distance": 26
+        },
+        {
+          "old_file": "区块放大_蛛丝峡_v2.png",
+          "phash_distance": 28
+        },
+        {
+          "old_file": "区块放大_迷魂田_v2.png",
+          "phash_distance": 28
+        }
+      ]
+    },
+    {
+      "rid": "rId22",
+      "part": "word/media/image12.png",
+      "file": "journeywest-word-media-context\\image12.png",
+      "preceding_context": [
+        "中文为首发权威文本；UI字符串使用稳定key；禁止运行时解析展示文案；任何本地化必须保持数值、单位、五行符号和预警等级一致。",
+        "16.1 怪物视觉映射",
+        "16.1.1 38套怪物概念形象",
+        "以下概念图与MVS资产ID一一对应，只锁定轮廓、气质、五行辨识和角色归属；最终3D模型仍须服从碰撞体、攻击前摇、受击体与LOD预算。"
+      ],
+      "width": 1668,
+      "height": 1298,
+      "sha256": "56a8bdc210a4c171593da0cf17d9556c06e49dee19f0af6636a2cd3b45cb5666",
+      "nearest_old_maps": [
+        {
+          "old_file": "区块放大_蛛丝峡_v2.png",
+          "phash_distance": 22
+        },
+        {
+          "old_file": "区块放大_龙脊渊_v2.png",
+          "phash_distance": 22
+        },
+        {
+          "old_file": "区块放大_迷魂田_v2.png",
+          "phash_distance": 28
+        }
+      ]
+    },
+    {
+      "rid": "rId23",
+      "part": "word/media/image13.png",
+      "file": "journeywest-word-media-context\\image13.png",
+      "preceding_context": [
+        "中文为首发权威文本；UI字符串使用稳定key；禁止运行时解析展示文案；任何本地化必须保持数值、单位、五行符号和预警等级一致。",
+        "16.1 怪物视觉映射",
+        "16.1.1 38套怪物概念形象",
+        "以下概念图与MVS资产ID一一对应，只锁定轮廓、气质、五行辨识和角色归属；最终3D模型仍须服从碰撞体、攻击前摇、受击体与LOD预算。"
+      ],
+      "width": 1668,
+      "height": 1298,
+      "sha256": "0ed531402899dd5f50bf28fd5dfae100ecdfad4506928524ef14213c92c9e61c",
+      "nearest_old_maps": [
+        {
+          "old_file": "决赛庭圈心_惊蛰庭.png",
+          "phash_distance": 24
+        },
+        {
+          "old_file": "决赛庭圈心_玄冥庭.png",
+          "phash_distance": 24
+        },
+        {
+          "old_file": "分层_伏石.png",
+          "phash_distance": 24
+        }
+      ]
+    },
+    {
+      "rid": "rId24",
+      "part": "word/media/image14.png",
+      "file": "journeywest-word-media-context\\image14.png",
+      "preceding_context": [
+        "中文为首发权威文本；UI字符串使用稳定key；禁止运行时解析展示文案；任何本地化必须保持数值、单位、五行符号和预警等级一致。",
+        "16.1 怪物视觉映射",
+        "16.1.1 38套怪物概念形象",
+        "以下概念图与MVS资产ID一一对应，只锁定轮廓、气质、五行辨识和角色归属；最终3D模型仍须服从碰撞体、攻击前摇、受击体与LOD预算。"
+      ],
+      "width": 1668,
+      "height": 1298,
+      "sha256": "e6136fcb9414f5de7e8261ce45364371d365cc4a6f08132f2aa05a356fd2d765",
+      "nearest_old_maps": [
+        {
+          "old_file": "区块放大_蛛丝峡_v2.png",
+          "phash_distance": 26
+        },
+        {
+          "old_file": "区块放大_断金坊_v2.png",
+          "phash_distance": 28
+        },
+        {
+          "old_file": "分层_伏石.png",
+          "phash_distance": 30
+        }
+      ]
+    },
+    {
+      "rid": "rId25",
+      "part": "word/media/image15.png",
+      "file": "journeywest-word-media-context\\image15.png",
+      "preceding_context": [
+        "D.2 路网边",
+        "D.3 实体墙多边形",
+        "D.4 高台与坡道",
+        "D.5 三庭完整设施"
+      ],
+      "width": 1925,
+      "height": 1544,
+      "sha256": "477cd479adef35675e4b1360d6c31dd74bdc11ba5a70cc979effec5e9c21d933",
+      "nearest_old_maps": [
+        {
+          "old_file": "决赛庭圈心_惊蛰庭.png",
+          "phash_distance": 6
+        },
+        {
+          "old_file": "分层_路网墙体.png",
+          "phash_distance": 6
+        },
+        {
+          "old_file": "决赛庭圈心_焚天庭.png",
+          "phash_distance": 8
+        }
+      ]
+    },
+    {
+      "rid": "rId26",
+      "part": "word/media/image16.png",
+      "file": "journeywest-word-media-context\\image16.png",
+      "preceding_context": [
+        "D.3 实体墙多边形",
+        "D.4 高台与坡道",
+        "D.5 三庭完整设施",
+        "惊蛰庭决赛圈与设施"
+      ],
+      "width": 1925,
+      "height": 1544,
+      "sha256": "d5f3c1750b0625b64e4b7bfd1ad7fb5f24e87f48a1443de0ffb7441e5aea0b60",
+      "nearest_old_maps": [
+        {
+          "old_file": "决赛庭圈心_惊蛰庭.png",
+          "phash_distance": 6
+        },
+        {
+          "old_file": "分层_路网墙体.png",
+          "phash_distance": 6
+        },
+        {
+          "old_file": "决赛庭圈心_焚天庭.png",
+          "phash_distance": 8
+        }
+      ]
+    },
+    {
+      "rid": "rId27",
+      "part": "word/media/image17.png",
+      "file": "journeywest-word-media-context\\image17.png",
+      "preceding_context": [
+        "D.4 高台与坡道",
+        "D.5 三庭完整设施",
+        "惊蛰庭决赛圈与设施",
+        "玄冥庭决赛圈与设施"
+      ],
+      "width": 1925,
+      "height": 1544,
+      "sha256": "99565aeae7f1d741bb9cd1339adf8c0d9d0769636fce0d498d06abeb0178f7bd",
+      "nearest_old_maps": [
+        {
+          "old_file": "决赛庭圈心_惊蛰庭.png",
+          "phash_distance": 8
+        },
+        {
+          "old_file": "决赛庭圈心_焚天庭.png",
+          "phash_distance": 8
+        },
+        {
+          "old_file": "分层_路网墙体.png",
+          "phash_distance": 8
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,460 @@
+{
+  "schema": "jwgb.animated-character-model.v1",
+  "generatedAt": "2026-08-16T17:14:57.016Z",
+  "modelId": "H004",
+  "displayName": "蝎子精",
+  "deliveryPath": "models/characters/H004/model.glb",
+  "targetHeight": 2.2,
+  "sources": [
+    {
+      "name": "Idle",
+      "selectedClip": "Armature|Armature|mixamo.com|Layer0_retimed",
+      "fileName": "01_待机_idle.fbx",
+      "bytes": 4680684,
+      "sha256": "33F4E464D6803E323231D756942A3BDF53A9B3A6C02C2F676C13CD5CF789DBED"
+    },
+    {
+      "name": "Move",
+      "selectedClip": "Armature|Armature|mixamo.com|Layer0",
+      "fileName": "02_跑步_run.fbx",
+      "bytes": 4593868,
+      "sha256": "4D9739A53206AEFD2ECC1FCDC4E8AD853F96F682CD75D19767203BEBB2A713DB"
+    },
+    {
+      "name": "Attack",
+      "selectedClip": "Armature|Armature|mixamo.com|Layer0_retimed",
+      "fileName": "03_攻击_attack.fbx",
+      "bytes": 4620044,
+      "sha256": "8EF90B2838066054C512E5AAC34D4AAB661A4083A20E7EE88AE02CA67290922C"
+    },
+    {
+      "name": "Spell",
+      "selectedClip": "Armature|Armature|mixamo.com|Layer0",
+      "fileName": "04_施法_cast.fbx",
+      "bytes": 4597420,
+      "sha256": "F11B4208088CF1D50852CA4EF28B26958203937FBC7E51CAB7FA39F9D41EC869"
+    }
+  ],
+  "conversion": {
+    "clipPatterns": {
+      "Idle": null,
+      "Move": null,
+      "Attack": null,
+      "Spell": null
+    },
+    "sourceMetrics": [
+      {
+        "name": "Idle",
+        "selectedClip": "Armature|Armature|mixamo.com|Layer0_retimed",
+        "availableClips": [
+          "Armature|Armature|mixamo.com|Layer0_retimed"
+        ],
+        "meshes": 2,
+        "skinnedMeshes": 1,
+        "staticMeshes": 1,
+        "vertices": 185997,
+        "triangles": 61999,
+        "bones": [
+          "mixamorigHead",
+          "mixamorigHeadTop_End",
+          "mixamorigHips",
+          "mixamorigLeftArm",
+          "mixamorigLeftFoot",
+          "mixamorigLeftForeArm",
+          "mixamorigLeftHand",
+          "mixamorigLeftHandIndex1",
+          "mixamorigLeftHandIndex2",
+          "mixamorigLeftHandIndex3",
+          "mixamorigLeftHandIndex4",
+          "mixamorigLeftLeg",
+          "mixamorigLeftShoulder",
+          "mixamorigLeftToeBase",
+          "mixamorigLeftToe_End",
+          "mixamorigLeftUpLeg",
+          "mixamorigNeck",
+          "mixamorigRightArm",
+          "mixamorigRightFoot",
+          "mixamorigRightForeArm",
+          "mixamorigRightHand",
+          "mixamorigRightHandIndex1",
+          "mixamorigRightHandIndex2",
+          "mixamorigRightHandIndex3",
+          "mixamorigRightHandIndex4",
+          "mixamorigRightLeg",
+          "mixamorigRightShoulder",
+          "mixamorigRightToeBase",
+          "mixamorigRightToe_End",
+          "mixamorigRightUpLeg",
+          "mixamorigSpine",
+          "mixamorigSpine1",
+          "mixamorigSpine2"
+        ],
+        "meshRecords": [
+          {
+            "name": "WEAPON_武器",
+            "parentName": "mixamorigRightHand",
+            "skinned": false,
+            "vertices": 150000,
+            "triangles": 50000
+          },
+          {
+            "name": "tripo_node_65121fea",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35997,
+            "triangles": 11999
+          }
+        ],
+        "duration": 6.291666507720947,
+        "tracks": 68,
+        "keyframes": 2988,
+        "retargetedPositionTracks": 34,
+        "maximumRestPositionCorrection": 0
+      },
+      {
+        "name": "Move",
+        "selectedClip": "Armature|Armature|mixamo.com|Layer0",
+        "availableClips": [
+          "Armature|Armature|mixamo.com|Layer0"
+        ],
+        "meshes": 2,
+        "skinnedMeshes": 1,
+        "staticMeshes": 1,
+        "vertices": 185997,
+        "triangles": 61999,
+        "bones": [
+          "mixamorigHead",
+          "mixamorigHeadTop_End",
+          "mixamorigHips",
+          "mixamorigLeftArm",
+          "mixamorigLeftFoot",
+          "mixamorigLeftForeArm",
+          "mixamorigLeftHand",
+          "mixamorigLeftHandIndex1",
+          "mixamorigLeftHandIndex2",
+          "mixamorigLeftHandIndex3",
+          "mixamorigLeftHandIndex4",
+          "mixamorigLeftLeg",
+          "mixamorigLeftShoulder",
+          "mixamorigLeftToeBase",
+          "mixamorigLeftToe_End",
+          "mixamorigLeftUpLeg",
+          "mixamorigNeck",
+          "mixamorigRightArm",
+          "mixamorigRightFoot",
+          "mixamorigRightForeArm",
+          "mixamorigRightHand",
+          "mixamorigRightHandIndex1",
+          "mixamorigRightHandIndex2",
+          "mixamorigRightHandIndex3",
+          "mixamorigRightHandIndex4",
+          "mixamorigRightLeg",
+          "mixamorigRightShoulder",
+          "mixamorigRightToeBase",
+          "mixamorigRightToe_End",
+          "mixamorigRightUpLeg",
+          "mixamorigSpine",
+          "mixamorigSpine1",
+          "mixamorigSpine2"
+        ],
+        "meshRecords": [
+          {
+            "name": "WEAPON_武器",
+            "parentName": "mixamorigRightHand",
+            "skinned": false,
+            "vertices": 150000,
+            "triangles": 50000
+          },
+          {
+            "name": "tripo_node_65121fea",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35997,
+            "triangles": 11999
+          }
+        ],
+        "duration": 0.7916666865348816,
+        "tracks": 68,
+        "keyframes": 520,
+        "retargetedPositionTracks": 34,
+        "maximumRestPositionCorrection": 101.82547216170492
+      },
+      {
+        "name": "Attack",
+        "selectedClip": "Armature|Armature|mixamo.com|Layer0_retimed",
+        "availableClips": [
+          "Armature|Armature|mixamo.com|Layer0_retimed"
+        ],
+        "meshes": 2,
+        "skinnedMeshes": 1,
+        "staticMeshes": 1,
+        "vertices": 185997,
+        "triangles": 61999,
+        "bones": [
+          "mixamorigHead",
+          "mixamorigHeadTop_End",
+          "mixamorigHips",
+          "mixamorigLeftArm",
+          "mixamorigLeftFoot",
+          "mixamorigLeftForeArm",
+          "mixamorigLeftHand",
+          "mixamorigLeftHandIndex1",
+          "mixamorigLeftHandIndex2",
+          "mixamorigLeftHandIndex3",
+          "mixamorigLeftHandIndex4",
+          "mixamorigLeftLeg",
+          "mixamorigLeftShoulder",
+          "mixamorigLeftToeBase",
+          "mixamorigLeftToe_End",
+          "mixamorigLeftUpLeg",
+          "mixamorigNeck",
+          "mixamorigRightArm",
+          "mixamorigRightFoot",
+          "mixamorigRightForeArm",
+          "mixamorigRightHand",
+          "mixamorigRightHandIndex1",
+          "mixamorigRightHandIndex2",
+          "mixamorigRightHandIndex3",
+          "mixamorigRightHandIndex4",
+          "mixamorigRightLeg",
+          "mixamorigRightShoulder",
+          "mixamorigRightToeBase",
+          "mixamorigRightToe_End",
+          "mixamorigRightUpLeg",
+          "mixamorigSpine",
+          "mixamorigSpine1",
+          "mixamorigSpine2"
+        ],
+        "meshRecords": [
+          {
+            "name": "WEAPON_武器",
+            "parentName": "mixamorigRightHand",
+            "skinned": false,
+            "vertices": 150000,
+            "triangles": 50000
+          },
+          {
+            "name": "tripo_node_65121fea",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35997,
+            "triangles": 11999
+          }
+        ],
+        "duration": 2.0416667461395264,
+        "tracks": 68,
+        "keyframes": 1301,
+        "retargetedPositionTracks": 34,
+        "maximumRestPositionCorrection": 58.101528222246166
+      },
+      {
+        "name": "Spell",
+        "selectedClip": "Armature|Armature|mixamo.com|Layer0",
+        "availableClips": [
+          "Armature|Armature|mixamo.com|Layer0"
+        ],
+        "meshes": 2,
+        "skinnedMeshes": 1,
+        "staticMeshes": 1,
+        "vertices": 185997,
+        "triangles": 61999,
+        "bones": [
+          "mixamorigHead",
+          "mixamorigHeadTop_End",
+          "mixamorigHips",
+          "mixamorigLeftArm",
+          "mixamorigLeftFoot",
+          "mixamorigLeftForeArm",
+          "mixamorigLeftHand",
+          "mixamorigLeftHandIndex1",
+          "mixamorigLeftHandIndex2",
+          "mixamorigLeftHandIndex3",
+          "mixamorigLeftHandIndex4",
+          "mixamorigLeftLeg",
+          "mixamorigLeftShoulder",
+          "mixamorigLeftToeBase",
+          "mixamorigLeftToe_End",
+          "mixamorigLeftUpLeg",
+          "mixamorigNeck",
+          "mixamorigRightArm",
+          "mixamorigRightFoot",
+          "mixamorigRightForeArm",
+          "mixamorigRightHand",
+          "mixamorigRightHandIndex1",
+          "mixamorigRightHandIndex2",
+          "mixamorigRightHandIndex3",
+          "mixamorigRightHandIndex4",
+          "mixamorigRightLeg",
+          "mixamorigRightShoulder",
+          "mixamorigRightToeBase",
+          "mixamorigRightToe_End",
+          "mixamorigRightUpLeg",
+          "mixamorigSpine",
+          "mixamorigSpine1",
+          "mixamorigSpine2"
+        ],
+        "meshRecords": [
+          {
+            "name": "WEAPON_武器",
+            "parentName": "mixamorigRightHand",
+            "skinned": false,
+            "vertices": 150000,
+            "triangles": 50000
+          },
+          {
+            "name": "tripo_node_65121fea",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35997,
+            "triangles": 11999
+          }
+        ],
+        "duration": 1.0833333730697632,
+        "tracks": 68,
+        "keyframes": 576,
+        "retargetedPositionTracks": 34,
+        "maximumRestPositionCorrection": 6.055227729073868
+      }
+    ],
+    "retainedMesh": {
+      "meshes": 2,
+      "skinnedMeshes": 1,
+      "staticMeshes": 1,
+      "vertices": 185997,
+      "triangles": 61999,
+      "bones": [
+        "mixamorigHead",
+        "mixamorigHeadTop_End",
+        "mixamorigHips",
+        "mixamorigLeftArm",
+        "mixamorigLeftFoot",
+        "mixamorigLeftForeArm",
+        "mixamorigLeftHand",
+        "mixamorigLeftHandIndex1",
+        "mixamorigLeftHandIndex2",
+        "mixamorigLeftHandIndex3",
+        "mixamorigLeftHandIndex4",
+        "mixamorigLeftLeg",
+        "mixamorigLeftShoulder",
+        "mixamorigLeftToeBase",
+        "mixamorigLeftToe_End",
+        "mixamorigLeftUpLeg",
+        "mixamorigNeck",
+        "mixamorigRightArm",
+        "mixamorigRightFoot",
+        "mixamorigRightForeArm",
+        "mixamorigRightHand",
+        "mixamorigRightHandIndex1",
+        "mixamorigRightHandIndex2",
+        "mixamorigRightHandIndex3",
+        "mixamorigRightHandIndex4",
+        "mixamorigRightLeg",
+        "mixamorigRightShoulder",
+        "mixamorigRightToeBase",
+        "mixamorigRightToe_End",
+        "mixamorigRightUpLeg",
+        "mixamorigSpine",
+        "mixamorigSpine1",
+        "mixamorigSpine2"
+      ],
+      "meshRecords": [
+        {
+          "name": "H004-Weapon-01",
+          "parentName": "mixamorigRightHand",
+          "skinned": false,
+          "vertices": 150000,
+          "triangles": 50000
+        },
+        {
+          "name": "H004-Body-01",
+          "parentName": "H004-蝎子精-Animated",
+          "skinned": true,
+          "vertices": 35997,
+          "triangles": 11999
+        }
+      ]
+    },
+    "exportedClips": [
+      {
+        "name": "Idle",
+        "duration": 6.291666507720947,
+        "tracks": 68,
+        "keyframes": 2988
+      },
+      {
+        "name": "Move",
+        "duration": 0.7916666865348816,
+        "tracks": 68,
+        "keyframes": 520
+      },
+      {
+        "name": "Attack",
+        "duration": 2.0416667461395264,
+        "tracks": 68,
+        "keyframes": 1301
+      },
+      {
+        "name": "Spell",
+        "duration": 1.0833333730697632,
+        "tracks": 68,
+        "keyframes": 576
+      }
+    ],
+    "bodyTriangleBudget": 28000,
+    "weaponTriangleBudget": 10000,
+    "bodySimplifyRatio": 1,
+    "weaponSimplifyRatio": 0.2
+  },
+  "optimized": {
+    "bytes": 541572,
+    "vertices": 18757,
+    "triangles": 21999,
+    "meshes": 2,
+    "materials": 2,
+    "textures": 4,
+    "bodyTriangles": 11999,
+    "weaponTriangles": 10000,
+    "animations": [
+      {
+        "name": "Idle",
+        "channels": 68,
+        "samplers": 68
+      },
+      {
+        "name": "Move",
+        "channels": 68,
+        "samplers": 68
+      },
+      {
+        "name": "Attack",
+        "channels": 68,
+        "samplers": 68
+      },
+      {
+        "name": "Spell",
+        "channels": 68,
+        "samplers": 68
+      }
+    ],
+    "skins": [
+      {
+        "name": "",
+        "joints": 33
+      }
+    ],
+    "meshRecords": [
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 11999
+      },
+      {
+        "name": "",
+        "skinned": false,
+        "triangles": 10000
+      }
+    ]
+  },
+  "errors": [],
+  "status": "passed"
+}

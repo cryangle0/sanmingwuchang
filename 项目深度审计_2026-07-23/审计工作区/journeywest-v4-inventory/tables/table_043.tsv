@@ -1,0 +1,41 @@
+﻿工程字段	唯一值 / 执行语义
+times_s	360 / 720 / 1080
+warning_s	15
+reservation.radius_m	3
+reservation.blocks_dynamic_solid_placement_query	是
+reservation.blocks_player_movement	否
+player_overlap.nav_search_m	4
+player_overlap.if_no_point	MOVE_AIRDROP_TO_NEXT_LEGAL_CANDIDATE
+player_overlap.never_push_through_wall_or_storm	是
+fallback_priority	NO_SOLID_OVERLAP / OPENABLE_SPACE / OTHER_CHEST_DISTANCE / SHOP_DISTANCE / MONSTER_DISTANCE
+final_chest.authored_backup_points	4
+final_chest.boss_body_has_priority	CHEST_RELOCATES_TO_NEXT_BACKUP; BOSS_NEVER_MOVES
+final_chest.choose	FIRST_LEGAL_POINT_AFTER_BOSS_BODY_AND_SOLID_CHECK_IN_ARRAY_ORDER_ROTATED_BY_AIR_DROP_RNG
+channel_s	3
+interrupts	ACTUAL_NON_STORM_DAMAGE / FORCED_MOVEMENT / STUN / KNOCKUP / PULL / MOVE_OVER_0_25M / TRUE_DEATH
+does_not_interrupt_alone	SLOW / SILENCE / ROOT / NORMAL_STORM_DAMAGE_WITHOUT_STUN
+drop_placement	SEARCH_8_DIRECTIONS_ON_RING_1_2_TO_2_0M_ELSE_LOOT_CLUSTER_AT_CHEST
+reward.opener_gold	1200
+reward.equipment_count	1
+reward.equipment_quality	GOLD
+reward.equipment_pool	G1 / G2 / G3 / G4 / G5 / G6 / G7 / G8 / G9
+reward.selection	UNIFORM_AIR_DROP_RNG
+reward.equipment_public_ground	是
+reward.gold_to_first_successful_channeler	是
+reward.single_commit	是
+normal_B33_chest.eligible_final_blow_targets	ORDINARY_MONSTER / FLYING_MONSTER / PIG / LEADER / DRAGON / CORE_BOSS
+normal_B33_chest.summon_final_blow_uses_owner_passive	否
+normal_B33_chest.chest_trigger_percent_by_level	8 / 10 / 13 / 16 / 20
+normal_B33_chest.chest_gold_by_level	100 / 120 / 120 / 120 / 120
+normal_B33_chest.gem_chance_percent_by_level	0 / 0 / 10 / 15 / 20
+normal_B33_chest.gold_equipment_chance_percent_by_level	0 / 0 / 0 / 0 / 5
+normal_B33_chest.gold_equipment_pool	G1 / G2 / G3 / G4 / G5 / G6 / G7 / G8 / G9
+normal_B33_chest.spawn_at	MONSTER_DEATH_POINT_ELSE_NEAREST_LEGAL_WITHIN_3M
+normal_B33_chest.ground_expiry_s	60
+normal_B33_chest.open_channel_s	0.35
+normal_B33_chest.public_first_COMMIT_wins	是
+normal_B33_chest.nested_roll_order	ROLL_CHEST / CREATE_CHEST_WITH_GOLD / ROLL_GEM_IF_LEVEL_AT_LEAST_3 / ROLL_GOLD_EQUIPMENT_IF_LEVEL_5
+fallback_min_distances_m.OTHER_CHEST	12
+fallback_min_distances_m.SHOP_INTERACTION_PAD	15
+fallback_min_distances_m.LIVING_MONSTER_BODY	12
+fallback_min_distances_m.LIVING_PLAYER_CAPSULE	3

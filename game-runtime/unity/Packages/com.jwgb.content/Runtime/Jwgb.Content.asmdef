@@ -1,0 +1,9 @@
+{
+  "name": "Jwgb.Content",
+  "rootNamespace": "Jwgb.Content",
+  "references": [
+    "Jwgb.Core"
+  ],
+  "autoReferenced": true,
+  "noEngineReferences": true
+}

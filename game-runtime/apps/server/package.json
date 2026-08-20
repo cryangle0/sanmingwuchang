@@ -1,0 +1,17 @@
+{
+  "name": "@jwgb/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "start": "tsx src/main.ts",
+    "build": "esbuild src/main.ts --bundle --platform=node --format=esm --external:ws --outfile=dist/server.mjs"
+  },
+  "dependencies": {
+    "@jwgb/core": "0.1.0",
+    "@jwgb/protocol": "0.1.0",
+    "@jwgb/sim": "0.1.0",
+    "ws": "8.21.0"
+  }
+}

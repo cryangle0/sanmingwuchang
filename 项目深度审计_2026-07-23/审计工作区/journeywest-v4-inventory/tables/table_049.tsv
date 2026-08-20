@@ -1,0 +1,38 @@
+﻿工程字段	唯一值 / 执行语义
+collection.machine.states	LOCKED / SEEN / USED / MASTERED
+catalogs[0].id	HERO
+catalogs[0].count	38
+catalogs[0].seen	offered_or_direct_visible_1s
+catalogs[0].used	spawned_with_valid_input
+catalogs[0].mastered	placement_top3
+catalogs[1].id	ACTIVE_EXCLUSIVE
+catalogs[1].count	38
+catalogs[1].seen	owned_or_direct_visible_cast
+catalogs[1].used	successful_cast
+catalogs[1].mastered	successful_cast_and_top3
+catalogs[2].id	ACTIVE_GENERIC
+catalogs[2].count	19
+catalogs[2].seen	direct_visible_drop_or_cast_or_shop_preview
+catalogs[2].used	equipped_and_successful_cast
+catalogs[2].mastered	successful_cast_and_top3
+catalogs[3].id	PASSIVE
+catalogs[3].count	44
+catalogs[3].seen	direct_visible_book_or_replace_drawer
+catalogs[3].used	learned_level_gte_1
+catalogs[3].mastered	reached_level_5
+catalogs[4].id	EQUIPMENT
+catalogs[4].count	48
+catalogs[4].seen	direct_visible_ground_or_shop_or_loot_pile
+catalogs[4].used	equipped_or_unique_effect_triggered
+catalogs[4].mastered	top3_and_equipped_120s_or_unique_effect_triggered
+reward_thresholds_used_percent	25 / 50 / 75 / 100
+rewards_gameplay_power	否
+directed_drop_rules_visible	否
+likes.per_match	3
+likes.self_like	否
+likes.per_target	1
+likes.window_s	300
+likes.gameplay_reward	0
+likes.bot_target	NPC_STAT_ONLY
+battle_report_limit	20
+battle_report_story_nodes_max	8

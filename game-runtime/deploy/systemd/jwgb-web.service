@@ -1,0 +1,24 @@
+[Unit]
+Description=Journey West Great Brawl WebSocket match server
+After=network.target
+
+[Service]
+Type=simple
+User=jwgb-web
+Group=jwgb-web
+WorkingDirectory=/opt/jwgb-web/current
+Environment=NODE_ENV=production
+Environment=HOST=127.0.0.1
+Environment=PORT=8787
+ExecStart=/usr/bin/node /opt/jwgb-web/current/server.mjs
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/jwgb-web
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

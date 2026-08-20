@@ -1,0 +1,10 @@
+{
+  "name": "com.jwgb.core",
+  "version": "0.1.0",
+  "displayName": "JWGB Core",
+  "description": "Engine-independent deterministic primitives shared by the JWGB runtime.",
+  "unity": "6000.3",
+  "author": {
+    "name": "JWGB"
+  }
+}

@@ -1,0 +1,11 @@
+﻿类别	安全区寿命	天劫规则
+SKILL_BOOK	永久	连续圈外60秒销毁；回圈重置倒计时
+WHITE_EQUIPMENT	永久	连续圈外60秒销毁；回圈重置倒计时
+BLUE_EQUIPMENT	永久	连续圈外60秒销毁；回圈重置倒计时
+PURPLE_EQUIPMENT	永久	连续圈外60秒销毁；回圈重置倒计时
+GOLD_EQUIPMENT	永久	连续圈外60秒销毁；回圈重置倒计时
+GENERIC_ACTIVE	永久	连续圈外60秒销毁；回圈重置倒计时
+BOSS_DROP	永久	连续圈外60秒销毁；回圈重置倒计时
+GEM	60秒	连续圈外60秒销毁；回圈重置倒计时
+NORMAL_CHEST	60秒	连续圈外60秒销毁；回圈重置倒计时
+AIR_DROP_CHEST	120秒	连续圈外60秒销毁；回圈重置倒计时

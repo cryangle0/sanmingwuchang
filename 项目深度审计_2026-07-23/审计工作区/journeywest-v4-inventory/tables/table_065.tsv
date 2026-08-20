@@ -1,0 +1,1 @@
+﻿门槛状态释义｜本文的玩法、数值、几何、交互和工程口径均已定案。BLOCKING_PRERELEASE_ENGINE、BLOCKING_PRERELEASE_EXTERNAL与MONITOR_ONLY只表示实现后的验证阶段，不代表规则尚未确定，也不授权开发过程临时改写本文；若验证失败，必须形成可复现证据并回到同一真源版本化修订。

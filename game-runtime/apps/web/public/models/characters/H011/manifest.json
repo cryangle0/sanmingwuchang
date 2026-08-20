@@ -1,0 +1,1076 @@
+{
+  "schema": "jwgb.animated-character-model.v1",
+  "generatedAt": "2026-08-13T18:55:28.764Z",
+  "modelId": "H011",
+  "displayName": "哪吒",
+  "deliveryPath": "models/characters/H011/model.glb",
+  "targetHeight": 2.2,
+  "sources": [
+    {
+      "name": "Idle",
+      "selectedClip": "Armature|Armature|Armature|Armature|mixamo.com|Layer0",
+      "fileName": "01_待机_idle.fbx",
+      "bytes": 9667788,
+      "sha256": "87D799149AAB8F2F0892B32DC4611F24DA1D5CA2CEDFCA74D39FEBB971F8838F"
+    },
+    {
+      "name": "Move",
+      "selectedClip": "Armature|Armature|Armature|Armature|mixamo.com|Layer0",
+      "fileName": "02_跑步_run.fbx",
+      "bytes": 9595084,
+      "sha256": "2329D79FF640A556C1417B2954FBB7B58537CF1E8C77DACAC19CABCCB13A308D"
+    },
+    {
+      "name": "Attack",
+      "selectedClip": "Armature|Armature|Armature|Armature|mixamo.com|Layer0",
+      "fileName": "03_攻击_attack.fbx",
+      "bytes": 9588716,
+      "sha256": "61318C3AE77B4D60F675734AD30D264BBDF44149098A15DF78F31E69B8CA35B3"
+    },
+    {
+      "name": "Spell",
+      "selectedClip": "Armature|Armature|Armature|Armature|mixamo.com|Layer0",
+      "fileName": "04_施法_cast.fbx",
+      "bytes": 9606732,
+      "sha256": "AD9249EFA51E8D6AA71BF12D6A550E457809FA731F662DC510F21A20E4A98E20"
+    }
+  ],
+  "conversion": {
+    "clipPatterns": {
+      "Idle": null,
+      "Move": null,
+      "Attack": null,
+      "Spell": null
+    },
+    "sourceMetrics": [
+      {
+        "name": "Idle",
+        "selectedClip": "Armature|Armature|Armature|Armature|mixamo.com|Layer0",
+        "availableClips": [
+          "Armature|Armature|Armature|Armature|mixamo.com|Layer0"
+        ],
+        "meshes": 16,
+        "skinnedMeshes": 15,
+        "staticMeshes": 1,
+        "vertices": 248880,
+        "triangles": 82960,
+        "bones": [
+          "mixamorigHead",
+          "mixamorigHeadTop_End",
+          "mixamorigHips",
+          "mixamorigLeftArm",
+          "mixamorigLeftFoot",
+          "mixamorigLeftForeArm",
+          "mixamorigLeftHand",
+          "mixamorigLeftHandIndex1",
+          "mixamorigLeftHandIndex2",
+          "mixamorigLeftHandIndex3",
+          "mixamorigLeftHandIndex4",
+          "mixamorigLeftLeg",
+          "mixamorigLeftShoulder",
+          "mixamorigLeftToeBase",
+          "mixamorigLeftToe_End",
+          "mixamorigLeftUpLeg",
+          "mixamorigNeck",
+          "mixamorigRightArm",
+          "mixamorigRightFoot",
+          "mixamorigRightForeArm",
+          "mixamorigRightHand",
+          "mixamorigRightHandIndex1",
+          "mixamorigRightHandIndex2",
+          "mixamorigRightHandIndex3",
+          "mixamorigRightHandIndex4",
+          "mixamorigRightLeg",
+          "mixamorigRightShoulder",
+          "mixamorigRightToeBase",
+          "mixamorigRightToe_End",
+          "mixamorigRightUpLeg",
+          "mixamorigSpine",
+          "mixamorigSpine1",
+          "mixamorigSpine2"
+        ],
+        "meshRecords": [
+          {
+            "name": "tripo_part_0001",
+            "parentName": "mixamorigRightHand",
+            "skinned": false,
+            "vertices": 149826,
+            "triangles": 49942
+          },
+          {
+            "name": "tripo_part_0",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 26355,
+            "triangles": 8785
+          },
+          {
+            "name": "tripo_part_1",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 24375,
+            "triangles": 8125
+          },
+          {
+            "name": "tripo_part_2",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 18432,
+            "triangles": 6144
+          },
+          {
+            "name": "tripo_part_3",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 5169,
+            "triangles": 1723
+          },
+          {
+            "name": "tripo_part_7",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3876,
+            "triangles": 1292
+          },
+          {
+            "name": "tripo_part_4",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3537,
+            "triangles": 1179
+          },
+          {
+            "name": "tripo_part_9",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3525,
+            "triangles": 1175
+          },
+          {
+            "name": "tripo_part_5",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3183,
+            "triangles": 1061
+          },
+          {
+            "name": "tripo_part_6",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3108,
+            "triangles": 1036
+          },
+          {
+            "name": "tripo_part_8",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 2964,
+            "triangles": 988
+          },
+          {
+            "name": "tripo_part_11",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 2766,
+            "triangles": 922
+          },
+          {
+            "name": "tripo_part_10",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 711,
+            "triangles": 237
+          },
+          {
+            "name": "tripo_part_12",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 546,
+            "triangles": 182
+          },
+          {
+            "name": "tripo_part_13",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 273,
+            "triangles": 91
+          },
+          {
+            "name": "tripo_part_14",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 234,
+            "triangles": 78
+          }
+        ],
+        "duration": 10.416666984558105,
+        "tracks": 68,
+        "keyframes": 1362,
+        "retargetedPositionTracks": 34,
+        "maximumRestPositionCorrection": 0
+      },
+      {
+        "name": "Move",
+        "selectedClip": "Armature|Armature|Armature|Armature|mixamo.com|Layer0",
+        "availableClips": [
+          "Armature|Armature|Armature|Armature|mixamo.com|Layer0"
+        ],
+        "meshes": 16,
+        "skinnedMeshes": 15,
+        "staticMeshes": 1,
+        "vertices": 248880,
+        "triangles": 82960,
+        "bones": [
+          "mixamorigHead",
+          "mixamorigHeadTop_End",
+          "mixamorigHips",
+          "mixamorigLeftArm",
+          "mixamorigLeftFoot",
+          "mixamorigLeftForeArm",
+          "mixamorigLeftHand",
+          "mixamorigLeftHandIndex1",
+          "mixamorigLeftHandIndex2",
+          "mixamorigLeftHandIndex3",
+          "mixamorigLeftHandIndex4",
+          "mixamorigLeftLeg",
+          "mixamorigLeftShoulder",
+          "mixamorigLeftToeBase",
+          "mixamorigLeftToe_End",
+          "mixamorigLeftUpLeg",
+          "mixamorigNeck",
+          "mixamorigRightArm",
+          "mixamorigRightFoot",
+          "mixamorigRightForeArm",
+          "mixamorigRightHand",
+          "mixamorigRightHandIndex1",
+          "mixamorigRightHandIndex2",
+          "mixamorigRightHandIndex3",
+          "mixamorigRightHandIndex4",
+          "mixamorigRightLeg",
+          "mixamorigRightShoulder",
+          "mixamorigRightToeBase",
+          "mixamorigRightToe_End",
+          "mixamorigRightUpLeg",
+          "mixamorigSpine",
+          "mixamorigSpine1",
+          "mixamorigSpine2"
+        ],
+        "meshRecords": [
+          {
+            "name": "tripo_part_0001",
+            "parentName": "mixamorigRightHand",
+            "skinned": false,
+            "vertices": 149826,
+            "triangles": 49942
+          },
+          {
+            "name": "tripo_part_0",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 26355,
+            "triangles": 8785
+          },
+          {
+            "name": "tripo_part_1",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 24375,
+            "triangles": 8125
+          },
+          {
+            "name": "tripo_part_2",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 18432,
+            "triangles": 6144
+          },
+          {
+            "name": "tripo_part_3",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 5169,
+            "triangles": 1723
+          },
+          {
+            "name": "tripo_part_7",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3876,
+            "triangles": 1292
+          },
+          {
+            "name": "tripo_part_4",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3537,
+            "triangles": 1179
+          },
+          {
+            "name": "tripo_part_9",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3525,
+            "triangles": 1175
+          },
+          {
+            "name": "tripo_part_5",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3183,
+            "triangles": 1061
+          },
+          {
+            "name": "tripo_part_6",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3108,
+            "triangles": 1036
+          },
+          {
+            "name": "tripo_part_8",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 2964,
+            "triangles": 988
+          },
+          {
+            "name": "tripo_part_11",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 2766,
+            "triangles": 922
+          },
+          {
+            "name": "tripo_part_10",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 711,
+            "triangles": 237
+          },
+          {
+            "name": "tripo_part_12",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 546,
+            "triangles": 182
+          },
+          {
+            "name": "tripo_part_13",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 273,
+            "triangles": 91
+          },
+          {
+            "name": "tripo_part_14",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 234,
+            "triangles": 78
+          }
+        ],
+        "duration": 0.875,
+        "tracks": 68,
+        "keyframes": 683,
+        "retargetedPositionTracks": 34,
+        "maximumRestPositionCorrection": 35.34799749582132
+      },
+      {
+        "name": "Attack",
+        "selectedClip": "Armature|Armature|Armature|Armature|mixamo.com|Layer0",
+        "availableClips": [
+          "Armature|Armature|Armature|Armature|mixamo.com|Layer0"
+        ],
+        "meshes": 16,
+        "skinnedMeshes": 15,
+        "staticMeshes": 1,
+        "vertices": 248880,
+        "triangles": 82960,
+        "bones": [
+          "mixamorigHead",
+          "mixamorigHeadTop_End",
+          "mixamorigHips",
+          "mixamorigLeftArm",
+          "mixamorigLeftFoot",
+          "mixamorigLeftForeArm",
+          "mixamorigLeftHand",
+          "mixamorigLeftHandIndex1",
+          "mixamorigLeftHandIndex2",
+          "mixamorigLeftHandIndex3",
+          "mixamorigLeftHandIndex4",
+          "mixamorigLeftLeg",
+          "mixamorigLeftShoulder",
+          "mixamorigLeftToeBase",
+          "mixamorigLeftToe_End",
+          "mixamorigLeftUpLeg",
+          "mixamorigNeck",
+          "mixamorigRightArm",
+          "mixamorigRightFoot",
+          "mixamorigRightForeArm",
+          "mixamorigRightHand",
+          "mixamorigRightHandIndex1",
+          "mixamorigRightHandIndex2",
+          "mixamorigRightHandIndex3",
+          "mixamorigRightHandIndex4",
+          "mixamorigRightLeg",
+          "mixamorigRightShoulder",
+          "mixamorigRightToeBase",
+          "mixamorigRightToe_End",
+          "mixamorigRightUpLeg",
+          "mixamorigSpine",
+          "mixamorigSpine1",
+          "mixamorigSpine2"
+        ],
+        "meshRecords": [
+          {
+            "name": "tripo_part_0001",
+            "parentName": "mixamorigRightHand",
+            "skinned": false,
+            "vertices": 149826,
+            "triangles": 49942
+          },
+          {
+            "name": "tripo_part_0",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 26355,
+            "triangles": 8785
+          },
+          {
+            "name": "tripo_part_1",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 24375,
+            "triangles": 8125
+          },
+          {
+            "name": "tripo_part_2",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 18432,
+            "triangles": 6144
+          },
+          {
+            "name": "tripo_part_3",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 5169,
+            "triangles": 1723
+          },
+          {
+            "name": "tripo_part_7",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3876,
+            "triangles": 1292
+          },
+          {
+            "name": "tripo_part_4",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3537,
+            "triangles": 1179
+          },
+          {
+            "name": "tripo_part_9",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3525,
+            "triangles": 1175
+          },
+          {
+            "name": "tripo_part_5",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3183,
+            "triangles": 1061
+          },
+          {
+            "name": "tripo_part_6",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3108,
+            "triangles": 1036
+          },
+          {
+            "name": "tripo_part_8",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 2964,
+            "triangles": 988
+          },
+          {
+            "name": "tripo_part_11",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 2766,
+            "triangles": 922
+          },
+          {
+            "name": "tripo_part_10",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 711,
+            "triangles": 237
+          },
+          {
+            "name": "tripo_part_12",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 546,
+            "triangles": 182
+          },
+          {
+            "name": "tripo_part_13",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 273,
+            "triangles": 91
+          },
+          {
+            "name": "tripo_part_14",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 234,
+            "triangles": 78
+          }
+        ],
+        "duration": 0.6666666865348816,
+        "tracks": 68,
+        "keyframes": 460,
+        "retargetedPositionTracks": 34,
+        "maximumRestPositionCorrection": 140.00953701484065
+      },
+      {
+        "name": "Spell",
+        "selectedClip": "Armature|Armature|Armature|Armature|mixamo.com|Layer0",
+        "availableClips": [
+          "Armature|Armature|Armature|Armature|mixamo.com|Layer0"
+        ],
+        "meshes": 16,
+        "skinnedMeshes": 15,
+        "staticMeshes": 1,
+        "vertices": 248880,
+        "triangles": 82960,
+        "bones": [
+          "mixamorigHead",
+          "mixamorigHeadTop_End",
+          "mixamorigHips",
+          "mixamorigLeftArm",
+          "mixamorigLeftFoot",
+          "mixamorigLeftForeArm",
+          "mixamorigLeftHand",
+          "mixamorigLeftHandIndex1",
+          "mixamorigLeftHandIndex2",
+          "mixamorigLeftHandIndex3",
+          "mixamorigLeftHandIndex4",
+          "mixamorigLeftLeg",
+          "mixamorigLeftShoulder",
+          "mixamorigLeftToeBase",
+          "mixamorigLeftToe_End",
+          "mixamorigLeftUpLeg",
+          "mixamorigNeck",
+          "mixamorigRightArm",
+          "mixamorigRightFoot",
+          "mixamorigRightForeArm",
+          "mixamorigRightHand",
+          "mixamorigRightHandIndex1",
+          "mixamorigRightHandIndex2",
+          "mixamorigRightHandIndex3",
+          "mixamorigRightHandIndex4",
+          "mixamorigRightLeg",
+          "mixamorigRightShoulder",
+          "mixamorigRightToeBase",
+          "mixamorigRightToe_End",
+          "mixamorigRightUpLeg",
+          "mixamorigSpine",
+          "mixamorigSpine1",
+          "mixamorigSpine2"
+        ],
+        "meshRecords": [
+          {
+            "name": "tripo_part_0001",
+            "parentName": "mixamorigRightHand",
+            "skinned": false,
+            "vertices": 149826,
+            "triangles": 49942
+          },
+          {
+            "name": "tripo_part_0",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 26355,
+            "triangles": 8785
+          },
+          {
+            "name": "tripo_part_1",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 24375,
+            "triangles": 8125
+          },
+          {
+            "name": "tripo_part_2",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 18432,
+            "triangles": 6144
+          },
+          {
+            "name": "tripo_part_3",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 5169,
+            "triangles": 1723
+          },
+          {
+            "name": "tripo_part_7",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3876,
+            "triangles": 1292
+          },
+          {
+            "name": "tripo_part_4",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3537,
+            "triangles": 1179
+          },
+          {
+            "name": "tripo_part_9",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3525,
+            "triangles": 1175
+          },
+          {
+            "name": "tripo_part_5",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3183,
+            "triangles": 1061
+          },
+          {
+            "name": "tripo_part_6",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3108,
+            "triangles": 1036
+          },
+          {
+            "name": "tripo_part_8",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 2964,
+            "triangles": 988
+          },
+          {
+            "name": "tripo_part_11",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 2766,
+            "triangles": 922
+          },
+          {
+            "name": "tripo_part_10",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 711,
+            "triangles": 237
+          },
+          {
+            "name": "tripo_part_12",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 546,
+            "triangles": 182
+          },
+          {
+            "name": "tripo_part_13",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 273,
+            "triangles": 91
+          },
+          {
+            "name": "tripo_part_14",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 234,
+            "triangles": 78
+          }
+        ],
+        "duration": 1.8333333730697632,
+        "tracks": 68,
+        "keyframes": 963,
+        "retargetedPositionTracks": 34,
+        "maximumRestPositionCorrection": 27.019988439673376
+      }
+    ],
+    "retainedMesh": {
+      "meshes": 16,
+      "skinnedMeshes": 15,
+      "staticMeshes": 1,
+      "vertices": 248880,
+      "triangles": 82960,
+      "bones": [
+        "mixamorigHead",
+        "mixamorigHeadTop_End",
+        "mixamorigHips",
+        "mixamorigLeftArm",
+        "mixamorigLeftFoot",
+        "mixamorigLeftForeArm",
+        "mixamorigLeftHand",
+        "mixamorigLeftHandIndex1",
+        "mixamorigLeftHandIndex2",
+        "mixamorigLeftHandIndex3",
+        "mixamorigLeftHandIndex4",
+        "mixamorigLeftLeg",
+        "mixamorigLeftShoulder",
+        "mixamorigLeftToeBase",
+        "mixamorigLeftToe_End",
+        "mixamorigLeftUpLeg",
+        "mixamorigNeck",
+        "mixamorigRightArm",
+        "mixamorigRightFoot",
+        "mixamorigRightForeArm",
+        "mixamorigRightHand",
+        "mixamorigRightHandIndex1",
+        "mixamorigRightHandIndex2",
+        "mixamorigRightHandIndex3",
+        "mixamorigRightHandIndex4",
+        "mixamorigRightLeg",
+        "mixamorigRightShoulder",
+        "mixamorigRightToeBase",
+        "mixamorigRightToe_End",
+        "mixamorigRightUpLeg",
+        "mixamorigSpine",
+        "mixamorigSpine1",
+        "mixamorigSpine2"
+      ],
+      "meshRecords": [
+        {
+          "name": "H011-Weapon-01",
+          "parentName": "mixamorigRightHand",
+          "skinned": false,
+          "vertices": 149826,
+          "triangles": 49942
+        },
+        {
+          "name": "H011-Body-12",
+          "parentName": "H011-哪吒-Animated",
+          "skinned": true,
+          "vertices": 26355,
+          "triangles": 8785
+        },
+        {
+          "name": "H011-Body-01",
+          "parentName": "H011-哪吒-Animated",
+          "skinned": true,
+          "vertices": 24375,
+          "triangles": 8125
+        },
+        {
+          "name": "H011-Body-14",
+          "parentName": "H011-哪吒-Animated",
+          "skinned": true,
+          "vertices": 18432,
+          "triangles": 6144
+        },
+        {
+          "name": "H011-Body-09",
+          "parentName": "H011-哪吒-Animated",
+          "skinned": true,
+          "vertices": 5169,
+          "triangles": 1723
+        },
+        {
+          "name": "H011-Body-02",
+          "parentName": "H011-哪吒-Animated",
+          "skinned": true,
+          "vertices": 3876,
+          "triangles": 1292
+        },
+        {
+          "name": "H011-Body-03",
+          "parentName": "H011-哪吒-Animated",
+          "skinned": true,
+          "vertices": 3537,
+          "triangles": 1179
+        },
+        {
+          "name": "H011-Body-15",
+          "parentName": "H011-哪吒-Animated",
+          "skinned": true,
+          "vertices": 3525,
+          "triangles": 1175
+        },
+        {
+          "name": "H011-Body-04",
+          "parentName": "H011-哪吒-Animated",
+          "skinned": true,
+          "vertices": 3183,
+          "triangles": 1061
+        },
+        {
+          "name": "H011-Body-13",
+          "parentName": "H011-哪吒-Animated",
+          "skinned": true,
+          "vertices": 3108,
+          "triangles": 1036
+        },
+        {
+          "name": "H011-Body-06",
+          "parentName": "H011-哪吒-Animated",
+          "skinned": true,
+          "vertices": 2964,
+          "triangles": 988
+        },
+        {
+          "name": "H011-Body-07",
+          "parentName": "H011-哪吒-Animated",
+          "skinned": true,
+          "vertices": 2766,
+          "triangles": 922
+        },
+        {
+          "name": "H011-Body-08",
+          "parentName": "H011-哪吒-Animated",
+          "skinned": true,
+          "vertices": 711,
+          "triangles": 237
+        },
+        {
+          "name": "H011-Body-11",
+          "parentName": "H011-哪吒-Animated",
+          "skinned": true,
+          "vertices": 546,
+          "triangles": 182
+        },
+        {
+          "name": "H011-Body-10",
+          "parentName": "H011-哪吒-Animated",
+          "skinned": true,
+          "vertices": 273,
+          "triangles": 91
+        },
+        {
+          "name": "H011-Body-05",
+          "parentName": "H011-哪吒-Animated",
+          "skinned": true,
+          "vertices": 234,
+          "triangles": 78
+        }
+      ]
+    },
+    "exportedClips": [
+      {
+        "name": "Idle",
+        "duration": 10.416666984558105,
+        "tracks": 68,
+        "keyframes": 1362
+      },
+      {
+        "name": "Move",
+        "duration": 0.875,
+        "tracks": 68,
+        "keyframes": 683
+      },
+      {
+        "name": "Attack",
+        "duration": 0.6666666865348816,
+        "tracks": 68,
+        "keyframes": 460
+      },
+      {
+        "name": "Spell",
+        "duration": 1.8333333730697632,
+        "tracks": 68,
+        "keyframes": 963
+      }
+    ],
+    "bodyTriangleBudget": 28000,
+    "weaponTriangleBudget": 10000,
+    "bodySimplifyRatio": 0.8480222908716458,
+    "weaponSimplifyRatio": 0.20023226943254174
+  },
+  "optimized": {
+    "bytes": 1124384,
+    "vertices": 32385,
+    "triangles": 37978,
+    "meshes": 16,
+    "materials": 16,
+    "textures": 32,
+    "bodyTriangles": 27981,
+    "weaponTriangles": 9997,
+    "animations": [
+      {
+        "name": "Idle",
+        "channels": 68,
+        "samplers": 68
+      },
+      {
+        "name": "Move",
+        "channels": 68,
+        "samplers": 68
+      },
+      {
+        "name": "Attack",
+        "channels": 68,
+        "samplers": 68
+      },
+      {
+        "name": "Spell",
+        "channels": 68,
+        "samplers": 68
+      }
+    ],
+    "skins": [
+      {
+        "name": "",
+        "joints": 33
+      },
+      {
+        "name": "",
+        "joints": 33
+      },
+      {
+        "name": "",
+        "joints": 33
+      },
+      {
+        "name": "",
+        "joints": 33
+      },
+      {
+        "name": "",
+        "joints": 33
+      },
+      {
+        "name": "",
+        "joints": 33
+      },
+      {
+        "name": "",
+        "joints": 33
+      },
+      {
+        "name": "",
+        "joints": 33
+      },
+      {
+        "name": "",
+        "joints": 33
+      },
+      {
+        "name": "",
+        "joints": 33
+      },
+      {
+        "name": "",
+        "joints": 33
+      },
+      {
+        "name": "",
+        "joints": 33
+      },
+      {
+        "name": "",
+        "joints": 33
+      },
+      {
+        "name": "",
+        "joints": 33
+      },
+      {
+        "name": "",
+        "joints": 33
+      }
+    ],
+    "meshRecords": [
+      {
+        "name": "",
+        "skinned": false,
+        "triangles": 9997
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 7446
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 6885
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 5209
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 1461
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 1095
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 999
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 996
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 898
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 877
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 837
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 781
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 200
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 154
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 77
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 66
+      }
+    ]
+  },
+  "errors": [],
+  "status": "passed"
+}

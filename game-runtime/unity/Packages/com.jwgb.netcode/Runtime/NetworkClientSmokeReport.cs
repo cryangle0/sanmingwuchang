@@ -1,0 +1,91 @@
+using System;
+
+namespace Jwgb.Netcode
+{
+    [Serializable]
+    internal sealed class NetworkClientSmokeReport
+    {
+        public string schema;
+        public string unityVersion;
+        public string mode;
+        public int networkId;
+        public int localEntityId;
+        public string reconnectTicket;
+        public string requestedHeroId;
+        public string assignedHeroId;
+        public bool resumedSession;
+        public bool rematchRequested;
+        public bool rematchObserved;
+        public int initialEntityId;
+        public string initialAssignedHeroId;
+        public int firstMatchFinishedTick;
+        public int rematchTick;
+        public string matchStatus;
+        public int authoritativeTick;
+        public int playerCount;
+        public int remainingCompetitors;
+        public int projectileCount;
+        public int windWallCount;
+        public string stateHash;
+        public int ghostSnapshotTick;
+        public int worldGhostCount;
+        public int playerGhostCount;
+        public int projectileGhostCount;
+        public int windWallGhostCount;
+        public int monsterGhostCount;
+        public int lootGhostCount;
+        public int shopGhostCount;
+        public bool mapEnabled;
+        public string mapGeometryHash;
+        public bool pveEnabled;
+        public int monsterCount;
+        public int stormRadiusMm;
+        public int completeGhostSnapshotCount;
+        public int predictedInputCount;
+        public int predictionReplayCount;
+        public int predictionFrameCount;
+        public int predictionCorrectionCount;
+        public int predictionHardSnapCount;
+        public int predictionReconciliationHardCorrectionCount;
+        public int maxPredictionErrorMm;
+        public int maxPredictionVisualStepMm;
+        public int latestAcknowledgedInputSequence;
+        public int latestSentInputSequence;
+        public int unacknowledgedInputCount;
+        public int maxPredictionErrorAtAuthoritativeTick;
+        public int maxPredictionErrorAcknowledgedSequence;
+        public int maxPredictionErrorPendingInputCount;
+        public int maxPredictionErrorAuthoritativeTickDelta;
+        public int maxPredictionErrorAuthoritativeStepMm;
+        public int maxPredictionErrorPreviousPredictedX;
+        public int maxPredictionErrorPreviousPredictedZ;
+        public int maxPredictionErrorReconciledX;
+        public int maxPredictionErrorReconciledZ;
+        public int maxPredictionErrorAuthoritativeX;
+        public int maxPredictionErrorAuthoritativeZ;
+        public int maxPredictionErrorPreviousLifeState;
+        public int maxPredictionErrorLifeState;
+        public int maxPredictionErrorHp;
+        public int maxPredictionErrorHardControlTicks;
+        public int maxPredictionErrorIceCoffinTicks;
+        public int maxPredictionErrorWhirlwindTicks;
+        public int maxPredictionErrorReviveProtectionTicks;
+        public string maxPredictionErrorActiveAbilityId;
+        public string maxPredictionErrorClassification;
+        public int predictedLocalX;
+        public int predictedLocalZ;
+        public int authoritativeLocalX;
+        public int authoritativeLocalZ;
+        public int remoteInterpolationFrameCount;
+        public int remoteInterpolationHoldViewCount;
+        public int peakRemoteInterpolatedViewCount;
+        public int maxRemoteInterpolationStepMm;
+        public int sentInputRpcCount;
+        public int receivedStateRpcCount;
+        public int eventMatchSequence;
+        public int lastEventCursor;
+        public int receivedEventRpcCount;
+        public int receivedReplayEventRpcCount;
+        public int ignoredEventRpcCount;
+    }
+}

@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "allowImportingTsExtensions": false,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "useDefineForClassFields": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "types": ["node", "vitest/globals"],
+    "baseUrl": ".",
+    "paths": {
+      "@jwgb/core": ["packages/core/src/index.ts"],
+      "@jwgb/content": ["packages/content/src/index.ts"],
+      "@jwgb/protocol": ["packages/protocol/src/index.ts"],
+      "@jwgb/sim": ["packages/sim/src/index.ts"]
+    }
+  },
+  "include": [
+    "apps/**/*.ts",
+    "packages/**/*.ts",
+    "tests/**/*.ts",
+    "tools/**/*.ts",
+    "vitest.config.ts"
+  ]
+}

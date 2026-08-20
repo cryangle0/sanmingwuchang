@@ -1,0 +1,988 @@
+{
+  "source": "C:\\Users\\xinzh\\Documents\\Codex\\2026-07-24\\shen\\work\\journeywest_master_v4.docx",
+  "bytes": 20875292,
+  "sha256": "874d2b84debd069cbd10ae16761aa2b410415fc728d575f2ab06e71c1d6343d9",
+  "direct_body_paragraphs": 369,
+  "direct_body_tables": 134,
+  "inline_shapes": 17,
+  "sections": 1,
+  "style_counts": {
+    "Normal": 148,
+    "List Bullet": 101,
+    "Heading 2": 92,
+    "Heading 1": 24,
+    "Heading 3": 2,
+    "Title": 1,
+    "Subtitle": 1
+  },
+  "headings": [
+    {
+      "paragraph_index": 5,
+      "block_index": 7,
+      "style": "Heading 1",
+      "text": "目录"
+    },
+    {
+      "paragraph_index": 25,
+      "block_index": 27,
+      "style": "List Bullet",
+      "text": "附录A 全英雄与等级数值"
+    },
+    {
+      "paragraph_index": 26,
+      "block_index": 28,
+      "style": "List Bullet",
+      "text": "附录B 全技能、被动与装备数据"
+    },
+    {
+      "paragraph_index": 27,
+      "block_index": 29,
+      "style": "List Bullet",
+      "text": "附录C 全怪物与定向掉落"
+    },
+    {
+      "paragraph_index": 28,
+      "block_index": 30,
+      "style": "List Bullet",
+      "text": "附录D 地图坐标、路网、墙体与POI"
+    },
+    {
+      "paragraph_index": 29,
+      "block_index": 31,
+      "style": "List Bullet",
+      "text": "附录E 运行时工程字段、枚举、事件与资产台账"
+    },
+    {
+      "paragraph_index": 31,
+      "block_index": 33,
+      "style": "Heading 1",
+      "text": "0 真源权限与工程约定"
+    },
+    {
+      "paragraph_index": 33,
+      "block_index": 37,
+      "style": "Heading 2",
+      "text": "0.1 稳定规则域ID与AI开发入口"
+    },
+    {
+      "paragraph_index": 35,
+      "block_index": 40,
+      "style": "Heading 2",
+      "text": "0.2 封闭术语表"
+    },
+    {
+      "paragraph_index": 37,
+      "block_index": 43,
+      "style": "Heading 1",
+      "text": "1 产品定位与设计宪法"
+    },
+    {
+      "paragraph_index": 39,
+      "block_index": 46,
+      "style": "Heading 1",
+      "text": "2 单局流程、胜负与三条命"
+    },
+    {
+      "paragraph_index": 41,
+      "block_index": 49,
+      "style": "Heading 2",
+      "text": "2.1 等级与经验"
+    },
+    {
+      "paragraph_index": 44,
+      "block_index": 53,
+      "style": "Heading 2",
+      "text": "2.2 致死链、掉落与复活"
+    },
+    {
+      "paragraph_index": 52,
+      "block_index": 62,
+      "style": "Heading 2",
+      "text": "2.3 玩家击杀奖励"
+    },
+    {
+      "paragraph_index": 54,
+      "block_index": 65,
+      "style": "Heading 1",
+      "text": "3 三端输入、镜头、HUD与信息公平"
+    },
+    {
+      "paragraph_index": 61,
+      "block_index": 73,
+      "style": "Heading 2",
+      "text": "3.1 1280×720逻辑HUD"
+    },
+    {
+      "paragraph_index": 63,
+      "block_index": 76,
+      "style": "Heading 1",
+      "text": "4 英雄、等级、属性与五行"
+    },
+    {
+      "paragraph_index": 66,
+      "block_index": 81,
+      "style": "Heading 1",
+      "text": "5 战斗结算、控制、视野与隐身"
+    },
+    {
+      "paragraph_index": 67,
+      "block_index": 82,
+      "style": "Heading 2",
+      "text": "5.1 普攻"
+    },
+    {
+      "paragraph_index": 69,
+      "block_index": 85,
+      "style": "Heading 2",
+      "text": "5.2 伤害结算顺序"
+    },
+    {
+      "paragraph_index": 71,
+      "block_index": 88,
+      "style": "Heading 2",
+      "text": "5.3 伤害类型"
+    },
+    {
+      "paragraph_index": 73,
+      "block_index": 91,
+      "style": "Heading 2",
+      "text": "5.4 控制与强制位移"
+    },
+    {
+      "paragraph_index": 75,
+      "block_index": 94,
+      "style": "Heading 2",
+      "text": "5.5 战争迷雾、伏石与揭露"
+    },
+    {
+      "paragraph_index": 83,
+      "block_index": 103,
+      "style": "Heading 1",
+      "text": "6 主动技能（57项）"
+    },
+    {
+      "paragraph_index": 89,
+      "block_index": 110,
+      "style": "Heading 1",
+      "text": "7 被动技能（44项）"
+    },
+    {
+      "paragraph_index": 95,
+      "block_index": 117,
+      "style": "Heading 1",
+      "text": "8 装备、手牌、技能书与宝石"
+    },
+    {
+      "paragraph_index": 98,
+      "block_index": 122,
+      "style": "Heading 1",
+      "text": "9 百眼迷城地图总则与精确几何"
+    },
+    {
+      "paragraph_index": 100,
+      "block_index": 125,
+      "style": "Heading 2",
+      "text": "9.1 六区职责"
+    },
+    {
+      "paragraph_index": 101,
+      "block_index": 127,
+      "style": "Heading 2",
+      "text": "9.1a 六区可计算边界"
+    },
+    {
+      "paragraph_index": 103,
+      "block_index": 131,
+      "style": "Heading 2",
+      "text": "9.1b 三维地表与物体行为矩阵"
+    },
+    {
+      "paragraph_index": 105,
+      "block_index": 134,
+      "style": "Heading 2",
+      "text": "9.2 地图总图与分层图"
+    },
+    {
+      "paragraph_index": 118,
+      "block_index": 147,
+      "style": "Heading 1",
+      "text": "10 天劫、雷眼、决赛庭与灭世雷暴"
+    },
+    {
+      "paragraph_index": 123,
+      "block_index": 154,
+      "style": "Heading 1",
+      "text": "11 PVE生态、怪物、首领、龙王与核心BOSS"
+    },
+    {
+      "paragraph_index": 126,
+      "block_index": 159,
+      "style": "Heading 2",
+      "text": "11.1 AI、仇恨与迁移"
+    },
+    {
+      "paragraph_index": 134,
+      "block_index": 167,
+      "style": "Heading 2",
+      "text": "11.2 机械原型完整表"
+    },
+    {
+      "paragraph_index": 137,
+      "block_index": 172,
+      "style": "Heading 3",
+      "text": "11.2.1 怪物技能逐条工程表"
+    },
+    {
+      "paragraph_index": 139,
+      "block_index": 175,
+      "style": "Heading 2",
+      "text": "11.3 核心BOSS六种签名机制"
+    },
+    {
+      "paragraph_index": 141,
+      "block_index": 178,
+      "style": "Heading 2",
+      "text": "11.4 龙王与核心重生窗口"
+    },
+    {
+      "paragraph_index": 146,
+      "block_index": 183,
+      "style": "Heading 1",
+      "text": "12 掉落、经济、商店、空投与黑山"
+    },
+    {
+      "paragraph_index": 147,
+      "block_index": 184,
+      "style": "Heading 2",
+      "text": "12.1 怪物掉落"
+    },
+    {
+      "paragraph_index": 153,
+      "block_index": 191,
+      "style": "Heading 2",
+      "text": "12.2 地面物、拾取与遗宝堆"
+    },
+    {
+      "paragraph_index": 159,
+      "block_index": 198,
+      "style": "Heading 2",
+      "text": "12.3 六商店数量、时间窗与库存"
+    },
+    {
+      "paragraph_index": 168,
+      "block_index": 209,
+      "style": "Heading 2",
+      "text": "12.4 太白换英雄"
+    },
+    {
+      "paragraph_index": 172,
+      "block_index": 213,
+      "style": "Heading 2",
+      "text": "12.5 黑山老妖"
+    },
+    {
+      "paragraph_index": 174,
+      "block_index": 216,
+      "style": "Heading 2",
+      "text": "12.6 空投与宝箱"
+    },
+    {
+      "paragraph_index": 176,
+      "block_index": 219,
+      "style": "Heading 1",
+      "text": "13 匹配、BOT、新手与断线"
+    },
+    {
+      "paragraph_index": 178,
+      "block_index": 222,
+      "style": "Heading 2",
+      "text": "13.1 匹配工程字段"
+    },
+    {
+      "paragraph_index": 180,
+      "block_index": 225,
+      "style": "Heading 2",
+      "text": "13.2 BOT工程字段"
+    },
+    {
+      "paragraph_index": 182,
+      "block_index": 228,
+      "style": "Heading 2",
+      "text": "13.3 断线重连状态机"
+    },
+    {
+      "paragraph_index": 184,
+      "block_index": 231,
+      "style": "Heading 1",
+      "text": "14 局外成长、图鉴、战报与商业化"
+    },
+    {
+      "paragraph_index": 191,
+      "block_index": 238,
+      "style": "Heading 2",
+      "text": "14.1 局外系统工程字段"
+    },
+    {
+      "paragraph_index": 193,
+      "block_index": 241,
+      "style": "Heading 2",
+      "text": "14.2 图鉴与点赞工程字段"
+    },
+    {
+      "paragraph_index": 195,
+      "block_index": 244,
+      "style": "Heading 2",
+      "text": "14.3 商业化开关"
+    },
+    {
+      "paragraph_index": 197,
+      "block_index": 247,
+      "style": "Heading 1",
+      "text": "15 网络、后端、事务、回放与反作弊"
+    },
+    {
+      "paragraph_index": 204,
+      "block_index": 254,
+      "style": "Heading 2",
+      "text": "15.1 网络合同"
+    },
+    {
+      "paragraph_index": 206,
+      "block_index": 257,
+      "style": "Heading 2",
+      "text": "15.2 后端与账号合同"
+    },
+    {
+      "paragraph_index": 209,
+      "block_index": 262,
+      "style": "Heading 2",
+      "text": "15.3 对局事务合同"
+    },
+    {
+      "paragraph_index": 211,
+      "block_index": 265,
+      "style": "Heading 2",
+      "text": "15.4 确定性与随机合同"
+    },
+    {
+      "paragraph_index": 213,
+      "block_index": 268,
+      "style": "Heading 2",
+      "text": "15.5 随机流合同"
+    },
+    {
+      "paragraph_index": 215,
+      "block_index": 271,
+      "style": "Heading 2",
+      "text": "15.6 回放、举报与反作弊"
+    },
+    {
+      "paragraph_index": 217,
+      "block_index": 274,
+      "style": "Heading 1",
+      "text": "16 美术、怪物形象、音频、本地化与资产规范"
+    },
+    {
+      "paragraph_index": 224,
+      "block_index": 281,
+      "style": "Heading 2",
+      "text": "16.1 怪物视觉映射"
+    },
+    {
+      "paragraph_index": 226,
+      "block_index": 284,
+      "style": "Heading 3",
+      "text": "16.1.1 38套怪物概念形象"
+    },
+    {
+      "paragraph_index": 236,
+      "block_index": 295,
+      "style": "Heading 2",
+      "text": "16.2 音频规则与台账"
+    },
+    {
+      "paragraph_index": 238,
+      "block_index": 298,
+      "style": "Heading 2",
+      "text": "16.3 美术资产台账"
+    },
+    {
+      "paragraph_index": 240,
+      "block_index": 301,
+      "style": "Heading 1",
+      "text": "17 AI开发、性能与发布验收"
+    },
+    {
+      "paragraph_index": 243,
+      "block_index": 306,
+      "style": "Heading 2",
+      "text": "17.1 固定发布门槛"
+    },
+    {
+      "paragraph_index": 247,
+      "block_index": 312,
+      "style": "Heading 1",
+      "text": "附录A 全英雄与等级数值"
+    },
+    {
+      "paragraph_index": 248,
+      "block_index": 313,
+      "style": "Heading 2",
+      "text": "A.1 38英雄映射"
+    },
+    {
+      "paragraph_index": 250,
+      "block_index": 316,
+      "style": "Heading 2",
+      "text": "A.2 八种属性模板L1–L15"
+    },
+    {
+      "paragraph_index": 252,
+      "block_index": 319,
+      "style": "Heading 1",
+      "text": "附录B 全技能、被动与装备数据"
+    },
+    {
+      "paragraph_index": 254,
+      "block_index": 321,
+      "style": "Heading 2",
+      "text": "B.1 161条中文展示文本"
+    },
+    {
+      "paragraph_index": 256,
+      "block_index": 324,
+      "style": "Heading 1",
+      "text": "附录C 全怪物与定向掉落"
+    },
+    {
+      "paragraph_index": 257,
+      "block_index": 325,
+      "style": "Heading 2",
+      "text": "C.1 技能书隐藏倾向权重"
+    },
+    {
+      "paragraph_index": 259,
+      "block_index": 328,
+      "style": "Heading 2",
+      "text": "C.2 装备隐藏倾向权重"
+    },
+    {
+      "paragraph_index": 261,
+      "block_index": 331,
+      "style": "Heading 1",
+      "text": "附录D 地图坐标、路网、墙体与POI"
+    },
+    {
+      "paragraph_index": 263,
+      "block_index": 334,
+      "style": "Heading 2",
+      "text": "D.1 边界与节点"
+    },
+    {
+      "paragraph_index": 266,
+      "block_index": 339,
+      "style": "Heading 2",
+      "text": "D.2 路网边"
+    },
+    {
+      "paragraph_index": 268,
+      "block_index": 342,
+      "style": "Heading 2",
+      "text": "D.3 实体墙多边形"
+    },
+    {
+      "paragraph_index": 271,
+      "block_index": 347,
+      "style": "Heading 2",
+      "text": "D.4 高台与坡道"
+    },
+    {
+      "paragraph_index": 275,
+      "block_index": 354,
+      "style": "Heading 2",
+      "text": "D.5 三庭完整设施"
+    },
+    {
+      "paragraph_index": 284,
+      "block_index": 365,
+      "style": "Heading 2",
+      "text": "D.6 出生宏区与80微位"
+    },
+    {
+      "paragraph_index": 287,
+      "block_index": 370,
+      "style": "Heading 2",
+      "text": "D.7 商店宏区与48微锚点"
+    },
+    {
+      "paragraph_index": 290,
+      "block_index": 375,
+      "style": "Heading 2",
+      "text": "D.8 怪物槽、巢穴与迁移位"
+    },
+    {
+      "paragraph_index": 294,
+      "block_index": 382,
+      "style": "Heading 2",
+      "text": "D.9 猪窝、龙宫、首领场、伏石、关口与宝箱"
+    },
+    {
+      "paragraph_index": 301,
+      "block_index": 395,
+      "style": "Heading 1",
+      "text": "附录E 运行时工程字段、枚举、事件与资产台账"
+    },
+    {
+      "paragraph_index": 303,
+      "block_index": 397,
+      "style": "Heading 2",
+      "text": "E.1 单局与致死总合同"
+    },
+    {
+      "paragraph_index": 305,
+      "block_index": 400,
+      "style": "Heading 2",
+      "text": "E.2 生命、等级与复活"
+    },
+    {
+      "paragraph_index": 307,
+      "block_index": 403,
+      "style": "Heading 2",
+      "text": "E.3 战斗与伤害"
+    },
+    {
+      "paragraph_index": 309,
+      "block_index": 406,
+      "style": "Heading 2",
+      "text": "E.4 战斗解析"
+    },
+    {
+      "paragraph_index": 311,
+      "block_index": 409,
+      "style": "Heading 2",
+      "text": "E.5 五行"
+    },
+    {
+      "paragraph_index": 313,
+      "block_index": 412,
+      "style": "Heading 2",
+      "text": "E.6 输入"
+    },
+    {
+      "paragraph_index": 315,
+      "block_index": 415,
+      "style": "Heading 2",
+      "text": "E.7 视野与信息态"
+    },
+    {
+      "paragraph_index": 317,
+      "block_index": 418,
+      "style": "Heading 2",
+      "text": "E.8 移动、飞行、高台与动态实体"
+    },
+    {
+      "paragraph_index": 319,
+      "block_index": 421,
+      "style": "Heading 2",
+      "text": "E.9 动态实体放置"
+    },
+    {
+      "paragraph_index": 321,
+      "block_index": 424,
+      "style": "Heading 2",
+      "text": "E.10 召唤物"
+    },
+    {
+      "paragraph_index": 323,
+      "block_index": 427,
+      "style": "Heading 2",
+      "text": "E.11 天劫"
+    },
+    {
+      "paragraph_index": 325,
+      "block_index": 430,
+      "style": "Heading 2",
+      "text": "E.12 怪物AI"
+    },
+    {
+      "paragraph_index": 327,
+      "block_index": 433,
+      "style": "Heading 2",
+      "text": "E.13 怪物战斗"
+    },
+    {
+      "paragraph_index": 329,
+      "block_index": 436,
+      "style": "Heading 2",
+      "text": "E.14 经济掉落"
+    },
+    {
+      "paragraph_index": 331,
+      "block_index": 439,
+      "style": "Heading 2",
+      "text": "E.15 经济效果"
+    },
+    {
+      "paragraph_index": 333,
+      "block_index": 442,
+      "style": "Heading 2",
+      "text": "E.16 地面物"
+    },
+    {
+      "paragraph_index": 335,
+      "block_index": 445,
+      "style": "Heading 2",
+      "text": "E.17 商店"
+    },
+    {
+      "paragraph_index": 337,
+      "block_index": 448,
+      "style": "Heading 2",
+      "text": "E.18 黑山"
+    },
+    {
+      "paragraph_index": 339,
+      "block_index": 451,
+      "style": "Heading 2",
+      "text": "E.19 空投"
+    },
+    {
+      "paragraph_index": 341,
+      "block_index": 454,
+      "style": "Heading 2",
+      "text": "E.20 UI流程"
+    },
+    {
+      "paragraph_index": 343,
+      "block_index": 457,
+      "style": "Heading 2",
+      "text": "E.21 状态机"
+    },
+    {
+      "paragraph_index": 345,
+      "block_index": 460,
+      "style": "Heading 2",
+      "text": "E.22 同tick事件顺序"
+    },
+    {
+      "paragraph_index": 347,
+      "block_index": 463,
+      "style": "Heading 2",
+      "text": "E.23 闭合枚举"
+    },
+    {
+      "paragraph_index": 349,
+      "block_index": 466,
+      "style": "Heading 2",
+      "text": "E.24 设置"
+    },
+    {
+      "paragraph_index": 351,
+      "block_index": 469,
+      "style": "Heading 2",
+      "text": "E.25 埋点"
+    },
+    {
+      "paragraph_index": 353,
+      "block_index": 472,
+      "style": "Heading 2",
+      "text": "E.26 主动技能强类型运行时载荷"
+    },
+    {
+      "paragraph_index": 355,
+      "block_index": 475,
+      "style": "Heading 2",
+      "text": "E.27 H009被动效果倍率精确白名单"
+    },
+    {
+      "paragraph_index": 356,
+      "block_index": 477,
+      "style": "Heading 2",
+      "text": "E.28 数值类型、单位与容器系统"
+    },
+    {
+      "paragraph_index": 357,
+      "block_index": 479,
+      "style": "Heading 2",
+      "text": "E.29 公式DSL与AST合同"
+    },
+    {
+      "paragraph_index": 358,
+      "block_index": 481,
+      "style": "Heading 2",
+      "text": "E.30 主动效果逐类型字段矩阵"
+    },
+    {
+      "paragraph_index": 360,
+      "block_index": 485,
+      "style": "Heading 2",
+      "text": "E.31 被动技能强类型运行时载荷（44项）"
+    },
+    {
+      "paragraph_index": 362,
+      "block_index": 489,
+      "style": "Heading 2",
+      "text": "E.32 装备强类型运行时载荷（48项）"
+    },
+    {
+      "paragraph_index": 364,
+      "block_index": 492,
+      "style": "Heading 2",
+      "text": "E.33 怪物技能强类型运行时载荷"
+    },
+    {
+      "paragraph_index": 365,
+      "block_index": 495,
+      "style": "Heading 2",
+      "text": "E.34 召唤物强类型运行时载荷"
+    },
+    {
+      "paragraph_index": 367,
+      "block_index": 498,
+      "style": "Heading 2",
+      "text": "E.35 H009快照语义、字段饱和与区域叠加"
+    },
+    {
+      "paragraph_index": 368,
+      "block_index": 500,
+      "style": "Heading 2",
+      "text": "E.36 第二轮关联扩散审计修订裁决记录（108—170）"
+    },
+    {
+      "paragraph_index": 369,
+      "block_index": 502,
+      "style": "Heading 2",
+      "text": "E.37 第三轮收敛审计修订记录（171—179）"
+    }
+  ],
+  "package": {
+    "part_count": 36,
+    "parts": [
+      "[Content_Types].xml",
+      "_rels/.rels",
+      "customXml/_rels/item1.xml.rels",
+      "customXml/item1.xml",
+      "customXml/itemProps1.xml",
+      "docProps/app.xml",
+      "docProps/core.xml",
+      "docProps/thumbnail.jpeg",
+      "word/_rels/document.xml.rels",
+      "word/document.xml",
+      "word/fontTable.xml",
+      "word/footer1.xml",
+      "word/header1.xml",
+      "word/media/image1.png",
+      "word/media/image10.png",
+      "word/media/image11.png",
+      "word/media/image12.png",
+      "word/media/image13.png",
+      "word/media/image14.png",
+      "word/media/image15.png",
+      "word/media/image16.png",
+      "word/media/image17.png",
+      "word/media/image2.png",
+      "word/media/image3.png",
+      "word/media/image4.png",
+      "word/media/image5.png",
+      "word/media/image6.png",
+      "word/media/image7.png",
+      "word/media/image8.png",
+      "word/media/image9.png",
+      "word/numbering.xml",
+      "word/settings.xml",
+      "word/styles.xml",
+      "word/stylesWithEffects.xml",
+      "word/theme/theme1.xml",
+      "word/webSettings.xml"
+    ],
+    "comments_present": false,
+    "footnotes_present": false,
+    "endnotes_present": false,
+    "custom_xml_parts": [
+      "customXml/_rels/item1.xml.rels",
+      "customXml/item1.xml",
+      "customXml/itemProps1.xml"
+    ],
+    "embedded_objects": [],
+    "media": [
+      {
+        "part": "word/media/image1.png",
+        "bytes": 565774,
+        "sha256": "5fd2e05edaa3fd16905ccbf34414423ca27e96812fe91380a521a004242c3662",
+        "format": "PNG",
+        "width": 1925,
+        "height": 1491,
+        "mode": "RGBA"
+      },
+      {
+        "part": "word/media/image10.png",
+        "bytes": 2325931,
+        "sha256": "37850acb0880d1a1a6dc186e1c533158cf8a0e1c03cdc86a7753f51e60719b82",
+        "format": "PNG",
+        "width": 1668,
+        "height": 1298,
+        "mode": "RGBA"
+      },
+      {
+        "part": "word/media/image11.png",
+        "bytes": 2303522,
+        "sha256": "23e742228d56a7355ca94d768e327450affcfdb196f20ae4ecea5895e3cdfb09",
+        "format": "PNG",
+        "width": 1668,
+        "height": 1298,
+        "mode": "RGBA"
+      },
+      {
+        "part": "word/media/image12.png",
+        "bytes": 2610024,
+        "sha256": "56a8bdc210a4c171593da0cf17d9556c06e49dee19f0af6636a2cd3b45cb5666",
+        "format": "PNG",
+        "width": 1668,
+        "height": 1298,
+        "mode": "RGBA"
+      },
+      {
+        "part": "word/media/image13.png",
+        "bytes": 2445999,
+        "sha256": "0ed531402899dd5f50bf28fd5dfae100ecdfad4506928524ef14213c92c9e61c",
+        "format": "PNG",
+        "width": 1668,
+        "height": 1298,
+        "mode": "RGBA"
+      },
+      {
+        "part": "word/media/image14.png",
+        "bytes": 919868,
+        "sha256": "e6136fcb9414f5de7e8261ce45364371d365cc4a6f08132f2aa05a356fd2d765",
+        "format": "PNG",
+        "width": 1668,
+        "height": 1298,
+        "mode": "RGBA"
+      },
+      {
+        "part": "word/media/image15.png",
+        "bytes": 598903,
+        "sha256": "477cd479adef35675e4b1360d6c31dd74bdc11ba5a70cc979effec5e9c21d933",
+        "format": "PNG",
+        "width": 1925,
+        "height": 1544,
+        "mode": "RGBA"
+      },
+      {
+        "part": "word/media/image16.png",
+        "bytes": 598159,
+        "sha256": "d5f3c1750b0625b64e4b7bfd1ad7fb5f24e87f48a1443de0ffb7441e5aea0b60",
+        "format": "PNG",
+        "width": 1925,
+        "height": 1544,
+        "mode": "RGBA"
+      },
+      {
+        "part": "word/media/image17.png",
+        "bytes": 598734,
+        "sha256": "99565aeae7f1d741bb9cd1339adf8c0d9d0769636fce0d498d06abeb0178f7bd",
+        "format": "PNG",
+        "width": 1925,
+        "height": 1544,
+        "mode": "RGBA"
+      },
+      {
+        "part": "word/media/image2.png",
+        "bytes": 522092,
+        "sha256": "d8e88cd7ec7673b5c36588083942baf960d872a4433622877453856bb94cc728",
+        "format": "PNG",
+        "width": 1925,
+        "height": 1544,
+        "mode": "RGBA"
+      },
+      {
+        "part": "word/media/image3.png",
+        "bytes": 448884,
+        "sha256": "824ae219c1999f5e4aaf525dd3d577c57ec12c38bc3ef1422dca02d55a46be9e",
+        "format": "PNG",
+        "width": 1925,
+        "height": 1544,
+        "mode": "RGBA"
+      },
+      {
+        "part": "word/media/image4.png",
+        "bytes": 438326,
+        "sha256": "03144a3db6b0e6d1786c0fdab1f9d0c845f90fe178e0c4a0d378f798fdd7eea9",
+        "format": "PNG",
+        "width": 1925,
+        "height": 1544,
+        "mode": "RGBA"
+      },
+      {
+        "part": "word/media/image5.png",
+        "bytes": 445717,
+        "sha256": "3b20d1cb4ba36c940623e59fa55ff28772ddda07d0000642885c662be6fca4c0",
+        "format": "PNG",
+        "width": 1925,
+        "height": 1544,
+        "mode": "RGBA"
+      },
+      {
+        "part": "word/media/image6.png",
+        "bytes": 440095,
+        "sha256": "67fa230e6aa0cbb2fe9fa0d850f4888d2ea353ef4af21aa44ab4abe8218ef969",
+        "format": "PNG",
+        "width": 1925,
+        "height": 1544,
+        "mode": "RGBA"
+      },
+      {
+        "part": "word/media/image7.png",
+        "bytes": 690704,
+        "sha256": "a8e69abfb077a60e63239a21d964a0ebfe32dfa9d6d1460caced1f248b8f6e8b",
+        "format": "PNG",
+        "width": 1925,
+        "height": 1656,
+        "mode": "RGBA"
+      },
+      {
+        "part": "word/media/image8.png",
+        "bytes": 2258391,
+        "sha256": "074b5351c190bd57c301d80c4e4ed8c3f4d173f6677a7f613e32179066b7d842",
+        "format": "PNG",
+        "width": 1668,
+        "height": 1298,
+        "mode": "RGBA"
+      },
+      {
+        "part": "word/media/image9.png",
+        "bytes": 2431954,
+        "sha256": "a2dd82ce907ecfae6fb33afcf73d665b50da3df2b03a4a9dba05c70c133e3455",
+        "format": "PNG",
+        "width": 1668,
+        "height": 1298,
+        "mode": "RGBA"
+      }
+    ],
+    "xml_counts": {
+      "paragraphs_all": 26970,
+      "tables_all": 134,
+      "rows_all": 6492,
+      "cells_all": 26601,
+      "text_nodes": 26845,
+      "drawings": 17,
+      "legacy_pict": 0,
+      "alt_chunks": 0,
+      "content_controls": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "comment_ranges": 0,
+      "bookmarks": 105,
+      "hyperlinks": 23,
+      "fields": 1
+    },
+    "body_direct_children": {
+      "p": 369,
+      "sectPr": 1,
+      "tbl": 134
+    },
+    "xml_nonempty_paragraphs": 26840,
+    "docProps/core.xml": "《三命无常》工程真源定稿 | 唯一可执行玩法、数值、地图、内容、交互与工程蓝图 | 三命无常项目组 | 三命无常, 游戏策划, 工程真源, 百眼迷城 | 规则集3.0.0；已执行审计裁决001—107。 | 1 | 2013-12-23T23:15:00Z | 2013-12-23T23:15:00Z",
+    "docProps/app.xml": "| Normal.dotm | \n | 0 | \n | 1 | \n | 0 | \n | 0 | \n | Microsoft Macintosh Word | \n | 0 | \n | 0 | \n | 0 | \n | false | \n | \n | \n | \n | Title | \n | \n | \n | 1 | \n | \n | \n | \n | \n | \n | \n | \n | \n | \n | \n | false | \n | 0 | \n | false | \n | \n | false | \n | 14.0000 |"
+  }
+}

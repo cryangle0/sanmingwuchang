@@ -1,0 +1,64 @@
+═══════════════════════════════════════════════════════════════════
+      06 · 服务端与客户端工程数据字典 v1 （2026-07-18）
+═══════════════════════════════════════════════════════════════════
+架构基线=ClaudeCraft: 20Hz权威Sim/WebSocket/确定性共享Sim三宿主/PostgreSQL。
+
+【1 实体与组件(ECS口径)】
+实体: Player/Monster/Summon/Projectile/Wall/Trap/Loot/LootPile/Shop/
+  Chest/TianjieField/BossEye(真视)/SoulGhost(灵魂态)
+核心组件: Transform(x,y,朝向)/Motion(速度,位移标签)/Stats(攻血速攻速,
+  等级XP)/Element(五行)/Combat(战斗状态计时,PVP旗)/Health(HP,护盾栈)/
+  StatusBar(硬控/软控/无敌/隐身/暴露, 各带时限与来源)/SkillSlot(主动id,
+  CD)/PassiveSet[4](id,lv,内置CD)/GemBank(宝石仓)/Inventory(穿3+手牌1-2)/
+  Wallet(金币)/Lives(命数,保护计时)/AIBrain(六态,仇恨表,巢域)/
+  OwnerRef(召唤/陷阱/墙归属)/InterestArea(45m快照裁剪[TEST])
+
+【2 六状态机】
+MatchState: LOBBY→PICKING(15s)→LOADING→PROTECT(3s)→PLAYING→
+  FINALSTORM(灭世)→SETTLED; 崩溃→快照恢复(30s持久化)或作废补偿
+PlayerState: ALIVE⇄(致死链)→SOUL(5-8s飞行)→PROTECT(3s,攻法即解)→ALIVE
+  |3rd死→ELIMINATED(观战跟随击杀者/退出) |断线3s/挂机90s→BOT_CTRL
+  (120s内可取回,超时到底)
+MonsterState: HABIT→ALERT(0.3-0.8s)→COMBAT→RETURN(免硬控60%减伤回血)
+  →HABIT |死亡→DROP→迁移重生计时(插槽算法02§5) |天劫吞噬→LINGER(60s)
+  →DESPAWN; 龙王+RELOCATE(240s) 核心+COURT_MOVE(300s/雷眼迁驻5s撤庭)
+ShopState: SCHEDULED→OPEN(180s,关前10s本地倒计时)→RELOCATE(即关即开
+  无空窗,全场3s模糊播报)→…渐退表(12:30/13:15/14:00/14:45)→FINAL_PAIR
+  (15:00土A+太白入决赛庭)→CLOSED(圈归零); PVP伤害→界面强制关闭(事务保全)
+LootState: SPAWNED→(2.5m内≥4件)PILE表现合并→CLAIM_REQ(服务器时间戳)→
+  CLAIMED |天劫覆盖→DOOM60s→DESTROYED |宝石/宝箱自然寿命60/120s
+TianjieState: IDLE→SHRINK(150s)→HOLD→…→EYE(12:00公布)→FINAL_SHRINK
+  (圈心插值)→ZERO→STORM(递增伤害表)
+
+【3 事件表(服务端权威, 客户端预测表现)】
+EV_INPUT(端上行: 移动矢量/普攻/施法(短按|拖拽params)/交互/取消)
+EV_DAMAGE{src,dst,标签,原始值,五行系数,暴击,减伤链摘要,护盾吸收,终值}
+EV_DEATH{dst,致死保护步骤,归属(玩家/怪物/环境),掉落清单}
+EV_SNAPSHOT_EXPOSE{玩家,3s} EV_STEALTH{进出,来源}
+EV_LOOT{spawn/claim/doom/destroy} EV_SHOP{开/迁/关/交易(原子)}
+EV_TIANJIE{阶段/圈参数/雷眼庭id/雷击结算批} EV_MON{迁生/换场/换庭/撤庭}
+EV_BROADCAST(仅5类: 空投/金箍棒/雷眼/终局商位/前3存活)
+
+【4 随机流(分离, 每局主种子派生)】
+RS_HERO选人 RS_SPAWN出生 RS_SHOP商店 RS_MON怪物迁移 RS_ELEM五行
+RS_DROP掉落 RS_BOLT雷击 RS_MISC——一模块调用次数不影响他流(可重放前提)。
+
+【5 原子事务】购买/出售/换英雄/拾取/覆盖技能书=服务端单事务(校验金币/
+槽位/配额/距离→执行→回执), 断线重发幂等(客户端请求带唯一id)。
+
+【6 输入协议】手机: 摇杆矢量10Hz+按键事件+拖拽施法(方向/落点量化0.1m);
+PC: WASD数字化为矢量+鼠标事件; 两端同一EV_INPUT结构, 服务端不辨端差别
+(公平审计另做统计标签)。
+
+【7 反作弊校验】速度(模板+装备+技能合法上界)/攻速/CD/视野锁定合法性/
+库存与金币差账/交易频率; 扫掠碰撞防穿模; 闪现三重验证; 异常→影子池→
+人工复核; 跨局组队行为识别(互不攻击+资源让渡+同IP设备)。
+
+【8 性能预算(最坏况=补完稿§18)】
+30英雄+123怪+270召唤+动态实体。调度: 战斗实体20Hz/远怪5Hz/远召唤10Hz
+(伤害结算仍20Hz权威); 同主召唤共享编队脑; 目标500持续实体+300短时事件
+@20Hz。客户端: 迷雾外不渲染/30m外LOD/遗宝堆合并/千元机30fps中端60fps;
+终局30人高召唤压测场景为L3必测(07§压测)。
+【9 存档边界】局内资产(金币/装备/技能/等级)不出局; 出局仅统计+修为;
+回放存输入流+关键随机+关键事件, 同版本可种子重放。
+═══════════════════════════════════════════════════════════════════

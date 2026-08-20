@@ -1,0 +1,61 @@
+﻿工程字段	唯一值 / 执行语义
+monster.machine.states	IDLE_PATROL / ALERT_TELEGRAPH / CHASE / ATTACK_OR_CAST / RETURN_HOME / SPAWN_PROTECTED / STORM_EXIT_PENDING
+monster.machine.transitions[0].from_states	IDLE_PATROL
+monster.machine.transitions[0].to	ALERT_TELEGRAPH
+monster.machine.transitions[0].guard_id	LEGAL_TARGET_ENTERS_DETECTION_OR_DEALS_DAMAGE
+monster.machine.transitions[1].from_states	ALERT_TELEGRAPH
+monster.machine.transitions[1].to	CHASE
+monster.machine.transitions[1].guard_id	ALERT_FINISHED_FOR_ARCHETYPE
+monster.machine.transitions[2].from_states	CHASE
+monster.machine.transitions[2].to	ATTACK_OR_CAST
+monster.machine.transitions[2].guard_id	TARGET_IN_RANGE_LOS_AND_ACTION_READY
+monster.machine.transitions[3].from_states	ATTACK_OR_CAST
+monster.machine.transitions[3].to	CHASE
+monster.machine.transitions[3].guard_id	ACTION_COMMIT_OR_CANCEL_FINISHED
+monster.machine.transitions[4].from_states	ALERT_TELEGRAPH / CHASE / ATTACK_OR_CAST
+monster.machine.transitions[4].to	RETURN_HOME
+monster.machine.transitions[4].guard_id	TARGET_INVALID_OR_LEASH_BROKEN_OR_UNREACHABLE_2S
+monster.machine.transitions[5].from_states	RETURN_HOME
+monster.machine.transitions[5].to	IDLE_PATROL
+monster.machine.transitions[5].guard_id	WITHIN_1M_HOME_AND_FULL_HP
+monster.machine.transitions[6].from_states	SPAWN_PROTECTED
+monster.machine.transitions[6].to	IDLE_PATROL
+monster.machine.transitions[6].guard_id	SPAWN_PROTECTION_1S_FINISHED
+monster.machine.transitions[7].from_states	IDLE_PATROL / ALERT_TELEGRAPH / CHASE / ATTACK_OR_CAST / RETURN_HOME / SPAWN_PROTECTED
+monster.machine.transitions[7].to	STORM_EXIT_PENDING
+monster.machine.transitions[7].guard_id	CLASS_STORM_COVERAGE_EXIT_CONDITION_STARTED
+monster.machine.transitions[8].from_states	STORM_EXIT_PENDING
+monster.machine.transitions[8].to	IDLE_PATROL
+monster.machine.transitions[8].guard_id	CLASS_ALLOWS_REENTRY_AND_REENTRY_RESET_BEFORE_EXIT
+return_home.hard_control_immune	是
+return_home.damage_reduction_percent	60
+return_home.heal_delay_s	1.5
+return_home.heal_max_hp_percent_per_s	8
+return_home.can_be_killed	是
+group_scheduler.first_basic_uniform_s	0 / 0.5
+group_scheduler.same_group_impact_gap_s	0.15
+group_scheduler.ready_priority	SIGNATURE / MOBILITY / COMMON_AOE / BASIC
+group_scheduler.six_melee_slots_per_player	是
+sound_aggro.same_or_linked_nest_radius_m	12
+sound_aggro.requires_nav_reachable	是
+sound_aggro.does_not_cross_more_than_one_junction	是
+all_non_pig_monsters_proactively_attack	是
+pig_proactively_warns_charges_then_fights_at_nest_end	是
+storm_exit.enter	PER_CLASS_COVERAGE_CONDITION_FROM_MONSTER_COMBAT_CONTRACT
+storm_exit.during	KEEP_CURRENT_AI_UNTIL_EXIT_COMMIT_UNLESS_DRAGON_SPECIAL_NONINTERACTIVE_WINDOW
+storm_exit.cancel	LEGAL_REENTRY_BEFORE_EXIT_COMMIT_WHEN_CLASS_ALLOWS_REENTRY_RESET
+storm_exit.commit	REMOVE_ENTITY_NO_DEATH_NO_DROP_NO_GOLD_NO_XP_NO_KILL_OR_PERMANENT_LAYER
+guard_registry.ALERT_FINISHED_FOR_ARCHETYPE	DEFAULT_0_35S; PIG_0_6S_CHARGE_WARNING
+guard_registry.CLASS_STORM_COVERAGE_EXIT_CONDITION_STARTED	§5战斗规则
+guard_registry.CLASS_ALLOWS_REENTRY_AND_REENTRY_RESET_BEFORE_EXIT	ORDINARY_FLYING_LEADER_PIG_ONLY
+transition_encoding.from_states	NONEMPTY_ARRAY_OF_DECLARED_STATE_IDS
+transition_encoding.to	ONE_DECLARED_STATE_ID
+transition_encoding.guard_id	ONE_CLOSED_GUARD_ID
+transition_encoding.wildcards	FORBIDDEN
+monster.visual_selection.pool	MATCH_MECHANICAL_ROLE_AND_ALLOWED_REGION_THEME
+monster.visual_selection.algorithm	PER_ROLE_PER_REGION_SHUFFLE_BAG
+monster.visual_selection.candidate_sort	MVS_ID_ASC_BEFORE_FISHER_YATES
+monster.visual_selection.ordinary_and_flying_draw_at	SPAWN_COMMIT
+monster.visual_selection.no_immediate_repeat_when_pool_gt_1	是
+monster.visual_selection.pig_and_dragon	ELEMENT_LOCKED_VISUAL_VARIANT
+monster.visual_selection.core_boss	MATCH_LOCKED_VARIANT_DRAWN_ONCE

@@ -1,0 +1,13 @@
+{
+  "name": "Jwgb.Sim",
+  "rootNamespace": "Jwgb.Sim",
+  "references": [
+    "Jwgb.Core",
+    "Jwgb.Content",
+    "Unity.Burst",
+    "Unity.Collections",
+    "Unity.Entities",
+    "Unity.Mathematics"
+  ],
+  "autoReferenced": true
+}

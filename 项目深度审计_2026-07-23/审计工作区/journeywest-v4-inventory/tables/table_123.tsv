@@ -1,0 +1,10 @@
+﻿工程字段	唯一值 / 执行语义
+formula_dsl.grammar	expr := term (('+'|'-') term)* ；term := pow (('*'|'/') pow)* ；pow := factor ('^' factor)? ；factor := 数字 | 变量 | 函数(args) | (expr) | -factor
+formula_dsl.functions	FLOOR / CEIL / MAX / MIN / CLAMP / MOD / ATAN2_DEG / ABS；白名单外函数构建失败
+formula_dsl.variables_whitelist	BASE_DURATION / COST / COUNT / CURRENT_GAME_MOVE_SPEED / CURRENT_GOLD / CURRENT_HP / DECOY_MAX_HP / HISTORICAL_HP_CLAMPED_TO_CURRENT_MAX_HP / MISSING_HP_PERCENT / OWNER_CURRENT_HP / OWNER_CURRENT_MAX_HP / PRE_OVERHEAL_AMOUNT / SOURCE_FLAT_EXTENSION / TARGET_STRONGEST_MULTIPLIER / VALUE / target_x / target_y / viewer_x / viewer_y
+formula_dsl.number_literal	编译为Q4缩放整数（{q4:n}）；运行时不解析源文本
+formula_dsl.operator_semantics	ADD/SUB/MUL按Q4定点；'/'一律DIV_FLOOR；'^'仅允许非负整数指数POW_INT，逐乘饱和
+formula_dsl.evaluation	只执行载荷内已编译ast；src字段仅为审计对照；ast与src不一致时以ast为准并触发G_DATA_CONSISTENCY失败
+formula_dsl.overflow	SIGNED_INT64_SATURATING；饱和事件计入埋点formula_saturation_count
+formula_dsl.assign_to	带assign_to的公式将结果写入该命名槽位（如D17的BOUNTY），不产生其他副作用
+formula_dsl.variable_case	变量名大小写敏感；白名单为闭合集，大写为全局状态量、小写为几何流量（如target_x）；白名单外标识符构建失败

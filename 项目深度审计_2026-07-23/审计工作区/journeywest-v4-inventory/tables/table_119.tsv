@@ -1,0 +1,239 @@
+﻿工程字段	唯一值 / 执行语义
+common_required	event_id / event_time_server / session_id / account_hash / region / client_platform / build_version
+match_required	match_id / population_mode / human_count / bot_count / mmr_bucket
+events[0].id	session_start
+events[0].authority	CLIENT
+events[0].fields	device_tier / input_mode
+events[1].id	matchmaking_start
+events[1].authority	SERVER
+events[1].fields	search_radius / new_player_match_index
+events[2].id	match_created
+events[2].authority	SERVER
+events[2].fields	human_count / bot_mix / population_mode
+events[3].id	match_load_complete
+events[3].authority	CLIENT
+events[3].fields	load_ms / resource_retry_count
+events[4].id	hero_selected
+events[4].authority	SERVER
+events[4].fields	hero_id / reroll_count
+events[4].required_fields	reroll_used / offer_set_index
+events[5].id	spawn_assigned
+events[5].authority	SERVER
+events[5].fields	spawn_macro / spawn_micro / life_index
+events[6].id	first_encounter
+events[6].authority	SERVER
+events[6].fields	other_type / elapsed_s / distance_m / los
+events[7].id	monster_aggro
+events[7].authority	SERVER
+events[7].fields	monster_type / group_size / source_region
+events[8].id	monster_killed
+events[8].authority	SERVER
+events[8].fields	monster_type / last_hit_source / kill_s / drop_ids
+events[9].id	player_true_death
+events[9].authority	SERVER
+events[9].fields	life_index / killer_type / killer_id_hash / region_id / nearby_monsters / nearby_players
+events[10].id	player_respawn
+events[10].authority	SERVER
+events[10].fields	life_index / soul_flight_s / respawn_region
+events[11].id	loot_spawned
+events[11].authority	SERVER
+events[11].fields	item_id / source_type / region_id
+events[12].id	loot_picked
+events[12].authority	SERVER
+events[12].fields	item_id / ground_age_s / result
+events[13].id	skillbook_resolved
+events[13].authority	SERVER
+events[13].fields	book_id / action / replaced_id / result
+events[14].id	gem_allocated
+events[14].authority	SERVER
+events[14].fields	passive_id / before_level / after_level
+events[15].id	active_replaced
+events[15].authority	SERVER
+events[15].fields	old_active_id / new_active_id / source
+events[16].id	equipment_changed
+events[16].authority	SERVER
+events[16].fields	item_id / action / slot / result
+events[17].id	shop_discovered
+events[17].authority	SERVER
+events[17].fields	shop_type / region_id / method
+events[18].id	shop_transaction
+events[18].authority	SERVER
+events[18].fields	transaction_id / shop_type / action / item_id / gold_delta / result / latency_ms
+events[19].id	boss_engagement
+events[19].authority	SERVER
+events[19].fields	boss_type / element / participants / elapsed_s
+events[20].id	boss_killed
+events[20].authority	SERVER
+events[20].fields	boss_type / element / last_hit_element / upgrade_triggered / participant_count / drop_ids
+events[21].id	storm_stage
+events[21].authority	SERVER
+events[21].fields	stage / safe_radius_m / center_target
+events[22].id	storm_hit
+events[22].authority	SERVER
+events[22].fields	stage / damage / stunned / escaped_after_s
+events[23].id	match_settled
+events[23].authority	SERVER
+events[23].fields	settlement_id / placement / kills_human / kills_bot / mmr_delta_internal / xiuwei / ledger_created / ledger_transferred / ledger_destroyed
+events[24].id	disconnect_state
+events[24].authority	SERVER
+events[24].fields	state / duration_s / bot_takeover / device_switch
+events[25].id	performance_sample
+events[25].authority	CLIENT
+events[25].fields	frame_ms / memory_mb / rtt_ms / packet_loss / position_correction_m
+events[26].id	ui_input
+events[26].authority	CLIENT
+events[26].fields	action / control / hold_ms / cancelled / drawer_state
+events[27].required_fields	match_id / participant_slot / server_tick
+events[27].id	airdrop_warned
+events[27].authority	SERVER
+events[27].fields	match_id / participant_slot / server_tick
+events[28].required_fields	match_id / participant_slot / server_tick
+events[28].id	airdrop_arrived
+events[28].authority	SERVER
+events[28].fields	match_id / participant_slot / server_tick
+events[29].required_fields	match_id / participant_slot / server_tick
+events[29].id	airdrop_opened
+events[29].authority	SERVER
+events[29].fields	match_id / participant_slot / server_tick
+events[30].required_fields	match_id / participant_slot / server_tick
+events[30].id	black_mountain_committed
+events[30].authority	SERVER
+events[30].fields	match_id / participant_slot / server_tick
+events[31].required_fields	match_id / participant_slot / server_tick
+events[31].id	taibai_swap_committed
+events[31].authority	SERVER
+events[31].fields	match_id / participant_slot / server_tick
+events[32].required_fields	match_id / participant_slot / server_tick
+events[32].id	revive_protection_removed
+events[32].authority	SERVER
+events[32].fields	match_id / participant_slot / server_tick
+events[33].required_fields	match_id / participant_slot / server_tick
+events[33].id	B35_item_instance_reward
+events[33].authority	SERVER
+events[33].fields	match_id / participant_slot / server_tick
+events[34].required_fields	match_id / participant_slot / server_tick
+events[34].id	co_champion_settled
+events[34].authority	SERVER
+events[34].fields	match_id / participant_slot / server_tick
+privacy.raw_account_id_forbidden	是
+privacy.account_hash	HMAC_SHA256_DAILY_ROTATING_ANALYTICS_KEY_ACCOUNT_UUID
+privacy.participant_slot	UINT8_0_TO_29
+privacy.ip_address_not_event_field	是
+time.event_time_server	UTC_RFC3339_MILLISECONDS
+time.server_tick	UINT64_20HZ
+time.client_time	OPTIONAL_DIAGNOSTIC_NOT_ORDER_AUTHORITY
+field_types.event_id	UUID
+field_types.session_id	UUID
+field_types.account_hash	HEX_SHA256
+field_types.match_id	UUID
+field_types.participant_slot	UINT8
+field_types.server_tick	UINT64
+field_types.elapsed_s	DECIMAL_SECONDS
+field_types.distance_m	DECIMAL_METERS
+field_types.gold_delta	INT64
+field_types.result	CLOSED_ENUM
+retention_days.raw_event	30
+retention_days.aggregated_anonymous	400
+retention_days.security_events	SECURITY_REPLAY_CONFIG
+unknown_field	DROP_AND_COUNT_SCHEMA_ERROR; NEVER_COERCE_TYPE
+field_types_complete.account_hash	HEX_SHA256
+field_types_complete.action	UTF8_NFC_1_TO_64
+field_types_complete.after_level	INT64
+field_types_complete.before_level	INT64
+field_types_complete.book_id	TYPED_CONTENT_REF
+field_types_complete.boss_type	UTF8_NFC_1_TO_64
+field_types_complete.bot_count	INT64
+field_types_complete.bot_mix	MAP_BOT_DIFFICULTY_TO_UINT8
+field_types_complete.bot_takeover	BOOLEAN
+field_types_complete.build_version	UTF8_NFC_1_TO_64
+field_types_complete.cancelled	BOOLEAN
+field_types_complete.center_target	UTF8_NFC_1_TO_64
+field_types_complete.client_platform	ENUM_ANDROID_IOS_WINDOWS
+field_types_complete.control	UTF8_NFC_1_TO_64
+field_types_complete.damage	INT64
+field_types_complete.device_switch	BOOLEAN
+field_types_complete.device_tier	UTF8_NFC_1_TO_64
+field_types_complete.distance_m	DECIMAL_NUMBER
+field_types_complete.drawer_state	UTF8_NFC_1_TO_64
+field_types_complete.drop_ids	CONTENT_REF_ARRAY
+field_types_complete.duration_s	DECIMAL_NUMBER
+field_types_complete.elapsed_s	DECIMAL_NUMBER
+field_types_complete.element	ENUM_METAL_WOOD_WATER_FIRE_EARTH_NONE
+field_types_complete.escaped_after_s	DECIMAL_NUMBER
+field_types_complete.event_id	UUID
+field_types_complete.event_time_server	UTC_RFC3339_MILLISECONDS
+field_types_complete.frame_ms	DECIMAL_NUMBER
+field_types_complete.gold_delta	INT64
+field_types_complete.ground_age_s	DECIMAL_NUMBER
+field_types_complete.group_size	INT64
+field_types_complete.hero_id	TYPED_CONTENT_REF
+field_types_complete.hold_ms	INT64
+field_types_complete.human_count	INT64
+field_types_complete.input_mode	UTF8_NFC_1_TO_64
+field_types_complete.item_id	TYPED_CONTENT_REF
+field_types_complete.kill_s	DECIMAL_NUMBER
+field_types_complete.killer_id_hash	HEX_SHA256
+field_types_complete.killer_type	UTF8_NFC_1_TO_64
+field_types_complete.kills_bot	INT64
+field_types_complete.kills_human	INT64
+field_types_complete.last_hit_element	ENUM_METAL_WOOD_WATER_FIRE_EARTH_NONE
+field_types_complete.last_hit_source	UTF8_NFC_1_TO_64
+field_types_complete.latency_ms	INT64
+field_types_complete.ledger_created	INT64
+field_types_complete.ledger_destroyed	INT64
+field_types_complete.ledger_transferred	INT64
+field_types_complete.life_index	INT64
+field_types_complete.load_ms	INT64
+field_types_complete.los	BOOLEAN
+field_types_complete.match_id	UUID
+field_types_complete.memory_mb	UINT32
+field_types_complete.method	UTF8_NFC_1_TO_64
+field_types_complete.mmr_bucket	UTF8_NFC_1_TO_64
+field_types_complete.mmr_delta_internal	INT32
+field_types_complete.monster_type	UTF8_NFC_1_TO_64
+field_types_complete.nearby_monsters	INT64
+field_types_complete.nearby_players	INT64
+field_types_complete.new_active_id	TYPED_CONTENT_REF
+field_types_complete.new_player_match_index	INT64
+field_types_complete.offer_set_index	INT64
+field_types_complete.old_active_id	TYPED_CONTENT_REF
+field_types_complete.other_type	UTF8_NFC_1_TO_64
+field_types_complete.packet_loss	DECIMAL_0_TO_1
+field_types_complete.participant_count	INT64
+field_types_complete.participant_slot	UINT8_0_TO_29
+field_types_complete.participants	PARTICIPANT_SLOT_ARRAY
+field_types_complete.passive_id	TYPED_CONTENT_REF
+field_types_complete.placement	INT64
+field_types_complete.population_mode	UTF8_NFC_1_TO_64
+field_types_complete.position_correction_m	DECIMAL_NUMBER
+field_types_complete.region	UTF8_NFC_1_TO_64
+field_types_complete.region_id	UTF8_NFC_1_TO_64
+field_types_complete.replaced_id	TYPED_CONTENT_REF
+field_types_complete.reroll_count	INT64
+field_types_complete.reroll_used	BOOLEAN
+field_types_complete.resource_retry_count	INT64
+field_types_complete.respawn_region	UTF8_NFC_1_TO_64
+field_types_complete.result	UTF8_NFC_1_TO_64
+field_types_complete.rtt_ms	INT64
+field_types_complete.safe_radius_m	DECIMAL_NUMBER
+field_types_complete.search_radius	INT64
+field_types_complete.server_tick	UINT64_20HZ
+field_types_complete.session_id	UUID
+field_types_complete.settlement_id	UUID
+field_types_complete.shop_type	UTF8_NFC_1_TO_64
+field_types_complete.slot	UTF8_NFC_1_TO_64
+field_types_complete.soul_flight_s	DECIMAL_NUMBER
+field_types_complete.source	UTF8_NFC_1_TO_64
+field_types_complete.source_region	UTF8_NFC_1_TO_64
+field_types_complete.source_type	UTF8_NFC_1_TO_64
+field_types_complete.spawn_macro	UTF8_NFC_1_TO_64
+field_types_complete.spawn_micro	UTF8_NFC_1_TO_64
+field_types_complete.stage	UTF8_NFC_1_TO_64
+field_types_complete.state	UTF8_NFC_1_TO_64
+field_types_complete.stunned	BOOLEAN
+field_types_complete.transaction_id	UUID
+field_types_complete.upgrade_triggered	BOOLEAN
+field_types_complete.xiuwei	INT64
+field_type_coverage_count	98
+untyped_field_policy	REJECT_EVENT_AND_INCREMENT_TELEMETRY_SCHEMA_ERROR
+bounded_utf8_is_not_enum	是

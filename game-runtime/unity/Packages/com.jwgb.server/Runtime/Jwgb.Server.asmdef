@@ -1,0 +1,13 @@
+{
+  "name": "Jwgb.Server",
+  "rootNamespace": "Jwgb.Server",
+  "references": [
+    "Jwgb.Core",
+    "Jwgb.Content",
+    "Jwgb.Sim",
+    "Jwgb.Netcode",
+    "Unity.Collections",
+    "Unity.Entities"
+  ],
+  "autoReferenced": true
+}

@@ -1,0 +1,464 @@
+{
+  "schema": "jwgb.wukong-animated-model.v1",
+  "generatedAt": "2026-08-11T08:15:02.114Z",
+  "modelId": "H009",
+  "deliveryPath": "models/characters/H009/model.glb",
+  "targetHeight": 2.2,
+  "sources": [
+    {
+      "name": "Idle",
+      "fileName": "01_待机_idle.fbx",
+      "bytes": 32271516,
+      "sha256": "8EC0EB4092958301E2C0F4F1155C75D00B3C7C62A4EADDBD49ED1C48335E7705"
+    },
+    {
+      "name": "Move",
+      "fileName": "02_跑步_run.fbx",
+      "bytes": 32216620,
+      "sha256": "544A400EABC713A45BE5E28D175314F4DB94A617345E132BC0EDDDF67CBAF814"
+    },
+    {
+      "name": "Attack",
+      "fileName": "03_攻击_attack.fbx",
+      "bytes": 32188412,
+      "sha256": "530EF92C452CB944C3590000C433E3DD304F069CF0794CA8DAD7458E15DDF57D"
+    },
+    {
+      "name": "Spell",
+      "fileName": "04_施法_cast.fbx",
+      "bytes": 32213308,
+      "sha256": "84D66B86C65ABDFC7C5E3244A0BB1A9E2BF51167D83F029E5A5A2B1DE34B3E3C"
+    }
+  ],
+  "conversion": {
+    "retainedWeaponMesh": "H009-RuyiJinguBang",
+    "bodySimplifyRatio": 0.46,
+    "weaponTargetTriangles": 6000,
+    "sourceMetrics": [
+      {
+        "name": "Idle",
+        "meshes": 2,
+        "skinnedMeshes": 1,
+        "staticMeshes": 1,
+        "vertices": 1650003,
+        "triangles": 550001,
+        "bones": [
+          "Head",
+          "Hip",
+          "L_Calf",
+          "L_CalfTwist01",
+          "L_CalfTwist02",
+          "L_Clavicle",
+          "L_Foot",
+          "L_Forearm",
+          "L_ForearmTwist01",
+          "L_ForearmTwist02",
+          "L_Hand",
+          "L_Thigh",
+          "L_ThighTwist01",
+          "L_ThighTwist02",
+          "L_ToeBase",
+          "L_Upperarm",
+          "L_UpperarmTwist01",
+          "L_UpperarmTwist02",
+          "NeckTwist01",
+          "NeckTwist02",
+          "Pelvis",
+          "R_Calf",
+          "R_CalfTwist01",
+          "R_CalfTwist02",
+          "R_Clavicle",
+          "R_Foot",
+          "R_Forearm",
+          "R_ForearmTwist01",
+          "R_ForearmTwist02",
+          "R_Hand",
+          "R_Thigh",
+          "R_ThighTwist01",
+          "R_ThighTwist02",
+          "R_ToeBase",
+          "R_Upperarm",
+          "R_UpperarmTwist01",
+          "R_UpperarmTwist02",
+          "Root",
+          "Spine01",
+          "Spine02",
+          "Waist"
+        ],
+        "meshRecords": [
+          {
+            "name": "model",
+            "parentName": "R_Hand",
+            "skinned": false,
+            "vertices": 1500000,
+            "triangles": 500000
+          },
+          {
+            "name": "tripo_node_7a1ffb3a",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 150003,
+            "triangles": 50001
+          }
+        ],
+        "duration": 5.733333110809326,
+        "tracks": 84,
+        "retargetedPositionTracks": 42,
+        "maximumRestPositionCorrection": 0
+      },
+      {
+        "name": "Move",
+        "meshes": 2,
+        "skinnedMeshes": 1,
+        "staticMeshes": 1,
+        "vertices": 1650003,
+        "triangles": 550001,
+        "bones": [
+          "Head",
+          "Hip",
+          "L_Calf",
+          "L_CalfTwist01",
+          "L_CalfTwist02",
+          "L_Clavicle",
+          "L_Foot",
+          "L_Forearm",
+          "L_ForearmTwist01",
+          "L_ForearmTwist02",
+          "L_Hand",
+          "L_Thigh",
+          "L_ThighTwist01",
+          "L_ThighTwist02",
+          "L_ToeBase",
+          "L_Upperarm",
+          "L_UpperarmTwist01",
+          "L_UpperarmTwist02",
+          "NeckTwist01",
+          "NeckTwist02",
+          "Pelvis",
+          "R_Calf",
+          "R_CalfTwist01",
+          "R_CalfTwist02",
+          "R_Clavicle",
+          "R_Foot",
+          "R_Forearm",
+          "R_ForearmTwist01",
+          "R_ForearmTwist02",
+          "R_Hand",
+          "R_Thigh",
+          "R_ThighTwist01",
+          "R_ThighTwist02",
+          "R_ToeBase",
+          "R_Upperarm",
+          "R_UpperarmTwist01",
+          "R_UpperarmTwist02",
+          "Root",
+          "Spine01",
+          "Spine02",
+          "Waist"
+        ],
+        "meshRecords": [
+          {
+            "name": "model",
+            "parentName": "R_Hand",
+            "skinned": false,
+            "vertices": 1500000,
+            "triangles": 500000
+          },
+          {
+            "name": "tripo_node_7a1ffb3a",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 150003,
+            "triangles": 50001
+          }
+        ],
+        "duration": 0.800000011920929,
+        "tracks": 84,
+        "retargetedPositionTracks": 42,
+        "maximumRestPositionCorrection": 192.04212487290644
+      },
+      {
+        "name": "Attack",
+        "meshes": 2,
+        "skinnedMeshes": 1,
+        "staticMeshes": 1,
+        "vertices": 1650003,
+        "triangles": 550001,
+        "bones": [
+          "Head",
+          "Hip",
+          "L_Calf",
+          "L_CalfTwist01",
+          "L_CalfTwist02",
+          "L_Clavicle",
+          "L_Foot",
+          "L_Forearm",
+          "L_ForearmTwist01",
+          "L_ForearmTwist02",
+          "L_Hand",
+          "L_Thigh",
+          "L_ThighTwist01",
+          "L_ThighTwist02",
+          "L_ToeBase",
+          "L_Upperarm",
+          "L_UpperarmTwist01",
+          "L_UpperarmTwist02",
+          "NeckTwist01",
+          "NeckTwist02",
+          "Pelvis",
+          "R_Calf",
+          "R_CalfTwist01",
+          "R_CalfTwist02",
+          "R_Clavicle",
+          "R_Foot",
+          "R_Forearm",
+          "R_ForearmTwist01",
+          "R_ForearmTwist02",
+          "R_Hand",
+          "R_Thigh",
+          "R_ThighTwist01",
+          "R_ThighTwist02",
+          "R_ToeBase",
+          "R_Upperarm",
+          "R_UpperarmTwist01",
+          "R_UpperarmTwist02",
+          "Root",
+          "Spine01",
+          "Spine02",
+          "Waist"
+        ],
+        "meshRecords": [
+          {
+            "name": "model",
+            "parentName": "R_Hand",
+            "skinned": false,
+            "vertices": 1500000,
+            "triangles": 500000
+          },
+          {
+            "name": "tripo_node_7a1ffb3a",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 150003,
+            "triangles": 50001
+          }
+        ],
+        "duration": 1.2000000476837158,
+        "tracks": 84,
+        "retargetedPositionTracks": 42,
+        "maximumRestPositionCorrection": 7.3676900218679675
+      },
+      {
+        "name": "Spell",
+        "meshes": 2,
+        "skinnedMeshes": 1,
+        "staticMeshes": 1,
+        "vertices": 1650003,
+        "triangles": 550001,
+        "bones": [
+          "Head",
+          "Hip",
+          "L_Calf",
+          "L_CalfTwist01",
+          "L_CalfTwist02",
+          "L_Clavicle",
+          "L_Foot",
+          "L_Forearm",
+          "L_ForearmTwist01",
+          "L_ForearmTwist02",
+          "L_Hand",
+          "L_Thigh",
+          "L_ThighTwist01",
+          "L_ThighTwist02",
+          "L_ToeBase",
+          "L_Upperarm",
+          "L_UpperarmTwist01",
+          "L_UpperarmTwist02",
+          "NeckTwist01",
+          "NeckTwist02",
+          "Pelvis",
+          "R_Calf",
+          "R_CalfTwist01",
+          "R_CalfTwist02",
+          "R_Clavicle",
+          "R_Foot",
+          "R_Forearm",
+          "R_ForearmTwist01",
+          "R_ForearmTwist02",
+          "R_Hand",
+          "R_Thigh",
+          "R_ThighTwist01",
+          "R_ThighTwist02",
+          "R_ToeBase",
+          "R_Upperarm",
+          "R_UpperarmTwist01",
+          "R_UpperarmTwist02",
+          "Root",
+          "Spine01",
+          "Spine02",
+          "Waist"
+        ],
+        "meshRecords": [
+          {
+            "name": "model",
+            "parentName": "R_Hand",
+            "skinned": false,
+            "vertices": 1500000,
+            "triangles": 500000
+          },
+          {
+            "name": "tripo_node_7a1ffb3a",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 150003,
+            "triangles": 50001
+          }
+        ],
+        "duration": 0.6333333253860474,
+        "tracks": 84,
+        "retargetedPositionTracks": 42,
+        "maximumRestPositionCorrection": 4.646494570215417
+      }
+    ],
+    "retainedMesh": {
+      "meshes": 2,
+      "skinnedMeshes": 1,
+      "staticMeshes": 1,
+      "vertices": 1650003,
+      "triangles": 550001,
+      "bones": [
+        "Head",
+        "Hip",
+        "L_Calf",
+        "L_CalfTwist01",
+        "L_CalfTwist02",
+        "L_Clavicle",
+        "L_Foot",
+        "L_Forearm",
+        "L_ForearmTwist01",
+        "L_ForearmTwist02",
+        "L_Hand",
+        "L_Thigh",
+        "L_ThighTwist01",
+        "L_ThighTwist02",
+        "L_ToeBase",
+        "L_Upperarm",
+        "L_UpperarmTwist01",
+        "L_UpperarmTwist02",
+        "NeckTwist01",
+        "NeckTwist02",
+        "Pelvis",
+        "R_Calf",
+        "R_CalfTwist01",
+        "R_CalfTwist02",
+        "R_Clavicle",
+        "R_Foot",
+        "R_Forearm",
+        "R_ForearmTwist01",
+        "R_ForearmTwist02",
+        "R_Hand",
+        "R_Thigh",
+        "R_ThighTwist01",
+        "R_ThighTwist02",
+        "R_ToeBase",
+        "R_Upperarm",
+        "R_UpperarmTwist01",
+        "R_UpperarmTwist02",
+        "Root",
+        "Spine01",
+        "Spine02",
+        "Waist"
+      ],
+      "meshRecords": [
+        {
+          "name": "H009-RuyiJinguBang",
+          "parentName": "R_Hand",
+          "skinned": false,
+          "vertices": 1500000,
+          "triangles": 500000
+        },
+        {
+          "name": "H009-Body",
+          "parentName": "H009-Wukong-Animated",
+          "skinned": true,
+          "vertices": 150003,
+          "triangles": 50001
+        }
+      ]
+    },
+    "exportedClips": [
+      {
+        "name": "Idle",
+        "duration": 5.733333110809326,
+        "tracks": 84,
+        "keyframes": 1908
+      },
+      {
+        "name": "Move",
+        "duration": 0.800000011920929,
+        "tracks": 84,
+        "keyframes": 590
+      },
+      {
+        "name": "Attack",
+        "duration": 1.2000000476837158,
+        "tracks": 84,
+        "keyframes": 818
+      },
+      {
+        "name": "Spell",
+        "duration": 0.6333333253860474,
+        "tracks": 84,
+        "keyframes": 458
+      }
+    ]
+  },
+  "optimized": {
+    "bytes": 613264,
+    "vertices": 18453,
+    "triangles": 28911,
+    "meshes": 2,
+    "materials": 2,
+    "textures": 3,
+    "animations": [
+      {
+        "name": "Idle",
+        "channels": 84,
+        "samplers": 84
+      },
+      {
+        "name": "Move",
+        "channels": 84,
+        "samplers": 84
+      },
+      {
+        "name": "Attack",
+        "channels": 84,
+        "samplers": 84
+      },
+      {
+        "name": "Spell",
+        "channels": 84,
+        "samplers": 84
+      }
+    ],
+    "skins": [
+      {
+        "name": "",
+        "joints": 41
+      }
+    ],
+    "meshRecords": [
+      {
+        "name": "H009-Body",
+        "triangles": 23000
+      },
+      {
+        "name": "H009-RuyiJinguBang",
+        "triangles": 5911
+      }
+    ]
+  },
+  "errors": [],
+  "status": "passed"
+}

@@ -1,0 +1,30 @@
+node_modules/
+dist/
+coverage/
+.env
+.env.*
+!.env.example
+deploy/oss-credentials.txt
+*.log
+.DS_Store
+Thumbs.db
+
+# Unity generated state
+unity/[Ll]ibrary/
+unity/[Tt]emp/
+unity/[Oo]bj/
+unity/[Bb]uild/
+unity/[Bb]uilds/
+unity/[Ll]ogs/
+unity/[Uu]ser[Ss]ettings/
+unity/[Mm]emoryCaptures/
+unity/[Rr]ecordings/
+unity/.utmp/
+
+# Unity-generated IDE files
+unity/*.csproj
+unity/*.sln
+unity/*.suo
+unity/*.tmp
+unity/*.user
+unity/*.userprefs

@@ -1,0 +1,1474 @@
+{
+  "schema": "jwgb.map-asset-manifest.v1",
+  "generatedAt": "2026-08-10T03:09:56.217Z",
+  "assets": [
+    {
+      "id": "desert-rock-01",
+      "path": "models/map-assets/desert-rock-01.glb",
+      "source": "C1524 rock pack / stone02 / Desert Rocks",
+      "targetHeight": 2.8,
+      "bytes": 78044,
+      "metrics": {
+        "before": {
+          "meshes": 15,
+          "triangles": 10251,
+          "nativeBounds": [212.791, -78.267, -2892.242, 6485.935, 1205.38, 1107.286]
+        },
+        "filtered": {
+          "meshes": 15,
+          "triangles": 10251,
+          "nativeBounds": [212.791, -78.267, -2892.242, 6485.935, 1205.38, 1107.286]
+        },
+        "after": {
+          "meshes": 1,
+          "triangles": 1428,
+          "nativeBounds": [-2.274, 0, -1.687, 2.274, 2.8, 1.687]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 1026.8969268798828,
+          "targetHeight": 2.8,
+          "scale": 0.0027266611932587064,
+          "bounds": [-2.274, 0, -1.687, 2.274, 2.8, 1.687]
+        }
+      },
+      "optimized": {
+        "vertices": 4266,
+        "triangles": 1422,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      }
+    },
+    {
+      "id": "desert-rock-02",
+      "path": "models/map-assets/desert-rock-02.glb",
+      "source": "C1524 rock pack / stone02 / Desert Rocks",
+      "targetHeight": 3.4,
+      "bytes": 43856,
+      "metrics": {
+        "before": null,
+        "filtered": null,
+        "after": {
+          "meshes": 1,
+          "triangles": 646,
+          "nativeBounds": [-2.199, 0, -2.265, 2.199, 3.4, 2.265]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 1236.1352844238281,
+          "targetHeight": 3.4,
+          "scale": 0.0027505080089876774,
+          "bounds": [-2.199, 0, -2.265, 2.199, 3.4, 2.265]
+        }
+      },
+      "optimized": {
+        "vertices": 1926,
+        "triangles": 642,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      }
+    },
+    {
+      "id": "desert-rock-03",
+      "path": "models/map-assets/desert-rock-03.glb",
+      "source": "C1524 rock pack / stone02 / Desert Rocks",
+      "targetHeight": 4.1,
+      "bytes": 115128,
+      "metrics": {
+        "before": null,
+        "filtered": null,
+        "after": {
+          "meshes": 1,
+          "triangles": 2254,
+          "nativeBounds": [-4.153, 0, -3.366, 4.153, 4.1, 3.366]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 1283.6461868286133,
+          "targetHeight": 4.1,
+          "scale": 0.0031940265488027454,
+          "bounds": [-4.153, 0, -3.366, 4.153, 4.1, 3.366]
+        }
+      },
+      "optimized": {
+        "vertices": 6723,
+        "triangles": 2241,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      }
+    },
+    {
+      "id": "desert-rock-04",
+      "path": "models/map-assets/desert-rock-04.glb",
+      "source": "C1524 rock pack / stone02 / Desert Rocks",
+      "targetHeight": 2.3,
+      "bytes": 24784,
+      "metrics": {
+        "before": null,
+        "filtered": null,
+        "after": {
+          "meshes": 1,
+          "triangles": 244,
+          "nativeBounds": [-0.975, 0, -1.027, 0.975, 2.3, 1.027]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 304.83320140838623,
+          "targetHeight": 2.3,
+          "scale": 0.0075451098809892455,
+          "bounds": [-0.975, 0, -1.027, 0.975, 2.3, 1.027]
+        }
+      },
+      "optimized": {
+        "vertices": 732,
+        "triangles": 244,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      }
+    },
+    {
+      "id": "desert-rock-05",
+      "path": "models/map-assets/desert-rock-05.glb",
+      "source": "C1524 rock pack / stone02 / Desert Rocks",
+      "targetHeight": 3.1,
+      "bytes": 15572,
+      "metrics": {
+        "before": null,
+        "filtered": null,
+        "after": {
+          "meshes": 1,
+          "triangles": 106,
+          "nativeBounds": [-2.004, 0, -2.11, 2.004, 3.1, 2.11]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 199.99999237060547,
+          "targetHeight": 3.1,
+          "scale": 0.0155000005912781,
+          "bounds": [-2.004, 0, -2.11, 2.004, 3.1, 2.11]
+        }
+      },
+      "optimized": {
+        "vertices": 318,
+        "triangles": 106,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      }
+    },
+    {
+      "id": "desert-rock-06",
+      "path": "models/map-assets/desert-rock-06.glb",
+      "source": "C1524 rock pack / stone02 / Desert Rocks",
+      "targetHeight": 2.6,
+      "bytes": 55928,
+      "metrics": {
+        "before": null,
+        "filtered": null,
+        "after": {
+          "meshes": 1,
+          "triangles": 935,
+          "nativeBounds": [-2.343, 0, -2.302, 2.343, 2.6, 2.302]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 276.0110321044922,
+          "targetHeight": 2.6,
+          "scale": 0.009419913328013979,
+          "bounds": [-2.343, 0, -2.302, 2.343, 2.6, 2.302]
+        }
+      },
+      "optimized": {
+        "vertices": 2802,
+        "triangles": 934,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      }
+    },
+    {
+      "id": "desert-rock-07",
+      "path": "models/map-assets/desert-rock-07.glb",
+      "source": "C1524 rock pack / stone02 / Desert Rocks",
+      "targetHeight": 3.8,
+      "bytes": 38840,
+      "metrics": {
+        "before": null,
+        "filtered": null,
+        "after": {
+          "meshes": 1,
+          "triangles": 560,
+          "nativeBounds": [-2.195, 0, -3.374, 2.195, 3.8, 3.374]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 423.5897846221924,
+          "targetHeight": 3.8,
+          "scale": 0.008970943440926676,
+          "bounds": [-2.195, 0, -3.374, 2.195, 3.8, 3.374]
+        }
+      },
+      "optimized": {
+        "vertices": 1680,
+        "triangles": 560,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      }
+    },
+    {
+      "id": "desert-rock-08",
+      "path": "models/map-assets/desert-rock-08.glb",
+      "source": "C1524 rock pack / stone02 / Desert Rocks",
+      "targetHeight": 2.2,
+      "bytes": 36444,
+      "metrics": {
+        "before": null,
+        "filtered": null,
+        "after": {
+          "meshes": 1,
+          "triangles": 534,
+          "nativeBounds": [-4.009, 0, -2.519, 4.009, 2.2, 2.519]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 299.3886709213257,
+          "targetHeight": 2.2,
+          "scale": 0.007348307446737433,
+          "bounds": [-4.009, 0, -2.519, 4.009, 2.2, 2.519]
+        }
+      },
+      "optimized": {
+        "vertices": 1602,
+        "triangles": 534,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      }
+    },
+    {
+      "id": "desert-rock-09",
+      "path": "models/map-assets/desert-rock-09.glb",
+      "source": "C1524 rock pack / stone02 / Desert Rocks",
+      "targetHeight": 1.9,
+      "bytes": 61356,
+      "metrics": {
+        "before": null,
+        "filtered": null,
+        "after": {
+          "meshes": 1,
+          "triangles": 1140,
+          "nativeBounds": [-2.022, 0, -1.475, 2.022, 1.9, 1.475]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 484.2266082763672,
+          "targetHeight": 1.9,
+          "scale": 0.003923782723884507,
+          "bounds": [-2.022, 0, -1.475, 2.022, 1.9, 1.475]
+        }
+      },
+      "optimized": {
+        "vertices": 3420,
+        "triangles": 1140,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      }
+    },
+    {
+      "id": "desert-rock-10",
+      "path": "models/map-assets/desert-rock-10.glb",
+      "source": "C1524 rock pack / stone02 / Desert Rocks",
+      "targetHeight": 1.6,
+      "bytes": 68356,
+      "metrics": {
+        "before": null,
+        "filtered": null,
+        "after": {
+          "meshes": 1,
+          "triangles": 1210,
+          "nativeBounds": [-1.407, 0, -0.953, 1.407, 1.6, 0.953]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 433.58812713623047,
+          "targetHeight": 1.6,
+          "scale": 0.0036901379439693255,
+          "bounds": [-1.407, 0, -0.953, 1.407, 1.6, 0.953]
+        }
+      },
+      "optimized": {
+        "vertices": 3630,
+        "triangles": 1210,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      }
+    },
+    {
+      "id": "desert-rock-11",
+      "path": "models/map-assets/desert-rock-11.glb",
+      "source": "C1524 rock pack / stone02 / Desert Rocks",
+      "targetHeight": 1.7,
+      "bytes": 23380,
+      "metrics": {
+        "before": null,
+        "filtered": null,
+        "after": {
+          "meshes": 1,
+          "triangles": 188,
+          "nativeBounds": [-3.895, 0, -2.58, 3.895, 1.7, 2.58]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 163.38160514831543,
+          "targetHeight": 1.7,
+          "scale": 0.010405088127618558,
+          "bounds": [-3.895, 0, -2.58, 3.895, 1.7, 2.58]
+        }
+      },
+      "optimized": {
+        "vertices": 564,
+        "triangles": 188,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      }
+    },
+    {
+      "id": "desert-rock-12",
+      "path": "models/map-assets/desert-rock-12.glb",
+      "source": "C1524 rock pack / stone02 / Desert Rocks",
+      "targetHeight": 1.8,
+      "bytes": 31528,
+      "metrics": {
+        "before": null,
+        "filtered": null,
+        "after": {
+          "meshes": 1,
+          "triangles": 376,
+          "nativeBounds": [-1.462, 0, -1.624, 1.462, 1.8, 1.624]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 177.24948501586914,
+          "targetHeight": 1.8,
+          "scale": 0.010155177600876223,
+          "bounds": [-1.462, 0, -1.624, 1.462, 1.8, 1.624]
+        }
+      },
+      "optimized": {
+        "vertices": 1128,
+        "triangles": 376,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      }
+    },
+    {
+      "id": "desert-rock-13",
+      "path": "models/map-assets/desert-rock-13.glb",
+      "source": "C1524 rock pack / stone02 / Desert Rocks",
+      "targetHeight": 1.5,
+      "bytes": 15400,
+      "metrics": {
+        "before": null,
+        "filtered": null,
+        "after": {
+          "meshes": 1,
+          "triangles": 82,
+          "nativeBounds": [-0.539, 0, -0.59, 0.539, 1.5, 0.59]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 181.98189640045166,
+          "targetHeight": 1.5,
+          "scale": 0.00824257813370208,
+          "bounds": [-0.539, 0, -0.59, 0.539, 1.5, 0.59]
+        }
+      },
+      "optimized": {
+        "vertices": 246,
+        "triangles": 82,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      }
+    },
+    {
+      "id": "desert-rock-14",
+      "path": "models/map-assets/desert-rock-14.glb",
+      "source": "C1524 rock pack / stone02 / Desert Rocks",
+      "targetHeight": 1.4,
+      "bytes": 30308,
+      "metrics": {
+        "before": null,
+        "filtered": null,
+        "after": {
+          "meshes": 1,
+          "triangles": 298,
+          "nativeBounds": [-1.002, 0, -1.088, 1.002, 1.4, 1.088]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 186.5435562133789,
+          "targetHeight": 1.4,
+          "scale": 0.00750494966654652,
+          "bounds": [-1.002, 0, -1.088, 1.002, 1.4, 1.088]
+        }
+      },
+      "optimized": {
+        "vertices": 894,
+        "triangles": 298,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      }
+    },
+    {
+      "id": "desert-rock-15",
+      "path": "models/map-assets/desert-rock-15.glb",
+      "source": "C1524 rock pack / stone02 / Desert Rocks",
+      "targetHeight": 1.3,
+      "bytes": 25032,
+      "metrics": {
+        "before": null,
+        "filtered": null,
+        "after": {
+          "meshes": 1,
+          "triangles": 250,
+          "nativeBounds": [-1.743, 0, -1.892, 1.743, 1.3, 1.892]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 99.58618927001953,
+          "targetHeight": 1.3,
+          "scale": 0.013054018931030285,
+          "bounds": [-1.743, 0, -1.892, 1.743, 1.3, 1.892]
+        }
+      },
+      "optimized": {
+        "vertices": 750,
+        "triangles": 250,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      }
+    },
+    {
+      "id": "stylized-rock-01",
+      "path": "models/map-assets/stylized-rock-01.glb",
+      "source": "C1524 rock pack / stone01 / ST-PaCK",
+      "targetHeight": 3.2,
+      "bytes": 32924,
+      "metrics": {
+        "before": null,
+        "filtered": null,
+        "after": {
+          "meshes": 1,
+          "triangles": 332,
+          "nativeBounds": [-1.693, 0, -1.379, 1.693, 3.2, 1.379]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 11.518884658813477,
+          "targetHeight": 3.2,
+          "scale": 0.2778046742183129,
+          "bounds": [-1.693, 0, -1.379, 1.693, 3.2, 1.379]
+        }
+      },
+      "optimized": {
+        "vertices": 996,
+        "triangles": 332,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      }
+    },
+    {
+      "id": "stylized-rock-02",
+      "path": "models/map-assets/stylized-rock-02.glb",
+      "source": "C1524 rock pack / stone01 / ST-PaCK",
+      "targetHeight": 2.1,
+      "bytes": 44172,
+      "metrics": {
+        "before": null,
+        "filtered": null,
+        "after": {
+          "meshes": 1,
+          "triangles": 592,
+          "nativeBounds": [-1.657, 0, -1.135, 1.657, 2.1, 1.135]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 18.575739920139313,
+          "targetHeight": 2.1,
+          "scale": 0.11305067841325864,
+          "bounds": [-1.657, 0, -1.135, 1.657, 2.1, 1.135]
+        }
+      },
+      "optimized": {
+        "vertices": 1776,
+        "triangles": 592,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      }
+    },
+    {
+      "id": "stylized-rock-03",
+      "path": "models/map-assets/stylized-rock-03.glb",
+      "source": "C1524 rock pack / stone01 / ST-PaCK",
+      "targetHeight": 2.6,
+      "bytes": 60128,
+      "metrics": {
+        "before": null,
+        "filtered": null,
+        "after": {
+          "meshes": 1,
+          "triangles": 864,
+          "nativeBounds": [-2.022, 0, -1.474, 2.022, 2.6, 1.474]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 19.733723878860474,
+          "targetHeight": 2.6,
+          "scale": 0.1317541491895111,
+          "bounds": [-2.022, 0, -1.474, 2.022, 2.6, 1.474]
+        }
+      },
+      "optimized": {
+        "vertices": 2592,
+        "triangles": 864,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      }
+    },
+    {
+      "id": "stylized-rock-04",
+      "path": "models/map-assets/stylized-rock-04.glb",
+      "source": "C1524 rock pack / stone01 / ST-PaCK",
+      "targetHeight": 3.3,
+      "bytes": 122048,
+      "metrics": {
+        "before": null,
+        "filtered": null,
+        "after": {
+          "meshes": 1,
+          "triangles": 2552,
+          "nativeBounds": [-2.103, 0, -1.683, 2.103, 3.3, 1.683]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 44.34094452857971,
+          "targetHeight": 3.3,
+          "scale": 0.07442331314961058,
+          "bounds": [-2.103, 0, -1.683, 2.103, 3.3, 1.683]
+        }
+      },
+      "optimized": {
+        "vertices": 7656,
+        "triangles": 2552,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      }
+    },
+    {
+      "id": "stylized-rock-05",
+      "path": "models/map-assets/stylized-rock-05.glb",
+      "source": "C1524 rock pack / stone01 / ST-PaCK",
+      "targetHeight": 3.8,
+      "bytes": 142976,
+      "metrics": {
+        "before": null,
+        "filtered": null,
+        "after": {
+          "meshes": 1,
+          "triangles": 3168,
+          "nativeBounds": [-2.439, 0, -2.734, 2.439, 3.8, 2.734]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 45.39719694107771,
+          "targetHeight": 3.8,
+          "scale": 0.08370560862892319,
+          "bounds": [-2.439, 0, -2.734, 2.439, 3.8, 2.734]
+        }
+      },
+      "optimized": {
+        "vertices": 9504,
+        "triangles": 3168,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      }
+    },
+    {
+      "id": "stylized-rock-06",
+      "path": "models/map-assets/stylized-rock-06.glb",
+      "source": "C1524 rock pack / stone01 / ST-PaCK",
+      "targetHeight": 4.1,
+      "bytes": 123276,
+      "metrics": {
+        "before": null,
+        "filtered": null,
+        "after": {
+          "meshes": 1,
+          "triangles": 2534,
+          "nativeBounds": [-1.324, 0, -1.125, 1.324, 4.1, 1.125]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 79.68176460266113,
+          "targetHeight": 4.1,
+          "scale": 0.051454683771687854,
+          "bounds": [-1.324, 0, -1.125, 1.324, 4.1, 1.125]
+        }
+      },
+      "optimized": {
+        "vertices": 7602,
+        "triangles": 2534,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      }
+    },
+    {
+      "id": "stylized-rock-07",
+      "path": "models/map-assets/stylized-rock-07.glb",
+      "source": "C1524 rock pack / stone01 / ST-PaCK",
+      "targetHeight": 4.6,
+      "bytes": 156416,
+      "metrics": {
+        "before": null,
+        "filtered": null,
+        "after": {
+          "meshes": 1,
+          "triangles": 3488,
+          "nativeBounds": [-1.841, 0, -2.106, 1.841, 4.6, 2.106]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 81.95987612009048,
+          "targetHeight": 4.6,
+          "scale": 0.05612502382580372,
+          "bounds": [-1.841, 0, -2.106, 1.841, 4.6, 2.106]
+        }
+      },
+      "optimized": {
+        "vertices": 10455,
+        "triangles": 3485,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      }
+    },
+    {
+      "id": "stylized-rock-08",
+      "path": "models/map-assets/stylized-rock-08.glb",
+      "source": "C1524 rock pack / stone01 / ST-PaCK",
+      "targetHeight": 4.2,
+      "bytes": 141920,
+      "metrics": {
+        "before": null,
+        "filtered": null,
+        "after": {
+          "meshes": 1,
+          "triangles": 3140,
+          "nativeBounds": [-2.372, 0, -1.915, 2.372, 4.2, 1.915]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 52.31450128555298,
+          "targetHeight": 4.2,
+          "scale": 0.08028366699081695,
+          "bounds": [-2.372, 0, -1.915, 2.372, 4.2, 1.915]
+        }
+      },
+      "optimized": {
+        "vertices": 9420,
+        "triangles": 3140,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      }
+    },
+    {
+      "id": "stylized-rock-09",
+      "path": "models/map-assets/stylized-rock-09.glb",
+      "source": "C1524 rock pack / stone01 / ST-PaCK",
+      "targetHeight": 4.6,
+      "bytes": 133508,
+      "metrics": {
+        "before": null,
+        "filtered": null,
+        "after": {
+          "meshes": 1,
+          "triangles": 2889,
+          "nativeBounds": [-3.62, 0, -4.81, 3.62, 4.6, 4.81]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 49.507073640823364,
+          "targetHeight": 4.6,
+          "scale": 0.09291601506025707,
+          "bounds": [-3.62, 0, -4.81, 3.62, 4.6, 4.81]
+        }
+      },
+      "optimized": {
+        "vertices": 8655,
+        "triangles": 2885,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      }
+    },
+    {
+      "id": "wuxia-citadel",
+      "path": "models/map-assets/wuxia-citadel.glb",
+      "source": "80个精品中国风武侠仙侠 MAX Unity 场景 / 45.FBX",
+      "targetHeight": 34,
+      "bytes": 770364,
+      "metrics": {
+        "before": {
+          "meshes": 263,
+          "triangles": 50052,
+          "nativeBounds": [-58.014, -32.412, -122.749, 48.714, 39.99, 121.698]
+        },
+        "filtered": {
+          "meshes": 88,
+          "triangles": 21425,
+          "nativeBounds": [-24.952, -3.567, -64.026, 30.362, 23.453, 39.885]
+        },
+        "after": {
+          "meshes": 88,
+          "triangles": 21425,
+          "nativeBounds": [-34.801, 0, -65.377, 34.801, 34, 65.377]
+        },
+        "materials": 2,
+        "normalized": {
+          "nativeHeight": 27.020129797360937,
+          "targetHeight": 34,
+          "scale": 1.2583211204011606,
+          "bounds": [-34.801, 0, -65.377, 34.801, 34, 65.377]
+        }
+      },
+      "optimized": {
+        "vertices": 63318,
+        "triangles": 21106,
+        "meshes": 2,
+        "materials": 2,
+        "drawCalls": 1
+      },
+      "textures": ["3005_Diff_01.webp", "3005_Diff_02.webp", "3005_Diff_03.webp"],
+      "nodeFilter": {
+        "include": "Building|Item",
+        "exclude": "Terrain|Ground|Plant|Tree|Grass|Bush|Flower",
+        "bounds": {
+          "minZ": -55,
+          "maxZ": 32
+        }
+      }
+    },
+    {
+      "id": "wuxia-gate-court",
+      "path": "models/map-assets/wuxia-gate-court.glb",
+      "source": "80个精品中国风武侠仙侠 MAX Unity 场景 / 51.FBX",
+      "targetHeight": 30,
+      "bytes": 1238184,
+      "metrics": {
+        "before": {
+          "meshes": 352,
+          "triangles": 38079,
+          "nativeBounds": [-48.897, -56.32, -43.899, 48.359, 17.462, 47.954]
+        },
+        "filtered": {
+          "meshes": 339,
+          "triangles": 35511,
+          "nativeBounds": [-31.211, -21.589, -28.064, 24.107, 13.425, 35.624]
+        },
+        "after": {
+          "meshes": 339,
+          "triangles": 35511,
+          "nativeBounds": [-23.698, 0, -27.284, 23.698, 30, 27.284]
+        },
+        "materials": 3,
+        "normalized": {
+          "nativeHeight": 35.01404009971818,
+          "targetHeight": 30,
+          "scale": 0.8567991558403871,
+          "bounds": [-23.698, 0, -27.284, 23.698, 30, 27.284]
+        }
+      },
+      "optimized": {
+        "vertices": 99807,
+        "triangles": 33269,
+        "meshes": 3,
+        "materials": 3,
+        "drawCalls": 1
+      },
+      "textures": ["JTYS_Diff_01.webp", "JTYS_Diff_02.webp", "JTYS_Diff_03.webp"],
+      "nodeFilter": {
+        "include": "Building|Item",
+        "exclude": "Terrain|Ground|Plant|Tree|Grass|Bush|Flower"
+      }
+    },
+    {
+      "id": "wuxia-east-asia-hall",
+      "path": "models/map-assets/wuxia-east-asia-hall.glb",
+      "source": "80个精品中国风武侠仙侠 MAX Unity 场景 / 54.FBX",
+      "targetHeight": 32,
+      "bytes": 2109932,
+      "metrics": {
+        "before": {
+          "meshes": 372,
+          "triangles": 124821,
+          "nativeBounds": [-47.498, -10.877, -39.418, 47.498, 13.203, 40.97]
+        },
+        "filtered": {
+          "meshes": 163,
+          "triangles": 57681,
+          "nativeBounds": [-46.522, -10.877, -39.418, 45.463, 13.203, 36.793]
+        },
+        "after": {
+          "meshes": 163,
+          "triangles": 57681,
+          "nativeBounds": [-61.119, 0, -50.638, 61.119, 32, 50.638]
+        },
+        "materials": 4,
+        "normalized": {
+          "nativeHeight": 24.08025457007377,
+          "targetHeight": 32,
+          "scale": 1.3288896056675688,
+          "bounds": [-61.119, 0, -50.638, 61.119, 32, 50.638]
+        }
+      },
+      "optimized": {
+        "vertices": 171978,
+        "triangles": 57326,
+        "meshes": 3,
+        "materials": 3,
+        "drawCalls": 1
+      },
+      "textures": [
+        "ITem_dongya_d_4001.webp",
+        "Item_Integration02_d.webp",
+        "Item_Integration_d.webp",
+        "Plant_Botany_d.webp"
+      ],
+      "nodeFilter": {
+        "include": "Building|Item",
+        "exclude": "Terrain|Ground|Sky|Cloud|Mountain|Wall|Plant|Tree|Grass|Bush|Flower",
+        "bounds": {
+          "minZ": -36,
+          "maxZ": 36
+        }
+      }
+    },
+    {
+      "id": "wuxia-mountain-gate",
+      "path": "models/map-assets/wuxia-mountain-gate.glb",
+      "source": "80个精品中国风武侠仙侠 MAX Unity 场景 / 60.FBX",
+      "targetHeight": 34,
+      "bytes": 780832,
+      "metrics": {
+        "before": {
+          "meshes": 391,
+          "triangles": 148434,
+          "nativeBounds": [-47.498, -10.877, -37.871, 47.498, 13.203, 154.162]
+        },
+        "filtered": {
+          "meshes": 19,
+          "triangles": 20285,
+          "nativeBounds": [-7.957, -0.01, -13, 9.899, 9.302, 9.933]
+        },
+        "after": {
+          "meshes": 19,
+          "triangles": 20285,
+          "nativeBounds": [-32.6, 0, -41.868, 32.6, 34, 41.868]
+        },
+        "materials": 4,
+        "normalized": {
+          "nativeHeight": 9.311678668186646,
+          "targetHeight": 34,
+          "scale": 3.6513287465729474,
+          "bounds": [-32.6, 0, -41.868, 32.6, 34, 41.868]
+        }
+      },
+      "optimized": {
+        "vertices": 60177,
+        "triangles": 20059,
+        "meshes": 3,
+        "materials": 3,
+        "drawCalls": 1
+      },
+      "textures": ["Item_Integration02_d.webp", "Item_Integration_d.webp", "Plant_Botany_d.webp"],
+      "nodeFilter": {
+        "include": "Building|Item",
+        "exclude": "Terrain|Ground|Sky|Cloud|Mountain|Wall|Plant|Tree|Grass|Bush|Flower|Stone|Bridge|Stairs|Item_Palace006",
+        "bounds": {
+          "minZ": -32,
+          "maxZ": 48
+        }
+      }
+    },
+    {
+      "id": "lowpoly-asian-village",
+      "path": "models/map-assets/lowpoly-asian-village.glb",
+      "source": "0072 Lowpoly Style Ultra Pack 1.2 / precomposed Asian village",
+      "targetHeight": 18,
+      "bytes": 1182516,
+      "metrics": {
+        "after": {
+          "vertices": 144189,
+          "triangles": 48063,
+          "meshes": 3,
+          "materials": 3,
+          "drawCalls": 1
+        },
+        "normalized": {
+          "targetHeight": 18,
+          "bounds": [-20.13962, 0.0009, -17.12575, 20.10789, 17.9991, 17.00977]
+        }
+      },
+      "optimized": {
+        "vertices": 144189,
+        "triangles": 48063,
+        "meshes": 3,
+        "materials": 3,
+        "drawCalls": 1
+      },
+      "components": ["AsianHouse_Big2", "AsianHouse_Big3", "Torii2", "ZenGarden", "RockFormation1"],
+      "delivery": "single-precomposed-glb"
+    },
+    {
+      "id": "lowpoly-asia-house",
+      "path": "models/map-assets/asia-house.glb",
+      "source": "0072 Lowpoly Style Ultra Pack 1.2 / AsianHouse_2.fbx",
+      "targetHeight": 12,
+      "bytes": 351408,
+      "metrics": {
+        "before": {
+          "meshes": 6,
+          "triangles": 14284,
+          "nativeBounds": [-0.036, 0, -0.062, 0.036, 0.094, 0.062]
+        },
+        "filtered": {
+          "meshes": 6,
+          "triangles": 14284,
+          "nativeBounds": [-0.036, 0, -0.062, 0.036, 0.094, 0.062]
+        },
+        "after": {
+          "meshes": 6,
+          "triangles": 14284,
+          "nativeBounds": [-4.669, 0, -7.996, 4.669, 12, 7.996]
+        },
+        "materials": 2,
+        "normalized": {
+          "nativeHeight": 0.09346557617187501,
+          "targetHeight": 12,
+          "scale": 128.38951506523696,
+          "bounds": [-4.669, 0, -7.996, 4.669, 12, 7.996]
+        }
+      },
+      "optimized": {
+        "vertices": 42600,
+        "triangles": 14200,
+        "meshes": 2,
+        "materials": 2,
+        "drawCalls": 1
+      },
+      "delivery": "map"
+    },
+    {
+      "id": "lowpoly-torii",
+      "path": "models/map-assets/torii-2.glb",
+      "source": "0072 Lowpoly Style Ultra Pack 1.2 / Torii2.fbx",
+      "targetHeight": 10,
+      "bytes": 54432,
+      "metrics": {
+        "before": {
+          "meshes": 1,
+          "triangles": 1741,
+          "nativeBounds": [-0.058, 0, -0.009, 0.058, 0.107, 0.009]
+        },
+        "filtered": {
+          "meshes": 1,
+          "triangles": 1741,
+          "nativeBounds": [-0.058, 0, -0.009, 0.058, 0.107, 0.009]
+        },
+        "after": {
+          "meshes": 1,
+          "triangles": 1741,
+          "nativeBounds": [-5.487, 0, -0.824, 5.487, 10, 0.824]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 0.10659454345703125,
+          "targetHeight": 10,
+          "scale": 93.81343242987899,
+          "bounds": [-5.487, 0, -0.824, 5.487, 10, 0.824]
+        }
+      },
+      "optimized": {
+        "vertices": 5220,
+        "triangles": 1740,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      },
+      "delivery": "map"
+    },
+    {
+      "id": "lowpoly-rock-formation",
+      "path": "models/map-assets/rock-formation-2.glb",
+      "source": "0072 Lowpoly Style Ultra Pack 1.2 / RockFormation2.fbx",
+      "targetHeight": 5.2,
+      "bytes": 41348,
+      "metrics": {
+        "before": {
+          "meshes": 1,
+          "triangles": 1126,
+          "nativeBounds": [-0.082, 0, -0.09, 0.082, 0.105, 0.09]
+        },
+        "filtered": {
+          "meshes": 1,
+          "triangles": 1126,
+          "nativeBounds": [-0.082, 0, -0.09, 0.082, 0.105, 0.09]
+        },
+        "after": {
+          "meshes": 1,
+          "triangles": 1126,
+          "nativeBounds": [-4.035, 0, -4.455, 4.035, 5.2, 4.455]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 0.10522207975387574,
+          "targetHeight": 5.2,
+          "scale": 49.41928549752377,
+          "bounds": [-4.035, 0, -4.455, 4.035, 5.2, 4.455]
+        }
+      },
+      "optimized": {
+        "vertices": 3345,
+        "triangles": 1115,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      },
+      "delivery": "map"
+    }
+  ],
+  "floraAssets": [
+    {
+      "id": "lowpoly-asia-tree",
+      "path": "models/foliage/asia-tree.glb",
+      "source": "0072 Lowpoly Style Ultra Pack 1.2 / AsiaTree1.fbx",
+      "targetHeight": 8.6,
+      "bytes": 43292,
+      "metrics": {
+        "before": {
+          "meshes": 1,
+          "triangles": 1283,
+          "nativeBounds": [-0.068, 0, -0.063, 0.05, 0.127, 0.088]
+        },
+        "filtered": {
+          "meshes": 1,
+          "triangles": 1283,
+          "nativeBounds": [-0.068, 0, -0.063, 0.05, 0.127, 0.088]
+        },
+        "after": {
+          "meshes": 1,
+          "triangles": 1283,
+          "nativeBounds": [-3.997, 0, -5.106, 3.997, 8.6, 5.106]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 0.12708451271057128,
+          "targetHeight": 8.6,
+          "scale": 67.67150313261283,
+          "bounds": [-3.997, 0, -5.106, 3.997, 8.6, 5.106]
+        }
+      },
+      "optimized": {
+        "vertices": 3849,
+        "triangles": 1283,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      }
+    },
+    {
+      "id": "lowpoly-red-maple",
+      "path": "models/foliage/red-maple.glb",
+      "source": "0072 Lowpoly Style Ultra Pack 1.2 / RedMapleTree1.fbx",
+      "targetHeight": 8.1,
+      "bytes": 50364,
+      "metrics": {
+        "before": {
+          "meshes": 2,
+          "triangles": 1630,
+          "nativeBounds": [-0.056, -0.009, -0.052, 0.051, 0.156, 0.057]
+        },
+        "filtered": {
+          "meshes": 2,
+          "triangles": 1630,
+          "nativeBounds": [-0.056, -0.009, -0.052, 0.051, 0.156, 0.057]
+        },
+        "after": {
+          "meshes": 2,
+          "triangles": 1630,
+          "nativeBounds": [-2.656, 0, -2.682, 2.656, 8.1, 2.682]
+        },
+        "materials": 2,
+        "normalized": {
+          "nativeHeight": 0.1645334255695343,
+          "targetHeight": 8.1,
+          "scale": 49.230118269049335,
+          "bounds": [-2.656, 0, -2.682, 2.656, 8.1, 2.682]
+        }
+      },
+      "optimized": {
+        "vertices": 4380,
+        "triangles": 1460,
+        "meshes": 2,
+        "materials": 2,
+        "drawCalls": 1
+      }
+    },
+    {
+      "id": "lowpoly-asia-bush",
+      "path": "models/foliage/asia-bush.glb",
+      "source": "0072 Lowpoly Style Ultra Pack 1.2 / Bush1.fbx",
+      "targetHeight": 2.9,
+      "bytes": 20524,
+      "metrics": {
+        "before": {
+          "meshes": 1,
+          "triangles": 440,
+          "nativeBounds": [-1.609, -0.297, -1.053, 1.609, 2.575, 1.053]
+        },
+        "filtered": {
+          "meshes": 1,
+          "triangles": 440,
+          "nativeBounds": [-1.609, -0.297, -1.053, 1.609, 2.575, 1.053]
+        },
+        "after": {
+          "meshes": 1,
+          "triangles": 440,
+          "nativeBounds": [-1.625, 0, -1.064, 1.625, 2.9, 1.064]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 2.8711071014404297,
+          "targetHeight": 2.9,
+          "scale": 1.0100633301157853,
+          "bounds": [-1.625, 0, -1.064, 1.625, 2.9, 1.064]
+        }
+      },
+      "optimized": {
+        "vertices": 1317,
+        "triangles": 439,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      }
+    },
+    {
+      "id": "lowpoly-reed-big",
+      "path": "models/foliage/reed-big.glb",
+      "source": "0072 Lowpoly Style Ultra Pack 1.2 / ReedBig.fbx",
+      "targetHeight": 4.3,
+      "bytes": 28396,
+      "metrics": {
+        "before": {
+          "meshes": 1,
+          "triangles": 1200,
+          "nativeBounds": [-1.605, 0, -1.008, 1.605, 2.534, 1.008]
+        },
+        "filtered": {
+          "meshes": 1,
+          "triangles": 1200,
+          "nativeBounds": [-1.605, 0, -1.008, 1.605, 2.534, 1.008]
+        },
+        "after": {
+          "meshes": 1,
+          "triangles": 1200,
+          "nativeBounds": [-2.724, 0, -1.71, 2.724, 4.3, 1.71]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 2.5342954816296697,
+          "targetHeight": 4.3,
+          "scale": 1.6967240131110917,
+          "bounds": [-2.724, 0, -1.71, 2.724, 4.3, 1.71]
+        }
+      },
+      "optimized": {
+        "vertices": 3600,
+        "triangles": 1200,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      }
+    },
+    {
+      "id": "lowpoly-small-plant-1",
+      "path": "models/foliage/small-plant-1.glb",
+      "source": "0072 Lowpoly Style Ultra Pack 1.2 / SmallPlant1_LOD.fbx",
+      "targetHeight": 1.7,
+      "bytes": 26492,
+      "metrics": {
+        "before": {
+          "meshes": 3,
+          "triangles": 629,
+          "nativeBounds": [-0.636, -0.053, -0.914, 0.824, 0.853, 0.914]
+        },
+        "filtered": {
+          "meshes": 3,
+          "triangles": 629,
+          "nativeBounds": [-0.636, -0.053, -0.914, 0.824, 0.853, 0.914]
+        },
+        "after": {
+          "meshes": 3,
+          "triangles": 629,
+          "nativeBounds": [-1.37, 0, -1.716, 1.37, 1.7, 1.716]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 0.9055730700492859,
+          "targetHeight": 1.7,
+          "scale": 1.8772643050300484,
+          "bounds": [-1.37, 0, -1.716, 1.37, 1.7, 1.716]
+        }
+      },
+      "optimized": {
+        "vertices": 1887,
+        "triangles": 629,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      }
+    },
+    {
+      "id": "lowpoly-small-plant-2",
+      "path": "models/foliage/small-plant-2.glb",
+      "source": "0072 Lowpoly Style Ultra Pack 1.2 / SmallPlant2_LOD.fbx",
+      "targetHeight": 1.9,
+      "bytes": 34084,
+      "metrics": {
+        "before": {
+          "meshes": 3,
+          "triangles": 894,
+          "nativeBounds": [-1.183, -0.108, -0.97, 0.918, 0.916, 1.066]
+        },
+        "filtered": {
+          "meshes": 3,
+          "triangles": 894,
+          "nativeBounds": [-1.183, -0.108, -0.97, 0.918, 0.916, 1.066]
+        },
+        "after": {
+          "meshes": 3,
+          "triangles": 894,
+          "nativeBounds": [-1.949, 0, -1.889, 1.949, 1.9, 1.889]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 1.023936152458191,
+          "targetHeight": 1.9,
+          "scale": 1.8555844477593832,
+          "bounds": [-1.949, 0, -1.889, 1.949, 1.9, 1.889]
+        }
+      },
+      "optimized": {
+        "vertices": 2556,
+        "triangles": 852,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      }
+    },
+    {
+      "id": "poly-nature-beech",
+      "path": "models/foliage/beech-poly.glb",
+      "source": "Poly Nature Pack 1.0.0 / tree-beech-european-generic-mature-a",
+      "targetHeight": 7.8,
+      "bytes": 51816,
+      "metrics": {
+        "after": {
+          "vertices": 4924,
+          "triangles": 1661,
+          "meshes": 1,
+          "materials": 2,
+          "drawCalls": 1
+        },
+        "normalized": {
+          "targetHeight": 7.8,
+          "bounds": [-2.32784, 0, -2.27118, 2.32784, 7.8, 2.27118]
+        }
+      },
+      "optimized": {
+        "vertices": 4924,
+        "triangles": 1661,
+        "meshes": 1,
+        "materials": 2,
+        "drawCalls": 1
+      },
+      "delivery": "prebuilt-blender-glb"
+    },
+    {
+      "id": "poly-nature-willow",
+      "path": "models/foliage/willow-poly.glb",
+      "source": "Poly Nature Pack 1.0.0 / tree-willow-weeping-generic-mature-a",
+      "targetHeight": 7.4,
+      "bytes": 70472,
+      "metrics": {
+        "after": {
+          "vertices": 6406,
+          "triangles": 2138,
+          "meshes": 1,
+          "materials": 2,
+          "drawCalls": 1
+        },
+        "normalized": {
+          "targetHeight": 7.4,
+          "bounds": [-3.17877, 0, -2.92312, 3.17876, 7.4, 2.92312]
+        }
+      },
+      "optimized": {
+        "vertices": 6406,
+        "triangles": 2138,
+        "meshes": 1,
+        "materials": 2,
+        "drawCalls": 1
+      },
+      "delivery": "prebuilt-blender-glb"
+    },
+    {
+      "id": "poly-nature-cypress",
+      "path": "models/foliage/cypress-poly.glb",
+      "source": "Poly Nature Pack 1.0.0 / tree-cypress-mediterranean-generic-mature-a",
+      "targetHeight": 7.2,
+      "bytes": 34280,
+      "metrics": {
+        "after": {
+          "vertices": 2742,
+          "triangles": 918,
+          "meshes": 1,
+          "materials": 2,
+          "drawCalls": 1
+        },
+        "normalized": {
+          "targetHeight": 7.2,
+          "bounds": [-0.53431, 0, -0.5448, 0.53429, 7.16929, 0.5448]
+        }
+      },
+      "optimized": {
+        "vertices": 2742,
+        "triangles": 918,
+        "meshes": 1,
+        "materials": 2,
+        "drawCalls": 1
+      },
+      "delivery": "prebuilt-blender-glb"
+    },
+    {
+      "id": "poly-nature-dead-beech",
+      "path": "models/foliage/dead-beech-poly.glb",
+      "source": "Poly Nature Pack 1.0.0 / tree-beech-european-dry-dead-a",
+      "targetHeight": 6.8,
+      "bytes": 16180,
+      "metrics": {
+        "after": {
+          "vertices": 2139,
+          "triangles": 741,
+          "meshes": 1,
+          "materials": 1,
+          "drawCalls": 1
+        },
+        "normalized": {
+          "targetHeight": 6.8,
+          "bounds": [-1.37725, 0, -1.34529, 1.37725, 6.8, 1.34529]
+        }
+      },
+      "optimized": {
+        "vertices": 2139,
+        "triangles": 741,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      },
+      "delivery": "prebuilt-blender-glb"
+    },
+    {
+      "id": "poly-nature-dead-cypress",
+      "path": "models/foliage/dead-cypress-poly.glb",
+      "source": "Poly Nature Pack 1.0.0 / tree-cypress-mediterranean-dry-dead-a",
+      "targetHeight": 6.8,
+      "bytes": 8248,
+      "metrics": {
+        "after": {
+          "vertices": 958,
+          "triangles": 426,
+          "meshes": 1,
+          "materials": 1,
+          "drawCalls": 1
+        },
+        "normalized": {
+          "targetHeight": 6.8,
+          "bounds": [-0.39347, 0, -0.53624, 0.39347, 6.8, 0.53626]
+        }
+      },
+      "optimized": {
+        "vertices": 958,
+        "triangles": 426,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      },
+      "delivery": "prebuilt-blender-glb"
+    },
+    {
+      "id": "poly-nature-burdock",
+      "path": "models/foliage/burdock-poly.glb",
+      "source": "Poly Nature Pack 1.0.0 / bush-burdock-generic-mature-a",
+      "targetHeight": 1.05,
+      "bytes": 9992,
+      "metrics": {
+        "after": {
+          "vertices": 492,
+          "triangles": 196,
+          "meshes": 1,
+          "materials": 1,
+          "drawCalls": 1
+        },
+        "normalized": {
+          "targetHeight": 1.05,
+          "bounds": [-0.89105, 0, -0.88159, 0.89105, 1.05, 0.88159]
+        }
+      },
+      "optimized": {
+        "vertices": 492,
+        "triangles": 196,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      },
+      "delivery": "prebuilt-blender-glb"
+    }
+  ],
+  "budgets": {
+    "landmarkMaxTriangles": 60000,
+    "rockMaxTriangles": 4000,
+    "maxInitialLandmarks": 5,
+    "maxInitialRockInstances": 84,
+    "maxInitialLowpolyFloraInstances": 260
+  }
+}

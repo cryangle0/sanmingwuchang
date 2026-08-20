@@ -1,0 +1,79 @@
+﻿工程字段	唯一值 / 执行语义
+base_probabilities.PASSIVE.big	0.15
+base_probabilities.PASSIVE.flat	0.5
+base_probabilities.PASSIVE.loss	0.35
+base_probabilities.EQUIPMENT.big	0.15
+base_probabilities.EQUIPMENT.flat	0.4
+base_probabilities.EQUIPMENT.loss	0.45
+base_probabilities.ACTIVE.big	0.1
+base_probabilities.ACTIVE.flat	0.5
+base_probabilities.ACTIVE.loss	0.4
+base_probabilities.GOLD.big	0.1
+base_probabilities.GOLD.flat	0.4
+base_probabilities.GOLD.loss	0.5
+gambling_badge_probabilities.PASSIVE.big	0.3
+gambling_badge_probabilities.PASSIVE.flat	0.5
+gambling_badge_probabilities.PASSIVE.loss	0.2
+gambling_badge_probabilities.EQUIPMENT.big	0.3
+gambling_badge_probabilities.EQUIPMENT.flat	0.4
+gambling_badge_probabilities.EQUIPMENT.loss	0.3
+gambling_badge_probabilities.ACTIVE.big	0.2
+gambling_badge_probabilities.ACTIVE.flat	0.5
+gambling_badge_probabilities.ACTIVE.loss	0.3
+gambling_badge_probabilities.GOLD.big	0.2
+gambling_badge_probabilities.GOLD.flat	0.4
+gambling_badge_probabilities.GOLD.loss	0.4
+equipment_gold_pool	G1 / G2 / G3 / G4 / G5 / G6 / G7 / G8 / G9
+rng_stream	BLACK_MOUNTAIN
+server_atomic	是
+active_big_excludes.candidate_pool	ALL_38_EXCLUSIVE_ACTIVE_REFS_SORTED_BY_TYPED_REF
+active_big_excludes.excluded_ref	CURRENT_ACTIVE_IF_EXCLUSIVE_ELSE_CURRENT_HERO_DEFAULT_EXCLUSIVE
+active_big_excludes.draw	UNIFORM_FROM_REMAINING_37_USING_BLACK_MOUNTAIN_STREAM
+passive_candidate_empty	REJECT_AND_LOG_CONFIGURATION_ERROR
+P8_capacity_loss_order	LOCK_INPUT / RESOLVE_P8_EFFECT / DROP_MOST_RECENT_NON_OUTPUT_HAND_INSTANCE_IF_OVER_CAP / PLACE_OUTPUT
+regional_non_gambling_refinery.uses_per_player_per_match	3
+regional_non_gambling_refinery.recipes	3_WHITE_TO_UNIFORM_BLUE / 3_BLUE_TO_UNIFORM_PURPLE / 2_PURPLE_PLUS_2000_GOLD_TO_UNIFORM_G1_G9
+regional_non_gambling_refinery.G10_allowed	否
+regional_non_gambling_refinery.multi_select_required	是
+regional_non_gambling_refinery.input_sources	WORN_SLOTS / HAND_SLOTS
+regional_non_gambling_refinery.output	HAND_OR_WORN_IF_EXPLICITLY_SELECTED_AND_LEGAL_ELSE_PUBLIC_GROUND
+regional_non_gambling_refinery.partial_commit_allowed	否
+attempts_per_player_per_match	3
+P10_probability_snapshot	WORN_AT_CONFIRMATION_COMMIT; CHANGES_AFTER_COMMIT_DO_NOT_AFFECT_RESULT
+passive.input	ONE_NONEMPTY_OWNED_PASSIVE_SLOT
+passive.big	REPLACE_WITH_RANDOM_NOT_CURRENTLY_OWNED; LEVEL=MIN(5,OLD_LEVEL+1)
+passive.flat	REPLACE_WITH_RANDOM_NOT_CURRENTLY_OWNED; LEVEL=OLD_LEVEL
+passive.loss	REMOVE_INPUT_PASSIVE_AND_ALL_ITS_ENTITIES_AND_PERMANENT_LAYERS
+passive.candidate_excludes	OTHER_THREE_SLOTS_AND_INPUT_ID
+passive.empty_candidate_fallback	RETURN_INPUT_WITH_LEVEL_PLUS_ONE_CAPPED_5
+equipment.input_sources	WORN_3 / HAND_1_OR_2
+equipment.eligible_qualities	WHITE / BLUE / PURPLE
+equipment.big	WHITE_TO_RANDOM_BLUE; BLUE_TO_RANDOM_PURPLE; PURPLE_TO_RANDOM_G1_G9
+equipment.flat	RANDOM_DIFFERENT_ID_SAME_QUALITY; IF_EMPTY_RETURN_INPUT
+equipment.loss	DESTROY_INPUT
+equipment.output	ORIGINAL_SLOT_IF_LEGAL_ELSE_HAND_ELSE_PUBLIC_GROUND_AT_SHOP
+equipment.G10_allowed	否
+active.input	CURRENT_ACTIVE
+active.big	ONE_OF_37_EXCLUSIVE_BY_ACTIVE_BIG_EXCLUDES
+active.flat	UNIFORM_19_GENERIC_EXCLUDING_CURRENT_IF_GENERIC
+active.loss	CURRENT_HERO_DEFAULT_EXCLUSIVE
+active.all_results_start_full_cooldown	是
+gold_modes.DOUBLE.bet_min	500
+gold_modes.DOUBLE.bet_max	5000
+gold_modes.DOUBLE.step	100
+gold_modes.DOUBLE.cannot_exceed_balance	是
+gold_modes.DOUBLE.deduct_at_confirm	是
+gold_modes.DOUBLE.big_return_multiplier	2
+gold_modes.DOUBLE.flat_return_multiplier	1
+gold_modes.DOUBLE.loss_return_multiplier	0.5
+gold_modes.DOUBLE.fraction_round	FLOOR_GOLD
+gold_modes.PURPLE.bet	2000
+gold_modes.PURPLE.deduct_at_confirm	是
+gold_modes.PURPLE.big	CREATE_ONE_UNIFORM_PURPLE_EQUIPMENT
+gold_modes.PURPLE.flat_return_gold	2000
+gold_modes.PURPLE.loss_return_gold	1000
+gold_modes.PURPLE.output	HAND_ELSE_PUBLIC_GROUND
+transaction_order	LOCK_PLAYER_GAMBLE_COUNT_AND_INPUTS / REVALIDATE_SHOP_OPEN_BALANCE_OWNERSHIP_P10 / SNAPSHOT_PROBABILITIES / CONSUME_ONE_ATTEMPT / DEDUCT_OR_DESTROY_INPUT / DRAW_BLACK_MOUNTAIN_RNG / CREATE_RESULT / PLACE_RESULT / COMMIT_LEDGER_AND_REPLAY
+gold_modes.income_multiplier_application	G5_DOES_NOT_MULTIPLY_GROSS_RETURN; ONLY_NET_PROFIT_IF_POSITIVE_IS_ELIGIBLE_ONCE
+gold_modes.expected_return.base	0.85
+gold_modes.expected_return.P10	1.00

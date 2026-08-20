@@ -1,0 +1,151 @@
+﻿工程字段	唯一值 / 执行语义
+hero_offer.start_gold	500
+hero_offer.offer_count	3
+hero_offer.pool	38_HEROES_EQUAL_WEIGHT
+hero_offer.within_offer_unique	是
+hero_offer.duration_s	15
+hero_offer.timeout	LEFTMOST
+hero_offer.reroll_cost_gold	250
+hero_offer.reroll_while_balance_gte_cost	是
+hero_offer.across_rerolls_repeat_allowed	是
+hero_offer.pity	NONE
+hero_offer.rng_stream	HERO_DRAFT
+hero_offer.window_semantics	SELECTION_REQUEST_COMMIT_TICK_MUST_BE_BEFORE_TIMEOUT_TICK
+hero_offer.transaction_id	MATCH_ID:ACCOUNT_ID:HERO_DRAFT_REQUEST_UUID
+hero_offer.reroll_atomic	LOCK_PLAYER; REVALIDATE_WINDOW_AND_GOLD; DEDUCT_COST; CONSUME_ONE_HERO_DRAFT_RNG_DRAW_SEQUENCE; REPLACE_ALL_THREE_OFFERS; COMMIT
+hero_offer.timeout_vs_inflight	ONLY_ALREADY_COMMITTED_REROLL_OR_SELECTION_COUNTS; OTHERWISE_LEFTMOST_CURRENT_COMMITTED_OFFER
+hero_offer.duplicate_request	RETURN_IDEMPOTENT_RESULT_WITHOUT_SECOND_GOLD_OR_RNG_CONSUMPTION
+level.min	1
+level.max	15
+level.curve[0].from_level	1
+level.curve[0].to_level	2
+level.curve[0].xp_required	50
+level.curve[0].cumulative_xp	50
+level.curve[1].from_level	2
+level.curve[1].to_level	3
+level.curve[1].xp_required	70
+level.curve[1].cumulative_xp	120
+level.curve[2].from_level	3
+level.curve[2].to_level	4
+level.curve[2].xp_required	90
+level.curve[2].cumulative_xp	210
+level.curve[3].from_level	4
+level.curve[3].to_level	5
+level.curve[3].xp_required	110
+level.curve[3].cumulative_xp	320
+level.curve[4].from_level	5
+level.curve[4].to_level	6
+level.curve[4].xp_required	130
+level.curve[4].cumulative_xp	450
+level.curve[5].from_level	6
+level.curve[5].to_level	7
+level.curve[5].xp_required	155
+level.curve[5].cumulative_xp	605
+level.curve[6].from_level	7
+level.curve[6].to_level	8
+level.curve[6].xp_required	180
+level.curve[6].cumulative_xp	785
+level.curve[7].from_level	8
+level.curve[7].to_level	9
+level.curve[7].xp_required	210
+level.curve[7].cumulative_xp	995
+level.curve[8].from_level	9
+level.curve[8].to_level	10
+level.curve[8].xp_required	240
+level.curve[8].cumulative_xp	1235
+level.curve[9].from_level	10
+level.curve[9].to_level	11
+level.curve[9].xp_required	275
+level.curve[9].cumulative_xp	1510
+level.curve[10].from_level	11
+level.curve[10].to_level	12
+level.curve[10].xp_required	315
+level.curve[10].cumulative_xp	1825
+level.curve[11].from_level	12
+level.curve[11].to_level	13
+level.curve[11].xp_required	450
+level.curve[11].cumulative_xp	2275
+level.curve[12].from_level	13
+level.curve[12].to_level	14
+level.curve[12].xp_required	550
+level.curve[12].cumulative_xp	2825
+level.curve[13].from_level	14
+level.curve[13].to_level	15
+level.curve[13].xp_required	700
+level.curve[13].cumulative_xp	3525
+level.max_cumulative_xp	3525
+level.overflow_multi_level	是
+level.at_level_15	DISCARD_FUTURE_XP
+level.passive_trickle.xp	10
+level.passive_trickle.interval_s	10
+level.passive_trickle.eligible_states	ALIVE / TRUE_DEATH_RESOLVING / SOUL_FLIGHT / REVIVE_PROTECTION
+player_kill_rewards.gold_created	500 + 100*VICTIM_LEVEL + MIN(FLOOR(0.10*VICTIM_WALLET_SNAPSHOT),800)
+player_kill_rewards.victim_wallet_not_deducted	是
+player_kill_rewards.third_death_finisher_bonus_gold	500
+player_kill_rewards.xp_created	MIN(180,60+8*VICTIM_LEVEL)
+player_kill_rewards.assist_gold	0
+player_kill_rewards.assist_xp	MIN(60,20+3*VICTIM_LEVEL)
+player_kill_rewards.monster_or_world_final_blow	0
+life.initial_lives	3
+life.first_second_true_death	CONSUME_ONE_AND_REVIVE
+life.third_true_death	CONSUME_LAST_AND_ELIMINATE
+life.settlement_s	1
+life.true_death_reset.active	CURRENT_ACTIVE_READY
+life.true_death_reset.passive_internal_cooldowns	CONTINUE_REMAINING; NEVER_RESET_BY_TRUE_DEATH
+life.true_death_reset.temporary_status_dot_control	CLEAR
+life.true_death_reset.owner_entities	CLEAR
+life.true_death_reset.preserve	GOLD / LEVEL / XP / PASSIVE_LEVELS / EQUIPMENT / PERMANENT_LAYERS
+life.true_death_reset.equipment_temporary_effect_state	CLEAR_STACKS_TARGETS_INTERNAL_COOLDOWNS_STATIONARY_TIMERS_AND_OWNER_BOUND_ENTITIES
+life.true_death_reset.equipment_permanent_layers	PRESERVE_ONLY_WHEN_ITEM_EFFECT_EXPLICITLY_DECLARES_PERMANENT_LAYER
+life.true_death_reset.running_equipment_created_independent_dot	CONTINUES_ONLY_IF_EFFECT_CONTRACT_EXPLICITLY_SAYS_INDEPENDENT_AFTER_APPLICATION
+death_drop.first_second.drop	ALL_HAND_EQUIPMENT
+death_drop.first_second.worn	KEEP
+death_drop.third.drop	ALL_HAND_AND_ALL_THREE_WORN_EQUIPMENT
+death_drop.gold	NEVER_DROP
+death_drop.placement	RADIAL_8_DIRECTIONS_1_2_TO_2_5M; PROJECT_TO_GROUND_NAV; THEN_NEAREST_LEGAL_NAV_WITHIN_6M; ELSE NEAREST_GLOBAL_LEGAL_NAV_POINT_BY_NAV_DISTANCE_THEN_POINT_ID; NEVER_SPAWN_INSIDE_SOLID_OR_OFF_NAV
+death_drop.public_immediately	是
+death_drop.transaction_snapshot_before_scatter	是
+revive.soul_speed_mps	18
+revive.flight_duration_s	CLAMP(3,STRAIGHT_DISTANCE_M/18,10)
+revive.soul_collision	否
+revive.soul_invulnerable	是
+revive.soul_can_interact_or_cast	否
+revive.soul_vision_m	30
+revive.soul_does_not_reveal_hidden	是
+revive.revalidate_on_arrival	是
+revive.reroute_extra_cap_s	3
+revive.no_candidate_fallback	SAFE_ZONE_NAV_POINT_MAXIMIZING_MIN_NAV_DISTANCE_TO_ALL_LIVING_PLAYERS
+revive.hp_percent	100
+revive.protection_s	3
+revive.protection.damage_immunity	是
+revive.protection.cannot_basic_or_cast	是
+revive.protection.cannot_pickup_shop_open_chest_or_gamble	是
+revive.protection.movement_allowed	是
+revive.protection.enter_fushi_allowed	是
+revive.protection.ends_early_on_offensive_or_interaction_intent	是
+revive.protection.storm_not_target	是
+revive.protection.early_end_request_semantics	REMOVE_PROTECTION_AT_INPUT_VALIDATION_THEN_REVALIDATE_AND_EXECUTE_THE_SAME_REQUEST_WITHOUT_IMMUNITY; IF_REQUEST_OTHERWISE_ILLEGAL_IT_STILL_FAILS
+revive.protection.damage_event_same_tick_as_voluntary_break	PROTECTION_REMOVAL_COMMITS_BEFORE_CAST_OR_INTERACTION_COMMIT
+revive.soul_scouting.reveals_normal_nonhidden_world_information_inside_30M	是
+revive.soul_scouting.updates_personal_fog_memory	是
+revive.soul_scouting.can_mark_personally_seen_shop_until_that_shop_moves	是
+revive.soul_scouting.cannot_reveal_stealth_or_interact	是
+revive.arrival_timeout	BASE_FLIGHT_CLAMP_PLUS_AT_MOST_3S_REROUTE; THEN_USE_DETERMINISTIC_FALLBACK_AND_ARRIVE
+simultaneous_final.resolution	FINISH_ALL_COMMITTED_LETHAL_CHAINS_IN_TICK
+simultaneous_final.tie_if_all_remaining_eliminated	是
+simultaneous_final.tie_rank	ALL_PLACEMENT_1
+simultaneous_final.next_rank_skips_tie_count	是
+simultaneous_final.mmr_placement	AVERAGE_ORDINAL_OF_TIED_SLOTS
+simultaneous_final.prelethal_tiebreak_not_used	是
+player_kill_rewards.wallet_bonus_cap_gold	800
+player_kill_rewards.wallet_bonus_G5_eligible	否
+player_kill_rewards.assist_eligibility	NON_FINAL_BLOW_PLAYER_OWNER_WITH_ACTUAL_HP_OR_SHIELD_DAMAGE_OR_HARD_CONTROL_WITHIN_PREVIOUS_8S; UNIQUE_ONCE_PER_TRUE_DEATH
+revive.pool.before_12m	ALL_80_MAP_SPAWN_POINT_IDS / ALL_192_MAP_NODE_IDS; FILTER_CURRENT_SAFE_CIRCLE_AND_PHYSICAL_LEGALITY
+revive.pool.12m_to_15m	ALL_192_MAP_NODE_IDS; FILTER_CURRENT_SAFE_CIRCLE_AND_PHYSICAL_LEGALITY
+revive.pool.at_or_after_15m	SELECTED_FINAL_COURT_SIX_AUTHORED_REVIVE_POINT_IDS
+revive.strict_filters	OUTSIDE_STORM_AND_10S_PREDICTED_STORM / NAV_REACHABLE / NOT_IN_SOLID / NOT_IN_SHOP_PAD_BOSS_BODY_DYNAMIC_SOLID / DISTANCE_FROM_LIVING_PLAYER_GTE_18M / NO_DIRECT_LOS_FROM_LIVING_PLAYER_WITHIN_30M
+revive.score_lexicographic	LOWEST_DEATH_HEAT_30S / MAX_MIN_NAV_DISTANCE_TO_LIVING_PLAYERS / MAX_DISTANCE_TO_LAST_DEATH / POINT_ID_ASC
+revive.degraded_after_no_strict_candidate_s	3
+revive.degraded_filters	KEEP_PHYSICAL_STORM_AND_GTE_12M; DROP_LOS_REQUIREMENT; SAME_SCORE
+revive.fallback	SAFE_ZONE_NAV_POINT_MAXIMIZING_MIN_NAV_DISTANCE_THEN_POINT_ID_ASC
+revive.concurrent_assignment	TRUE_DEATH_COMMIT_ORDER; RESERVED_POINT_BLOCKS_LATER_ASSIGNMENT_WITHIN_6M_UNTIL_ARRIVAL_OR_REROUTE

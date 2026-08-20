@@ -1,0 +1,16 @@
+﻿工程字段	唯一值 / 执行语义
+cycle.METAL	WOOD
+cycle.WOOD	EARTH
+cycle.EARTH	WATER
+cycle.WATER	FIRE
+cycle.FIRE	METAL
+multiplier_if_attacker_counters_target	1.5
+multiplier_otherwise	1
+no_defender_side_reduction	是
+mixed_origin_pearl_G2_if_owner_attacks_and_counters	2
+G2_does_not_amplify_incoming_counter_damage	是
+player_vs_player	ALL_NORMAL_BASIC_SKILL_DOT_DAMAGE_INHERITS_ATTACKER_ELEMENT; TRUE_PERCENT_STORM_REFLECT_USE_NONE
+monster_classes_with_element	PIG / DRAGON
+monster_classes_without_element	ORDINARY_MELEE / ORDINARY_RANGED / FLYING / LEADER / CORE_BOSS
+dragon_and_pig_outgoing	BASIC_AND_ALL_ABILITIES_INHERIT_MONSTER_ELEMENT
+bidirectional_example	WATER_PLAYER_TO_FIRE_DRAGON_X1_5; FIRE_DRAGON_TO_WATER_PLAYER_X1_0

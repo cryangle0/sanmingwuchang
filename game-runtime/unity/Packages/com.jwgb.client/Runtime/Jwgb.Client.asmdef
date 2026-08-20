@@ -1,0 +1,15 @@
+{
+  "name": "Jwgb.Client",
+  "rootNamespace": "Jwgb.Client",
+  "references": [
+    "Jwgb.Core",
+    "Jwgb.Content",
+    "Jwgb.Sim",
+    "Jwgb.Netcode",
+    "Unity.Collections",
+    "Unity.Entities",
+    "Unity.NetCode",
+    "Unity.Networking.Transport"
+  ],
+  "autoReferenced": true
+}

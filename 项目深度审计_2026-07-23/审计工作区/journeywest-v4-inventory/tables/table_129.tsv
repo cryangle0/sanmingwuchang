@@ -1,0 +1,18 @@
+﻿工程字段	唯一值 / 执行语义
+MonsterSkillShape.closed_enum	CIRCLE / CONE / LINE / LINE_CAPSULE / THREE_PARALLEL_LINES / THREE_RADIAL_LANES_WITH_ONE_GAP / SINGLE_TARGET_CHAIN / NONE
+MonsterSkillShape.CIRCLE.required	radius_m
+MonsterSkillShape.CONE.required	range_m / angle_deg
+MonsterSkillShape.LINE.required	length_m / width_m
+MonsterSkillShape.LINE_CAPSULE.required	length_m / width_m / height_m
+MonsterSkillShape.THREE_PARALLEL_LINES.required	length_m / width_m / gap_m
+MonsterSkillShape.THREE_RADIAL_LANES_WITH_ONE_GAP.required	length_m / width_m / lane_count=3 / gap_lane_random_stream=MONSTER_AI
+MonsterSkillShape.SINGLE_TARGET_CHAIN.required	jumps / jump_range_m / decay_percent_per_jump
+monster_skill.cd_phase_multiplier.LEADER	1 / 1 / 0.95 / 0.90（0/5/10/15分钟阶段；Q4存储）
+monster_skill.cd_phase_multiplier.DRAGON_MINIBOSS	1 / 1 / 0.90 / 0.85
+monster_skill.cd_phase_multiplier.CORE_BOSS	1 / 1 / 0.90 / 0.85
+monster_skill.fixed_damage_phase_scaling	技能固定伤害×该原型攻击阶段倍率（11.2表攻击阶段倍率列）；四舍五入禁止，FLOOR落地
+monster_basic.DRAGON.windup_recover_s	0.45 / 0.25
+monster_basic.CORE_BOSS.windup_recover_s	0.60 / 0.35
+monster_basic.runtime_authority	11.2机械原型两表（数值/物理与形态列）为怪物普攻唯一权威；本表仅补充龙王与核心前后摇
+MonsterSkillShape.NONE.required	无几何字段（召唤/状态类技能）
+CORE_V6.body_damage_spec	已删除；本体施法不产生伤害事件，普攻伤害规格由E.34 CORE_MIRROR载荷唯一声明

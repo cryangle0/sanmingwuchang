@@ -1,0 +1,45 @@
+﻿被动ID	H009允许翻倍字段	变换类型
+B01	slow_percent / l5_aoe_slow_percent	ADDITIVE_MAGNITUDE
+B02	NONE	EXCLUDED_CONTROL_DURATION
+B03	knockback_m / l5_aoe_knockback_m	ADDITIVE_MAGNITUDE
+B04	basic_miss_percent	ADDITIVE_MAGNITUDE
+B05	NONE	EXCLUDED_CONTROL_DURATION_AND_PROC
+B06	critical_damage_percent / l5_ignore_shield_percent	ADDITIVE_MAGNITUDE
+B07	splash_damage_percent	ADDITIVE_MAGNITUDE
+B08	lost_hp_damage_percent	ADDITIVE_MAGNITUDE
+B09	damage_per_stack_s / l5_full_stack_damage_multiplier	ADDITIVE_OR_DELTA_FROM_ONE
+B10	damage_multiplier / l5_kill_heal_max_hp_percent	DELTA_FROM_ONE_OR_ADDITIVE
+B11	NONE	EXCLUDED_CHANCE_AND_COUNT
+B12	summon_hp / summon_attack	ADDITIVE_MAGNITUDE
+B13	contact_damage	ADDITIVE_MAGNITUDE
+B14	damage	ADDITIVE_MAGNITUDE
+B15	l5_move_speed_percent	ADDITIVE_MAGNITUDE
+B16	reduction	ADDITIVE_MAGNITUDE
+B17	shield / l5_break_aoe_damage	ADDITIVE_MAGNITUDE
+B18	attack_percent_per_missing_10pct_hp / l5_lifesteal_percent	ADDITIVE_MAGNITUDE
+B19	NONE	EXCLUDED_LETHAL_PROTECTION
+B20	NONE	EXCLUDED_LETHAL_PROTECTION
+B21	hp_per_s / l5_first_basic_damage_multiplier	ADDITIVE_OR_DELTA_FROM_ONE
+B22	actual_hp_plus_shield_damage_percent	ADDITIVE_MAGNITUDE
+B23	counter_damage_attack_coefficient	ADDITIVE_MAGNITUDE
+B24	heal_percent_actual_hp_plus_shield_damage / l5_reflect_pre_overheal_conversion_percent	ADDITIVE_MAGNITUDE
+B25	next_basic_damage_multiplier / l5_attack_speed_percent	DELTA_FROM_ONE_OR_ADDITIVE
+B26	damage_multiplier	DELTA_FROM_ONE
+B27	move_speed_percent	ADDITIVE_MAGNITUDE
+B28	move_speed_toward_target_percent / l5_damage_multiplier	ADDITIVE_OR_DELTA_FROM_ONE
+B29	damage_multiplier	DELTA_FROM_ONE
+B30	slow_percent / l5_explosion_damage	ADDITIVE_MAGNITUDE
+B31	l5_heal_percent_transferred_gold	ADDITIVE_MAGNITUDE
+B32	NONE	EXCLUDED_ECONOMY
+B33	NONE	EXCLUDED_ECONOMY_AND_CHANCE
+B34	NONE	EXCLUDED_ECONOMY
+B35	NONE	EXCLUDED_ECONOMY
+B36	move_speed_percent_per_stack / l5_full_stack_basic_extra_damage_move_speed_value_percent	ADDITIVE_MAGNITUDE
+B37	heal / aoe_damage	ADDITIVE_MAGNITUDE
+B38	incoming_damage_remaining_multiplier / l5_heal_max_hp_percent_per_s	REMAINING_FROM_ONE_OR_ADDITIVE
+B39	statue_hp / l5_destroy_aoe_damage	ADDITIVE_MAGNITUDE
+B40	NONE	EXCLUDED_PERMANENT_GROWTH
+B41	NONE	EXCLUDED_ECONOMY_AND_DURATION
+B42	l5_move_speed_percent	ADDITIVE_MAGNITUDE
+B43	move_speed_percent / l5_basic_damage_multiplier	ADDITIVE_OR_DELTA_FROM_ONE
+B44	damage	ADDITIVE_MAGNITUDE

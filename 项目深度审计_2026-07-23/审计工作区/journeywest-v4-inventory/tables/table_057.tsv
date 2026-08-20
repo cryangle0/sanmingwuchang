@@ -1,0 +1,36 @@
+﻿工程字段	唯一值 / 执行语义
+server_tick_hz	20
+rate_limits_per_s.movement	20
+rate_limits_per_s.basic_attack	12
+rate_limits_per_s.cast_cancel	10
+rate_limits_per_s.interact	8
+rate_limits_per_s.transaction	4
+replay.normal_retention_days	7
+replay.flagged_retention_days	180
+replay.snapshot_interval_s	5
+replay.report_pre_seconds	60
+replay.report_post_seconds	15
+replay.deterministic_hash_required_for_punishment	是
+replay.hash_algorithm	BLAKE3_CHAINED_CANONICAL_EVENTS
+replay.stores_ruleset_hash	是
+replay.stores_rng_draw_ordinals	是
+spectator.entry_delay_s	5
+spectator.show_private_minimap	否
+spectator.show_private_inventory	否
+spectator.free_camera	否
+preteam_review.minimum_repeat_matches	5
+preteam_review.single_match_cooperation_legal	是
+preteam_review.automatic_punishment	否
+report_categories	CHEAT / REPEATED_PRETEAM / OFFENSIVE_NAME / EXPLOIT / OTHER
+client_authoritative_fields	NONE
+appeal_required	是
+movement_tolerance.window_s	1
+movement_tolerance.cumulative_extra_m	0.7
+movement_tolerance.not_granted_per_tick	是
+evidence_pack.contents	回放段(前60s后15s) / 判定规则版本 / 检测器输出 / RNG序数 / 服务器tick区间 / 处罚决定链
+evidence_pack.retention_days	180；与flagged回放同期
+appeal.states	SUBMITTED → AUTO_RECHECK → HUMAN_REVIEW → UPHELD | OVERTURNED；每次迁移落档并通知
+appeal.human_review_required_for	任何账号级处罚（封禁/降信誉）；对局内自动踢出可仅自动复核
+appeal.overturn_transaction	撤销处罚原子恢复：信誉分 / 段位 / 被扣发奖励；恢复记录进不可变审计账本
+appeal.deadline_days	30；超期归档不再受理
+residual_risk.spectator_voice_relay	已接受：5秒观战延迟无法阻止场外语音报点；不因此限制玩家自由；不再追加限制

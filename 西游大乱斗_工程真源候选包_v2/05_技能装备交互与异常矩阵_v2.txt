@@ -1,0 +1,65 @@
+═══════════════════════════════════════════════════════════════════
+      05 · 技能装备交互与异常矩阵 v2 （P0-10伤害标签重构版）
+═══════════════════════════════════════════════════════════════════
+取代v1单一标签制。五个正交字段, 每次伤害事件必须五字段齐全:
+
+【1 五字段定义】
+DamageForm:    NORMAL(普攻) / SKILL / DOT / TRUE / PCT(百分比生命)
+SourceFaction: PLAYER / MONSTER / ENVIRONMENT
+Delivery:      MELEE / PROJECTILE / GROUND_AOE / REFLECT / AURA
+CreditOwner:   玩家ID / 怪物ID / ENV(无归属)
+TriggerMask:   位集{ON_HIT, ON_STRUCK, LIFESTEAL, REFLECTABLE,
+               ELEM(吃五行), MITIGABLE(吃减伤), SHIELDABLE(护盾可吸)}
+
+【2 核心事件五字段表】
+事件            Form    Faction  Delivery    Credit   TriggerMask
+玩家普攻        NORMAL  PLAYER   MELEE/PROJ  玩家     全开
+玩家技能        SKILL   PLAYER   按技能      玩家     ON_STRUCK+ELEM*+MITIG+SHIELD (ON_HIT仅普攻类)
+玩家DoT每跳     DOT     PLAYER   AURA        玩家     ON_STRUCK不触发受击被动(每跳), ELEM✓ MITIG✓ SHIELD✓; 快照刷新≤1/s
+砸钱(真伤)      TRUE    PLAYER   PROJ        玩家     ELEM✗ MITIG✗ SHIELD✓(补完稿4.3)
+倒马毒引爆      PCT     PLAYER   AURA        玩家     ELEM✗ MITIG✓ SHIELD✓
+反伤/荆棘       NORMAL  PLAYER   REFLECT     反弹者   REFLECTABLE✗(不再反弹) ON_HIT✗ LIFESTEAL✗; 击杀=反弹者击杀(对玩家或怪物均成立)
+召唤物攻击      NORMAL  PLAYER   MELEE       主人     全开; 伤害玩家时主人暴露3s
+★怪物普攻/技能  NORMAL/SKILL MONSTER 按怪     怪物     ON_STRUCK✓(受击被动/反伤/吸收正常触发!) LIFESTEAL对玩家无 ELEM: 仅五行猪/龙王✓ MITIG✓ SHIELD✓
+  怪物击杀玩家 = 怪物击杀(CreditOwner=怪物ID, 玩家0收益, 锁定项)
+  反伤对怪物伤害: Form=REFLECT Credit=玩家 → 反伤打死怪=玩家PVE击杀✓
+★天劫雷击       PCT     ENVIRONMENT GROUND  ENV      ON_STRUCK✗ ELEM✗ MITIG✗(避雷类文本例外) SHIELD✓ 无敌可挡
+★灭世雷暴       PCT     ENVIRONMENT GROUND  ENV      同上, 无眩晕, 每秒递增; BOSS受50%
+肥猪顶撞        NORMAL  MONSTER  MELEE      怪物     ON_STRUCK✓ ELEM✓(五行猪双向) MITIG✓
+
+【3 由字段推出的通则(取代v1通则, 修正2条)】
+G1 REFLECT不再触发REFLECT(字段自锁) ✓
+G2 DOT吃五行/百分比减伤/固定减伤(MITIG✓), 每跳不触发受击被动——
+   与v1"G01 DoT免固定减伤"不同: v2统一走MITIG, 虎皮裙克DoT登记为
+   已知克制关系(坦克身份), 非bug
+G3 怪物伤害触发玩家受击链(修正v1把怪物混入ENV导致受击被动对怪失效的
+   潜在bug——这是审计P0-10指出的真实交互隐患)
+G4 ENV伤害不触发受击链/不可反弹/不吃五行; 只有护盾与无敌可对抗
+G5 击杀归属=CreditOwner字段唯一裁定; 怪物补刀=怪物击杀(锁定项);
+   拉怪害人时怪物击杀无人得利; 反伤击杀归反弹者
+G6 五行ELEM位: 仅 PLAYER↔五行猪/龙王 双向开启; 其余一律关闭
+G7 暴击: 默认×2.0, 磨刀石×2.3, B06按等级1.8-2.3, 多源取最高;
+   仅NORMAL与文本明示技能可暴击(冷箭是SKILL例外)
+
+【4 显式例外登记(v1的E1-E20迁移, 修正3条)】
+E1冷箭SKILL可暴击 E2轮盘无增伤不暴击 E3潜行拾取不显形
+E4暴击取最高(见G7) E5羊灵之光/金光石化=无敌态(UI警示)
+E6砸钱SHIELD✓(补完稿覆盖旧文本"无视一切", 技能表需改行)
+E7偷钱为转移金币, 不触发利息/聚宝盆 E8倒马毒PCT字段
+E9八卦炉火/五行山可盲放, 预警圈双方可见 E10分身不继承被动
+E11金刚琢区域沉默=软控不触发逆境 E12(修正)拉怪害人: 怪物伤害
+Faction=MONSTER Credit=怪物, ON_STRUCK对被害玩家正常触发(v1把它标ENV
+导致受击被动失效, 已纠正) E13噬魂戒层数绑装备/强韧绑玩家
+E14布袋双格全掉(后放入者落脚下) E15金丹触发即消失槽位空, 假死优先
+E16换英雄非净化(通用CD继续/负面保留/血量%保留) E17真死才重置CD
+(假死/金丹/被动复活不重置——补完稿6.2/6.3) E18(修正)天劫=PCT+ENV,
+反伤不弹天劫(G4), 但怪物攻击可被反伤(G3) E19雷暴杀BOSS金币经验无人得,
+装备照落 E20飞行/闪现按墙体标签: BOUND禁, VAULT允, BREACH墙洞=可破坏
+通道(地图新增实体) E21(新)灭世雷暴期间BOSS真视/伏石/隐身全部正常(锁定项)
+
+【5 自动化测试映射】
+字段笛卡尔生成用例: 每(Form×Faction)组合×(受击链/归属/五行/减伤/护盾/
+致死链)六断言; 06数据字典事件表补五字段列; 11号P0用例T-02改为
+"反伤不弹天劫但弹怪物攻击"双向断言; 新增T-36怪物击杀玩家归属、
+T-37反伤击杀怪物归属玩家、T-38五行猪双向克制字段验证。
+═══════════════════════════════════════════════════════════════════

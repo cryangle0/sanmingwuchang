@@ -1,0 +1,49 @@
+﻿ID	名称	品质	属性	效果	买价	卖价	商店
+W1	精铁棍	白	ATTACK_FLAT=15	type=NONE	600	240	是
+W2	粗布战衣	白	MAX_HP_FLAT=220	type=NONE	600	240	是
+W3	草鞋	白	MOVE_SPEED_FLAT=18	type=SHOE_ONLY	600	240	是
+W4	铜护腕	白	ATTACK_FLAT=10；MAX_HP_FLAT=100	type=NONE	600	240	是
+W5	轻甲背心	白	MAX_HP_FLAT=110；MOVE_SPEED_FLAT=10	type=NONE	600	240	是
+W6	行者束带	白	ATTACK_FLAT=8；MOVE_SPEED_FLAT=10	type=NONE	600	240	是
+B1	狼牙棒	蓝	ATTACK_FLAT=20	type=DAMAGE_MULTIPLIER；target_classes=ORDINARY_MONSTER / FLYING_MONSTER / PIG / LEADER / DRAGON / CORE_BOSS；multiplier=1.3	2000	800	是
+B2	虎皮裙	蓝	MAX_HP_FLAT=280	type=FIXED_DAMAGE_REDUCTION；eligible_damage_forms=BASIC；amount=8；minimum_final_damage=1	2000	800	是
+B3	避水珠	蓝	MAX_HP_FLAT=200	type=PERCENT_DAMAGE_REDUCTION；eligible_damage_forms=SKILL / DOT；remaining_multiplier=0.85	2000	800	是
+B4	定风珠	蓝	MAX_HP_FLAT=200	type=FORCED_MOVEMENT_DISTANCE_MULTIPLIER；eligible=KNOCKBACK / PULL；multiplier=0.5	2000	800	是
+B5	药葫芦	蓝	MAX_HP_FLAT=150	type=REGEN；out_of_any_combat_s=5；hp_per_s=8；tick_s=1	2000	800	是
+B6	磨刀石	蓝	ATTACK_FLAT=12	type=CRIT_DAMAGE_BONUS；add_percentage_points=30	2000	800	是
+B7	铜镜	蓝	MAX_HP_FLAT=200	type=CONDITIONAL_BONUS_DAMAGE_REDUCTION；bonus_sources=BACKSTAB_B26 / AMBUSH_B29；bonus_portion_multiplier=0.5	2000	800	是
+B8	聚宝袋	蓝	MAX_HP_FLAT=120	type=ON_MONSTER_KILL_GOLD_CREATE；amount=30；eligible=ORDINARY_MONSTER / FLYING_MONSTER / PIG / LEADER / DRAGON / CORE_BOSS；summon_kill=否	2000	800	是
+B9	夜巡灯	蓝	ATTACK_FLAT=10	type=DIRECT_VISION_RADIUS_MULTIPLIER；multiplier=1.2；does_not_ignore_walls_or_stealth=是	2000	800	是
+B10	驭兽鞭	蓝	ATTACK_FLAT=12	type=SUMMON_ATTACK_MULTIPLIER；multiplier=1.3	2000	800	是
+B11	避雷木牌	蓝	MAX_HP_FLAT=200	type=STORM_DAMAGE_REDUCTION；remaining_multiplier=0.7；applies=NORMAL_STORM / APOCALYPSE_STORM	2000	800	是
+B12	千里靴	蓝	MOVE_SPEED_FLAT=26	type=SHOE_ONLY	2000	800	是
+B13	登云履	蓝	MOVE_SPEED_FLAT=20	type=SLOW_MAGNITUDE_MULTIPLIER；multiplier=0.5；is_shoe=是	2000	800	是
+B14	蛰伏靴	蓝	MOVE_SPEED_FLAT=20	type=OFFENSIVE_STEALTH_BREAK_MOVE_SPEED；is_shoe=是；eligible_transition=STEALTH_TO_VISIBLE；eligible_causes=OWNER_BASIC_RELEASE_AGAINST_HOSTILE / OWNER_HOSTILE_ACTIVE_CAST_COMMIT；excluded_causes=REVEALED_BY_ENEMY / ACTUAL_DAMAGE_TAKEN / VOLUNTARY_CANCEL / STEALTH_TIMEOUT；final_move_speed_multiplier=1.3；duration_s=2；internal_cooldown_s=8；once_per_stealth_episode=是；stacking=REFRESH_DURATION_NO_MAGNITUDE_STACK；eligible_hidden_sources=FUSHI_HIDDEN / ACTIVE_STEALTH / EQUIPMENT_STEALTH；excluded_hidden_sources=FOG_OF_WAR_ONLY / SMOKE_OCCLUSION_ONLY；hostile_active_definition=ACTIVE_COMMIT_THAT_TARGETS_HOSTILE_OR_CREATES_PLAYER_OWNED_DAMAGE_CONTROL_TRAP_OR_HOSTILE_SUMMON；clear_speed_buff_on=UNEQUIP_B14 / OWNER_TRUE_DEATH / ITEM_INSTANCE_DESTROYED；internal_cooldown_on_unequip_or_true_death=CLEAR_WITH_ITEM_EFFECT_STATE	2000	800	是
+P1	七星剑	紫	ATTACK_FLAT=35	type=CONDITIONAL_DAMAGE_MULTIPLIER；condition=TARGET_CURRENT_HP_PERCENT_LT_30；multiplier=1.25	6000	2400	是
+P2	火尖枪	紫	ATTACK_FLAT=28	type=BASIC_ON_HIT_DOT；damage_per_s=20；duration_s=2；tick_s=1；refresh_not_stack=是；damage_form=DOT；inherits_element=是	6000	2400	是
+P3	幌金绳	紫	ATTACK_FLAT=18	type=OWNER_HARD_CONTROL_DURATION_ADD；seconds=0.5；does_not_apply_to_soft_control=是	6000	2400	是
+P4	人参果	紫	MAX_HP_FLAT=400	type=ON_ENEMY_PLAYER_TRUE_DEATH_HEAL；max_hp_percent=30；overheal_discarded=是	6000	2400	是
+P5	万年灵芝	紫	MAX_HP_FLAT=500	type=REGEN；out_of_combat_required=否；hp_per_s=8；tick_s=1	6000	2400	是
+P6	风袋	紫	MAX_HP_FLAT=200	type=ACTIVE_COOLDOWN_RATE；remaining_time_multiplier_on_equip=0.8；cooldown_duration_multiplier=0.8；preserve_remaining_percent=是	6000	2400	是
+P7	招魂幡	紫	ATTACK_FLAT=18	type=SUMMON_HP_AND_ATTACK_MULTIPLIER；multiplier=1.6	6000	2400	是
+P8	布袋	紫	NONE	type=EXTRA_HAND_SLOT；amount=1	6000	2400	是
+P9	照妖珠	紫	MAX_HP_FLAT=250	type=TRUE_SIGHT；radius_m=20；walls_block=是；shared_with_others=否	6000	2400	是
+P10	赌坊金牌	紫	MAX_HP_FLAT=150	type=BLACK_MOUNTAIN_OUTCOME_OVERRIDE；probability_authority=§12.5及§E.18黑山规则；rule=BIG_WIN_DOUBLES_FROM_BASE; FLAT_UNCHANGED; INCREASE_DEDUCTED_FROM_LOSS；service_active_condition=HEISHAN_SERVICE_OPEN_AT_EFFECT_EVALUATION_TICK；after_service_close=EXISTING_ITEM_RETAINS_MAX_HP_150_AND_CAN_BE_WORN_HELD_DROPPED_OR_SOLD; SPECIAL_EFFECT_DORMANT；new_random_generation_eligibility=HEISHAN_SERVICE_OPEN_AT_GENERATION_COMMIT_TICK；time_authority=§12.3及§E.17商店规则=HEISHAN].windows_s_half_open	6000	2400	是
+P11	判官笔	紫	ATTACK_FLAT=25	type=ON_ENEMY_PLAYER_TRUE_DEATH_ACTIVE_READY；ready=是；kill_during_committed_cast=CAST_CONTINUES；post_cast_cooldown=READY；kill_during_cooldown=READY	6000	2400	是
+P12	荆棘甲	紫	MAX_HP_FLAT=400	type=REFLECT；eligible_damage_forms=BASIC；actual_post_mitigation_damage_percent=20；cannot_trigger_reflect=是	6000	2400	是
+P13	夜行斗篷	紫	MOVE_SPEED_FLAT=25	type=STATIONARY_STEALTH；stationary_required_s=2；breaks_on=MOVE_OVER_0_1M / ATTACK / CAST / ACTUAL_DAMAGE_TAKEN；walls_normal=是；forced_displacement_over_m=0.1_BREAKS；camera_or_facing_rotation=DOES_NOT_BREAK；position_noise_under_or_equal_m=0.1_DOES_NOT_BREAK	6000	2400	是
+P14	血玉葫芦	紫	ATTACK_FLAT=25	type=BASIC_LIFESTEAL；actual_hp_damage_percent=10；does_not_heal_from_shield_damage=是	6000	2400	是
+P15	疾风靴	紫	MOVE_SPEED_FLAT=30	type=SLOW_IMMUNITY；is_shoe=是	6000	2400	是
+P16	连珠履	紫	MOVE_SPEED_FLAT=24	type=BASIC_SAME_TARGET_ATTACK_SPEED_STACK；is_shoe=是；eligible_hit=OWNER_BASIC_POST_IMMUNITY_HP_OR_SHIELD_DAMAGE_GT_ZERO；attack_speed_percent_per_stack=4；maximum_stacks=6；maximum_attack_speed_percent=24；duration_s=3；refresh_on_eligible_hit=是；hit_different_target=CLEAR_OLD_STACKS_THEN_ADD_ONE_STACK_TO_NEW_TARGET；target_true_death_or_invalid=CLEAR_IMMEDIATELY；summon_dot_reflect_and_equipment_procs=INELIGIBLE；B11_extra_basic=ELIGIBLE_IF_POST_IMMUNITY_HP_OR_SHIELD_DAMAGE_GT_ZERO；proc_generated_non_basic_damage=INELIGIBLE；each_damage_event_maximum_stack_gain=1；clear_on=UNEQUIP_P16 / OWNER_TRUE_DEATH / ITEM_INSTANCE_DESTROYED / TARGET_TRUE_DEATH_OR_INVALID / DURATION_TIMEOUT	6000	2400	是
+P17	摘星靴	紫	MOVE_SPEED_FLAT=22	type=BASIC_ATTACK_RANGE_FLAT；is_shoe=是；meters=0.7；owner_basic_only=是；active_and_summon_unchanged=是；direct_visibility_and_release_revalidation_still_required=是；applies_at=BASIC_TARGET_ACQUIRE / BASIC_RELEASE_RANGE_REVALIDATION；does_not_extend_projectile_lifetime_or_homing_distance=是	6000	2400	是
+P18	磐岩履	紫	MOVE_SPEED_FLAT=24	type=HARD_CONTROL_AND_FORCED_MOVEMENT_RESIST；is_shoe=是；forced_movement_distance_multiplier=0.3；eligible_forced_movement=KNOCKBACK / PULL / KNOCKUP / THROW；hard_control_duration_multiplier=0.3；eligible_hard_control=STUN / FREEZE / PETRIFY / ROOT / FEAR / TRANSFORM / KNOCKUP；excluded_soft_control=SLOW / SILENCE；hard_control_minimum_duration_s=0.3；same_category_resistance_stacking=TAKE_STRONGEST_LOWEST_MULTIPLIER；duration_order=MAX_0_30S((BASE_DURATION + SOURCE_FLAT_EXTENSION) * TARGET_STRONGEST_MULTIPLIER)；minimum_applies_only_if_pre_resistance_duration_gt_zero=是；immunity_or_cleanse_zero_stays_zero=是；forced_movement_minimum_distance_m=0；airborne_control_uses=KNOCKUP_CONTROL_DURATION_AND_KNOCKUP_FORCED_MOVEMENT_DISTANCE_BOTH_RESOLVE_ONCE；clear_state_on_unequip=NO_PERSISTENT_STATE; REEVALUATE_ONLY_FUTURE_CONTROL_APPLICATIONS	6000	2400	是
+G1	九转金丹	金	NONE	type=LETHAL_PROTECTION_CONSUMABLE；priority_after=B20；hp_percent=100；invulnerable_s=2；consume_item=是；consume_life=否	不售	4000	否
+G2	混元珠	金	ATTACK_FLAT=25	type=ELEMENT_COUNTER_MULTIPLIER_OVERRIDE；normal=1.5；owner_countering_target=2；incoming_unchanged=是	不售	4000	否
+G3	渡劫铃	金	MAX_HP_FLAT=350	type=STORM_DAMAGE_REDUCTION；remaining_multiplier=0.3；applies=NORMAL_STORM / APOCALYPSE_STORM	不售	4000	否
+G4	筋斗云	金	MOVE_SPEED_FLAT=40	type=FLIGHT_OUT_OF_COMBAT；out_of_any_combat_s=5；capsule_bottom_height_m=3；land_on_any_actual_damage_dealt_or_received=是；is_shoe=是；world_interaction=AUTO_LAND_BEFORE_PICKUP_SHOP_CHEST_GAMBLE_TAIBAI；combat_active_cast_does_not_auto_land_unless_damage_dealt=是；no_legal_landing_within_6m=INTERACTION_FAILS_KEEP_FLYING_NO_COST_NO_UI	不售	4000	否
+G5	聚宝盆	金	NONE	type=ALL_GOLD_INCOME_MULTIPLIER；multiplier=1.5；eligible_ledger_classes=G5_EXACT_LEDGER_WHITELIST；bonus_ledger_class=GOLD_CREATE_G5_BONUS；does_not_reapply_to_own_bonus=是；excludes=BLACK_MOUNTAIN_GROSS_RETURN / PLAYER_KILL_WALLET_BONUS / REFUND / ROLLBACK；black_mountain_only_positive_net_profit_eligible_once=是	不售	4000	否
+G6	降魔杵	金	ATTACK_FLAT=60	type=CONDITIONAL_DAMAGE_MULTIPLIER；condition=TARGET_CURRENT_HP_GREATER_THAN_OWNER_CURRENT_HP_AT_DAMAGE_SNAPSHOT；multiplier=1.25	不售	4000	否
+G7	顺风耳	金	MAX_HP_FLAT=300	type=GLOBAL_ACTIVE_CAST_PING；enemy_active_cast_only=是；minimap_exact_cast_position_snapshot_s=1；does_not_grant_vision_or_lock=是；coalesce_window_s=0.25；coalesce_spatial_cell_m=10；max_simultaneous_markers=8；overflow_policy=KEEP_MOST_RECENT_THEN_CAST_EVENT_ID_ASC	不售	4000	否
+G8	雷公凿	金	ATTACK_FLAT=20；ATTACK_SPEED_PERCENT=40	type=STAT_ONLY	不售	4000	否
+G9	噬魂戒	金	NONE	type=PERMANENT_ATTACK_ON_KILL；ordinary_amount=2；enemy_player_true_death_amount=10；eligible=ORDINARY_MONSTER / FLYING_MONSTER / PIG / LEADER / DRAGON / CORE_BOSS / ENEMY_PLAYER_TRUE_DEATH；summon_kill=否；no_cap=是	不售	4000	否
+G10	金箍棒	金	ATTACK_FLAT=80	type=BASIC_ATTACK_RANGE_FLAT；meters=3	不售	4000	否

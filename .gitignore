@@ -1,0 +1,34 @@
+# --- 构建产物 / 缓存（不推送） ---
+node_modules/
+artifacts/
+logs/
+migration/
+game-runtime/unity/Builds/
+game-runtime/unity/Library/
+game-runtime/unity/Temp/
+game-runtime/unity/Logs/
+game-runtime/unity/.utmp/
+game-runtime/unity/UserSettings/
+game-runtime/unity/obj/
+game-runtime/.git.bak/
+
+# --- 美术资源 / 交付包（纯代码仓库，不推送） ---
+素材/
+英雄原画图38个/
+野怪原型图/
+Unity技术交付_38英雄_单体优化版/
+Unity技术交付_38野怪_单体优化版/
+game-runtime/unity/Assets/
+
+# --- Python / 系统 ---
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+
+# --- IDE ---
+.vscode/
+.idea/

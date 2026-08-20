@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="data:," />
+    <title>JWGB Model Audit</title>
+    <link rel="stylesheet" href="/src/render/models/model-audit.css" />
+  </head>
+  <body>
+    <main class="audit-shell">
+      <header class="audit-header">
+        <h1>JWGB 3D Model Audit</h1>
+        <output id="audit-status">Preparing 76 models...</output>
+      </header>
+      <section id="audit-grid" class="audit-grid" aria-live="polite"></section>
+    </main>
+    <script type="module" src="/src/render/models/model-audit-page.ts"></script>
+  </body>
+</html>

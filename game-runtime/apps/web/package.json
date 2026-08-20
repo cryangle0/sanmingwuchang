@@ -1,0 +1,19 @@
+{
+  "name": "@jwgb/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@jwgb/content": "0.1.0",
+    "@jwgb/core": "0.1.0",
+    "@jwgb/protocol": "0.1.0",
+    "@jwgb/sim": "0.1.0",
+    "lucide": "^1.26.0",
+    "three": "0.165.0"
+  }
+}

@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>西游大乱斗 · 程序化地形 Demo v2（真实路网 + 法庭围墙/台阶 + 区域调色）</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0e1410; color: #dfe6dd; font: 13px/1.5 "Segoe UI", "Microsoft YaHei", system-ui, sans-serif; }
+  #panel {
+    position: fixed; top: 14px; left: 14px; z-index: 10;
+    width: 252px; padding: 12px 14px; border-radius: 10px;
+    background: rgba(14, 20, 16, 0.88); border: 1px solid #2c3a2e;
+    backdrop-filter: blur(6px); box-shadow: 0 6px 24px rgba(0,0,0,.45); user-select: none;
+  }
+  #panel h1 { font-size: 14px; margin: 0 0 10px; color: #c8ff78; }
+  .row { display: flex; align-items: center; justify-content: space-between; margin: 7px 0; gap: 8px; }
+  .row label { color: #9fb59f; white-space: nowrap; }
+  .row input[type=number], .row select { width: 92px; }
+  .row input[type=range] { width: 118px; }
+  input, select, button {
+    background: #1a241c; color: #e8f0e6; border: 1px solid #3a4c3c;
+    border-radius: 6px; padding: 4px 6px; font-size: 12px;
+  }
+  button { background: #2c4a2c; cursor: pointer; width: 100%; margin-top: 10px; padding: 7px; font-size: 13px; }
+  button:hover { background: #3a623a; }
+  .check { display: flex; align-items: center; gap: 6px; }
+  #legend {
+    position: fixed; bottom: 14px; left: 14px; z-index: 10;
+    padding: 8px 12px; border-radius: 8px; font-size: 12px;
+    background: rgba(14,20,16,.85); border: 1px solid #2c3a2e; max-width: 260px;
+  }
+  .swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: 6px; }
+  #hint { position: fixed; bottom: 14px; right: 14px; z-index: 10; font-size: 12px; color: #7e9480; background: rgba(14,20,16,.6); padding: 6px 10px; border-radius: 8px; }
+</style>
+</head>
+<body>
+
+<div id="panel">
+  <h1>地形高度场 Demo v2</h1>
+  <div class="row"><label>种子 seed</label><input type="number" id="seed" value="2026"></div>
+  <div class="row"><label>高度倍率</label><input type="range" id="amp" min="2" max="18" step="0.5" value="8"><span id="ampVal">8 m</span></div>
+  <div class="row"><label>网格分辨率</label><select id="step"><option value="4">4 m</option><option value="2" selected>2 m</option><option value="1">1 m</option></select></div>
+  <div class="row check"><input type="checkbox" id="stamps" checked><label>压平戳（法庭/路网）</label></div>
+  <div class="row check"><input type="checkbox" id="details" checked><label>细节（围墙/台阶/路缘/虚线）</label></div>
+  <div class="row check"><input type="checkbox" id="wire">线框</div>
+  <div class="row check"><input type="checkbox" id="rotate" checked>自动旋转</div>
+  <button id="rebuild">重新生成</button>
+</div>
+
+<div id="legend">
+  <div><span class="swatch" style="background:#5a7a34"></span>草地 · <span class="swatch" style="background:#8a7958"></span>高地/岩石</div>
+  <div><span class="swatch" style="background:#c96f3a"></span>焚天庭 B3 区域 · <span class="swatch" style="background:#3f8f8f"></span>玄冥庭 B2 区域 · <span class="swatch" style="background:#7fae3c"></span>惊蛰庭 B1 区域</div>
+  <div><span class="swatch" style="background:#9c9688"></span>MAIN 路 · <span class="swatch" style="background:#7d786c"></span>SIDE/侧门路 · <span class="swatch" style="background:#8a8478"></span>ARENA/COURT 连接</div>
+  <div><span class="swatch" style="background:#6b6f6b"></span>路缘石 · <span class="swatch" style="background:#d9c98a"></span>中位虚线(MAIN)</div>
+  <div><span class="swatch" style="background:#8d9396"></span>法庭围墙/门柱 · <span class="swatch" style="background:#a9b0b4"></span>内台阶</div>
+</div>
+<div id="hint">拖动旋转 · 滚轮缩放 · 右键平移 · 换种子看不同地形</div>
+
+<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+'use strict';
+
+/* ============================================================
+ * 1. 确定性噪声 —— 移植自 world-of-claudecraft src/sim/terrain_relief.ts
+ * ============================================================ */
+function hash2(x, y, seed) {
+  let h = (Math.imul(x, 374761393) + Math.imul(y, 668265263) + Math.imul(seed, 1274126177)) | 0;
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  h = h ^ (h >>> 16);
+  return (h >>> 0) / 4294967296;
+}
+const FADE = t => t * t * t * (t * (t * 6 - 15) + 10);
+
+function noise2(x, y, seed) {
+  const xi = Math.floor(x), yi = Math.floor(y);
+  const xf = x - xi, yf = y - yi;
+  const a = hash2(xi, yi, seed), b = hash2(xi + 1, yi, seed);
+  const c = hash2(xi, yi + 1, seed), d = hash2(xi + 1, yi + 1, seed);
+  const u = FADE(xf), v = FADE(yf);
+  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+}
+
+function fbm2(x, y, seed, octaves) {
+  let amp = 1, freq = 1, sum = 0, norm = 0;
+  for (let i = 0; i < octaves; i++) {
+    sum += amp * noise2(x * freq, y * freq, seed + i * 1013);
+    norm += amp; amp *= 0.5; freq *= 2.0;
+  }
+  return sum / norm;
+}
+
+function warped(x, y, seed, strength) {
+  const qx = fbm2(x, y, seed + 1000, 3);
+  const qy = fbm2(x + 5.2, y + 1.3, seed + 2000, 3);
+  return fbm2(x + strength * (qx - 0.5), y + strength * (qy - 0.5), seed + 3000, 5);
+}
+
+function ridge(x, y, seed, octaves) {
+  let sum = 0, amp = 1, freq = 1, norm = 0, signal = 1;
+  for (let i = 0; i < octaves; i++) {
+    let n = 1 - Math.abs(2 * noise2(x * freq, y * freq, seed + i * 777) - 1);
+    n = n * n;
+    sum += n * amp * signal; norm += amp * signal;
+    signal = n; amp *= 0.5; freq *= 2.1;
+  }
+  return norm ? sum / norm : 0;
+}
+
+function smoothstep(e0, e1, x) {
+  const t = Math.min(1, Math.max(0, (x - e0) / (e1 - e0)));
+  return t * t * (3 - 2 * t);
+}
+
+function baseHeight(x, z, seed) {
+  const warp = warped(x, z, seed, 1.5);
+  const h = (warp - 0.5) * 2;
+  const r = ridge(x * 0.4, z * 0.4, seed + 5000, 4);
+  const hi = smoothstep(0.10, 0.45, h);
+  return h * (1 - hi * 0.5) + r * hi * 0.9;
+}
+
+/* ============================================================
+ * 2. 地图数据 —— 真实取自 map_engineering_840.json（百眼迷城）
+ *    法庭六边形 + 大门坐标；路网由脚本从 JSON 抽取后内联（见 ROADS）
+ * ============================================================ */
+const COURTS = [
+  { name: 'B1 惊蛰庭', center: [22.4, 109.3], color: 0x7fae3c,
+    hex: [[-13.2, 123.2], [25.5, 144.8], [64.1, 123.2], [56.4, 83.0], [14.7, 75.3], [-17.8, 95.4]],
+    gates: [[-16.1, 105.7], [54.3, 128.7], [26.5, 77.5]] },
+  { name: 'B2 玄冥庭', center: [-12.3, -58.6], color: 0x3f8f8f,
+    hex: [[-44.7, -46.3], [-4.5, -23.1], [31.0, -44.7], [21.7, -86.5], [-23.1, -94.2], [-54.0, -72.5]],
+    gates: [[-43.3, -45.5], [26.7, -42.1], [-46.2, -78.0]] },
+  { name: 'B3 焚天庭', center: [150.3, -58.6], color: 0xc96f3a,
+    hex: [[116.3, -46.3], [156.5, -24.6], [193.6, -47.8], [184.3, -88.0], [139.5, -94.2], [108.6, -72.5]],
+    gates: [[120.8, -43.9], [189.4, -66.0], [136.8, -92.3]] },
+];
+
+const ROADS = [
+
+  { a: [22.4, 109.3], b: [-16.1, 105.6], cls: 'COURT', w: 8 },
+  { a: [-16.1, 105.6], b: [-62.9, 101.3], cls: 'COURT', w: 8 },
+  { a: [22.4, 109.3], b: [54.3, 128.7], cls: 'COURT', w: 8 },
+  { a: [54.3, 128.7], b: [97, 154.6], cls: 'COURT', w: 8 },
+  { a: [22.4, 109.3], b: [26.5, 77.4], cls: 'COURT', w: 8 },
+  { a: [26.5, 77.4], b: [33, 26.7], cls: 'COURT', w: 8 },
+  { a: [-12.3, -58.6], b: [-43.3, -45.5], cls: 'COURT', w: 8 },
+  { a: [-43.3, -45.5], b: [-100.2, -21.3], cls: 'COURT', w: 8 },
+  { a: [-12.3, -58.6], b: [26.7, -42.1], cls: 'COURT', w: 8 },
+  { a: [26.7, -42.1], b: [75.7, -21.3], cls: 'COURT', w: 8 },
+  { a: [-12.3, -58.6], b: [-46.2, -78], cls: 'COURT', w: 8 },
+  { a: [-46.2, -78], b: [-49.6, -80], cls: 'COURT', w: 8 },
+  { a: [150.3, -58.6], b: [120.8, -43.9], cls: 'COURT', w: 8 },
+  { a: [120.8, -43.9], b: [75.7, -21.3], cls: 'COURT', w: 8 },
+  { a: [150.3, -58.6], b: [189.4, -66], cls: 'COURT', w: 8 },
+  { a: [150.3, -58.6], b: [136.8, -92.3], cls: 'COURT', w: 8 },
+  { a: [136.8, -92.3], b: [118.3, -138.6], cls: 'COURT', w: 8 },
+  { a: [-100.2, -165.2], b: [-105.5, -127.9], cls: 'ARENA', w: 8 },
+  { a: [-100.2, -165.2], b: [-49.6, -186.6], cls: 'ARENA', w: 8 },
+  { a: [200.9, -154.6], b: [203.6, -138.6], cls: 'ARENA', w: 8 },
+  { a: [200.9, -154.6], b: [118.3, -138.6], cls: 'ARENA', w: 8 },
+  { a: [-158.8, 111.9], b: [-180.2, 111.9], cls: 'ARENA', w: 8 },
+  { a: [-158.8, 111.9], b: [-110.9, 159.9], cls: 'ARENA', w: 8 },
+  { a: [49, 191.9], b: [97, 154.6], cls: 'ARENA', w: 8 },
+  { a: [-49.6, -119.9], b: [-49.6, -80], cls: 'ARENA', w: 8 },
+  { a: [-49.6, -119.9], b: [-46.2, -78], cls: 'ARENA', w: 8 },
+  { a: [-161.5, 159.9], b: [-110.9, 159.9], cls: 'MAIN', w: 12 },
+  { a: [-161.5, 159.9], b: [-120.5, 177.5], cls: 'SIDEDOOR', w: 4.5 },
+  { a: [-110.9, 159.9], b: [-86.9, 130.6], cls: 'MAIN', w: 12 },
+  { a: [-86.9, 130.6], b: [-62.9, 101.3], cls: 'MAIN', w: 12 },
+  { a: [-86.9, 130.6], b: [-120.5, 177.5], cls: 'SIDEDOOR', w: 4.5 },
+  { a: [-62.9, 101.3], b: [-6.9, 101.3], cls: 'MAIN', w: 12 },
+  { a: [-6.9, 101.3], b: [49, 101.3], cls: 'MAIN', w: 12 },
+  { a: [-6.9, 101.3], b: [22.4, 109.3], cls: 'SIDEDOOR', w: 4.5 },
+  { a: [49, 101.3], b: [73, 127.9], cls: 'MAIN', w: 12 },
+  { a: [73, 127.9], b: [97, 154.6], cls: 'MAIN', w: 12 },
+  { a: [73, 127.9], b: [54.3, 128.7], cls: 'SIDEDOOR', w: 4.5 },
+  { a: [97, 154.6], b: [142.3, 154.6], cls: 'MAIN', w: 12 },
+  { a: [142.3, 154.6], b: [187.6, 154.6], cls: 'MAIN', w: 12 },
+  { a: [142.3, 154.6], b: [95.4, 202], cls: 'SIDEDOOR', w: 4.5 },
+  { a: [-192.1, 24], b: [-153.5, 24], cls: 'MAIN', w: 12 },
+  { a: [-192.1, 24], b: [-188.1, 48], cls: 'SIDEDOOR', w: 4.5 },
+  { a: [-153.5, 24], b: [-126.9, 1.3], cls: 'MAIN', w: 12 },
+  { a: [-126.9, 1.3], b: [-100.2, -21.3], cls: 'MAIN', w: 12 },
+  { a: [-126.9, 1.3], b: [-123.1, -57], cls: 'SIDEDOOR', w: 4.5 },
+  { a: [-100.2, -21.3], b: [-54.9, -21.3], cls: 'MAIN', w: 12 },
+  { a: [-54.9, -21.3], b: [-9.6, -21.3], cls: 'MAIN', w: 12 },
+  { a: [-54.9, -21.3], b: [-43.3, -45.5], cls: 'SIDEDOOR', w: 4.5 },
+  { a: [-9.6, -21.3], b: [11.7, 2.7], cls: 'MAIN', w: 12 },
+  { a: [11.7, 2.7], b: [33, 26.7], cls: 'MAIN', w: 12 },
+  { a: [11.7, 2.7], b: [26.7, -42.1], cls: 'SIDEDOOR', w: 4.5 },
+  { a: [33, 26.7], b: [83.7, 26.7], cls: 'MAIN', w: 12 },
+  { a: [83.7, 26.7], b: [134.3, 26.7], cls: 'MAIN', w: 12 },
+  { a: [83.7, 26.7], b: [75.7, -21.3], cls: 'SIDEDOOR', w: 4.5 },
+  { a: [134.3, 26.7], b: [161, 2.7], cls: 'MAIN', w: 12 },
+  { a: [161, 2.7], b: [187.6, -21.3], cls: 'MAIN', w: 12 },
+  { a: [161, 2.7], b: [120.8, -43.9], cls: 'SIDEDOOR', w: 4.5 },
+  { a: [-188.1, -127.9], b: [-146.8, -127.9], cls: 'MAIN', w: 12 },
+  { a: [-146.8, -127.9], b: [-105.5, -127.9], cls: 'MAIN', w: 12 },
+  { a: [-146.8, -127.9], b: [-137.5, -69.3], cls: 'SIDEDOOR', w: 4.5 },
+  { a: [-105.5, -127.9], b: [-77.6, -157.2], cls: 'MAIN', w: 12 },
+  { a: [-77.6, -157.2], b: [-49.6, -186.6], cls: 'MAIN', w: 12 },
+  { a: [-77.6, -157.2], b: [-100.2, -165.2], cls: 'SIDEDOOR', w: 4.5 },
+  { a: [-49.6, -186.6], b: [7.7, -186.6], cls: 'MAIN', w: 12 },
+  { a: [7.7, -186.6], b: [65, -186.6], cls: 'MAIN', w: 12 },
+  { a: [7.7, -186.6], b: [-14.9, -165.2], cls: 'SIDEDOOR', w: 4.5 },
+  { a: [65, -186.6], b: [91.7, -162.6], cls: 'MAIN', w: 12 },
+  { a: [91.7, -162.6], b: [118.3, -138.6], cls: 'MAIN', w: 12 },
+  { a: [91.7, -162.6], b: [76.8, -153], cls: 'SIDEDOOR', w: 4.5 },
+  { a: [118.3, -138.6], b: [161, -138.6], cls: 'MAIN', w: 12 },
+  { a: [161, -138.6], b: [203.6, -138.6], cls: 'MAIN', w: 12 },
+  { a: [161, -138.6], b: [200.9, -154.6], cls: 'SIDEDOOR', w: 4.5 },
+  { a: [-81.5, 40], b: [-70.9, 58.6], cls: 'SIDEDOOR', w: 4.5 },
+  { a: [-100.2, -21.3], b: [-102.9, -74.6], cls: 'MAIN', w: 12 },
+  { a: [-102.9, -74.6], b: [-105.5, -127.9], cls: 'MAIN', w: 12 },
+  { a: [-102.9, -74.6], b: [-123.1, -57], cls: 'SIDEDOOR', w: 4.5 },
+  { a: [115.7, 90.6], b: [73, 127.9], cls: 'SIDEDOOR', w: 4.5 },
+  { a: [126.3, -56], b: [150.3, -58.6], cls: 'SIDEDOOR', w: 4.5 },
+  { a: [-185.5, 193.2], b: [-161.5, 159.9], cls: 'SIDEDOOR', w: 4.5 },
+  { a: [49, 191.9], b: [118.3, 173.2], cls: 'MAIN', w: 12 },
+  { a: [118.3, 173.2], b: [187.6, 154.6], cls: 'MAIN', w: 12 },
+  { a: [118.3, 173.2], b: [97, 154.6], cls: 'SIDEDOOR', w: 4.5 },
+  { a: [-153.5, 24], b: [-112.2, 41.3], cls: 'MAIN', w: 12 },
+  { a: [-112.2, 41.3], b: [-70.9, 58.6], cls: 'MAIN', w: 12 },
+  { a: [-112.2, 41.3], b: [-81.5, 40], cls: 'SIDEDOOR', w: 4.5 },
+  { a: [-70.9, 58.6], b: [-18.9, 42.6], cls: 'MAIN', w: 12 },
+  { a: [-18.9, 42.6], b: [33, 26.7], cls: 'MAIN', w: 12 },
+  { a: [-18.9, 42.6], b: [26.5, 77.4], cls: 'SIDEDOOR', w: 4.5 },
+  { a: [-9.6, -21.3], b: [-29.6, -50.6], cls: 'MAIN', w: 12 },
+  { a: [-29.6, -50.6], b: [-49.6, -80], cls: 'MAIN', w: 12 },
+  { a: [-29.6, -50.6], b: [-12.3, -58.6], cls: 'SIDEDOOR', w: 4.5 },
+  { a: [-49.6, -80], b: [-49.6, -133.2], cls: 'MAIN', w: 12 },
+  { a: [-49.6, -133.2], b: [-49.6, -186.6], cls: 'MAIN', w: 12 },
+  { a: [-49.6, -133.2], b: [-59.2, -121], cls: 'SIDEDOOR', w: 4.5 },
+  { a: [134.3, 26.7], b: [173, 49.3], cls: 'MAIN', w: 12 },
+  { a: [173, 49.3], b: [161, 2.7], cls: 'SIDEDOOR', w: 4.5 },
+  { a: [-180.2, 111.9], b: [-166.8, 68], cls: 'SIDE', w: 7 },
+  { a: [-166.8, 68], b: [-153.5, 24], cls: 'SIDE', w: 7 },
+  { a: [-166.8, 68], b: [-188.1, 48], cls: 'SIDEDOOR', w: 4.5 },
+  { a: [-110.9, 159.9], b: [-110.9, 202.5], cls: 'SIDE', w: 7 },
+  { a: [-110.9, 202.5], b: [-120.5, 177.5], cls: 'SIDEDOOR', w: 4.5 },
+  { a: [49, 101.3], b: [49, 146.6], cls: 'SIDE', w: 7 },
+  { a: [49, 146.6], b: [49, 191.9], cls: 'SIDE', w: 7 },
+  { a: [49, 146.6], b: [54.3, 128.7], cls: 'SIDEDOOR', w: 4.5 },
+  { a: [49, 191.9], b: [73, 173.2], cls: 'SIDE', w: 7 },
+  { a: [73, 173.2], b: [97, 154.6], cls: 'SIDE', w: 7 },
+  { a: [73, 173.2], b: [49, 146.6], cls: 'SIDEDOOR', w: 4.5 },
+  { a: [187.6, 154.6], b: [199.6, 113.3], cls: 'SIDE', w: 7 },
+  { a: [-105.5, -127.9], b: [-128.2, -181.2], cls: 'SIDE', w: 7 },
+  { a: [-128.2, -181.2], b: [-100.2, -165.2], cls: 'SIDEDOOR', w: 4.5 },
+  { a: [-62.9, 101.3], b: [-72.2, 70.6], cls: 'MAIN', w: 12 },
+  { a: [-72.2, 70.6], b: [-81.5, 40], cls: 'MAIN', w: 12 },
+  { a: [-72.2, 70.6], b: [-112.2, 41.3], cls: 'SIDEDOOR', w: 4.5 },
+  { a: [-81.5, 40], b: [-90.9, 9.3], cls: 'MAIN', w: 12 },
+  { a: [-90.9, 9.3], b: [-100.2, -21.3], cls: 'MAIN', w: 12 },
+  { a: [-90.9, 9.3], b: [-126.9, 1.3], cls: 'SIDEDOOR', w: 4.5 },
+  { a: [97, 154.6], b: [106.3, 122.6], cls: 'MAIN', w: 12 },
+  { a: [106.3, 122.6], b: [115.7, 90.6], cls: 'MAIN', w: 12 },
+  { a: [106.3, 122.6], b: [73, 127.9], cls: 'SIDEDOOR', w: 4.5 },
+  { a: [115.7, 90.6], b: [125, 58.6], cls: 'MAIN', w: 12 },
+  { a: [125, 58.6], b: [134.3, 26.7], cls: 'MAIN', w: 12 },
+  { a: [125, 58.6], b: [173, 49.3], cls: 'SIDEDOOR', w: 4.5 },
+  { a: [134.3, 26.7], b: [130.3, -14.7], cls: 'MAIN', w: 12 },
+  { a: [130.3, -14.7], b: [126.3, -56], cls: 'MAIN', w: 12 },
+  { a: [130.3, -14.7], b: [120.8, -43.9], cls: 'SIDEDOOR', w: 4.5 },
+  { a: [126.3, -56], b: [122.3, -97.3], cls: 'MAIN', w: 12 },
+  { a: [122.3, -97.3], b: [118.3, -138.6], cls: 'MAIN', w: 12 },
+  { a: [122.3, -97.3], b: [136.8, -92.3], cls: 'SIDEDOOR', w: 4.5 },
+];
+
+/* ============================================================
+ * 3. 几何工具
+ * ============================================================ */
+function distToSegment(px, pz, ax, az, bx, bz) {
+  const dx = bx - ax, dz = bz - az;
+  const len2 = dx * dx + dz * dz;
+  let t = len2 ? ((px - ax) * dx + (pz - az) * dz) / len2 : 0;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px - (ax + t * dx), pz - (az + t * dz));
+}
+function distToPoly(px, pz, poly) {
+  let d = Infinity;
+  for (let i = 0; i < poly.length; i++) {
+    const a = poly[i], b = poly[(i + 1) % poly.length];
+    d = Math.min(d, distToSegment(px, pz, a[0], a[1], b[0], b[1]));
+  }
+  return d;
+}
+function pointInPoly(px, pz, poly) {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const xi = poly[i][0], zi = poly[i][1], xj = poly[j][0], zj = poly[j][1];
+    if (((zi > pz) !== (zj > pz)) && (px < (xj - xi) * (pz - zi) / (zj - zi) + xi)) inside = !inside;
+  }
+  return inside;
+}
+
+/* ============================================================
+ * 4. 高度戳（TH_STAMPS 语义）：四角边框 + 法庭多边形 + 真实路网走廊
+ * ============================================================ */
+function buildStamps() {
+  const S = [];
+  for (const [cx, cz] of [[-210, -210], [210, -210], [210, 210], [-210, 210]]) {
+    S.push({ kind: 'circle', x: cx, z: cz, radius: 150, delta: -1.5, falloff: 'flat' });
+  }
+  for (const c of COURTS) S.push({ kind: 'poly', poly: c.hex, delta: 0.0, edge: 6 });
+  for (const r of ROADS) S.push({ kind: 'road', a: r.a, b: r.b, width: r.w + 1, delta: 0.5, edge: 3 });
+  return S;
+}
+
+function applyStamps(h, x, z, stamps) {
+  let out = h;
+  for (const s of stamps) {
+    if (s.kind === 'circle') {
+      const d = Math.hypot(x - s.x, z - s.z);
+      if (d < s.radius) {
+        const t = s.falloff === 'flat' ? 1 : 1 - d / s.radius;
+        out = out + (s.delta - out) * Math.min(1, Math.max(0, t));
+      }
+    } else if (s.kind === 'poly') {
+      if (pointInPoly(x, z, s.poly)) out = s.delta;
+      else {
+        const d = distToPoly(x, z, s.poly);
+        const t = Math.max(0, 1 - d / s.edge);
+        if (t > 0) out = out + (s.delta - out) * t;
+      }
+    } else if (s.kind === 'road') {
+      const d = distToSegment(x, z, s.a[0], s.a[1], s.b[0], s.b[1]);
+      const t = Math.max(0, 1 - (d - s.width / 2) / s.edge);
+      if (t > 0) out = out + (s.delta - out) * t;
+    }
+  }
+  return out;
+}
+
+/* ============================================================
+ * 5. 高度采样
+ * ============================================================ */
+function heightAt(x, z, seed, amp, stampsActive) {
+  let h = baseHeight(x / 14, z / 14, seed) * amp;
+  if (stampsActive) h = applyStamps(h, x, z, stampsActive);
+  return h;
+}
+// 只吃边框戳的自然地面高度（围墙/门柱从"外部真实地表"立起）
+function heightAtRaw(x, z, seed, amp, stampsActive) {
+  let h = baseHeight(x / 14, z / 14, seed) * amp;
+  if (stampsActive) {
+    for (const s of stamps) {
+      if (s.kind !== 'circle') continue;
+      const d = Math.hypot(x - s.x, z - s.z);
+      if (d < s.radius) {
+        const t = s.falloff === 'flat' ? 1 : 1 - d / s.radius;
+        h = h + (s.delta - h) * Math.min(1, Math.max(0, t));
+      }
+    }
+  }
+  return h;
+}
+
+/* ============================================================
+ * 6. 上色：高度底色 + 法庭区域调色（35m 衰减）+ 路网按等级
+ * ============================================================ */
+function lerp3(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]; }
+function hexToRgb(hex) { return [(hex >> 16 & 255) / 255, (hex >> 8 & 255) / 255, (hex & 255) / 255]; }
+
+const ROAD_COLORS = { MAIN: [0.61, 0.59, 0.53], SIDE: [0.49, 0.47, 0.42], SIDEDOOR: [0.47, 0.45, 0.40], ARENA: [0.54, 0.51, 0.46], COURT: [0.56, 0.53, 0.47] };
+
+function colorAt(h, x, z, stampsActive) {
+  const grass = [0.33, 0.50, 0.24], dirt = [0.52, 0.46, 0.34], rock = [0.62, 0.59, 0.53];
+  let c = lerp3(grass, dirt, Math.min(1, (h + 2) / 6));
+  if (h > 3) c = lerp3(c, rock, Math.min(1, (h - 3) / 5));
+  // 法庭区域调色：多边形内强、外 35m 衰减
+  for (const court of COURTS) {
+    const inside = pointInPoly(x, z, court.hex);
+    const d = inside ? 0 : distToPoly(x, z, court.hex);
+    const t = inside ? 0.78 : Math.min(1, Math.max(0, 1 - d / 35)) * 0.45;
+    if (t > 0) c = lerp3(c, hexToRgb(court.color), t);
+  }
+  // 路网按等级着色
+  if (stampsActive) {
+    for (const r of ROADS) {
+      const d = distToSegment(x, z, r.a[0], r.a[1], r.b[0], r.b[1]);
+      const col = ROAD_COLORS[r.cls] || ROAD_COLORS.SIDE;
+      const t = Math.min(1, Math.max(0, 1 - (d - r.w / 2) / 3)) * 0.7;
+      if (t > 0) c = lerp3(c, col, t);
+    }
+  }
+  const j = (hash2(Math.floor(x * 0.5), Math.floor(z * 0.5), 99) - 0.5) * 0.05;
+  return [c[0] + j, c[1] + j, c[2] + j];
+}
+
+/* ============================================================
+ * 7. Three.js 场景
+ * ============================================================ */
+const RANGE = 220;
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x24302a);
+scene.fog = new THREE.Fog(0x24302a, 320, 640);
+
+const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.5, 2000);
+camera.position.set(300, 240, 280);
+camera.lookAt(55, 0, -2);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+document.body.appendChild(renderer.domElement);
+
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.target.set(55, 0, -2);
+controls.enableDamping = true;
+
+scene.add(new THREE.HemisphereLight(0xdfe8ff, 0x3a4230, 0.85));
+const sun = new THREE.DirectionalLight(0xfff2d8, 0.9);
+sun.position.set(180, 260, 120);
+scene.add(sun);
+
+let mesh = null;
+let detailGroup = new THREE.Group();
+scene.add(detailGroup);
+let stamps = buildStamps();
+
+// 共享材质
+const wallMaterials = COURTS.map(c => new THREE.MeshStandardMaterial({ color: c.color, roughness: 0.9, metalness: 0.05 }));
+const curbMat = new THREE.MeshStandardMaterial({ color: 0x6b6f6b, roughness: 0.9 });
+const dashMat = new THREE.MeshStandardMaterial({ color: 0xd9c98a, roughness: 0.8 });
+const stepMat = new THREE.MeshStandardMaterial({ color: 0xa9b0b4, roughness: 0.9 });
+const gateMat = new THREE.MeshStandardMaterial({ color: 0x8d9396, roughness: 0.9 });
+
+function clearDetails() {
+  while (detailGroup.children.length) {
+    const child = detailGroup.children.pop();
+    if (child.geometry) child.geometry.dispose();
+    if (child.material && child.material.map) child.material.map.dispose();
+  }
+}
+
+/* ---- 细节构建：路缘石 / MAIN 中位虚线 / 法庭围墙+门柱+台阶 ---- */
+function buildDetails(seed, amp, stampsActive) {
+  const ROAD_LEVEL = 0.5;
+  const dashGeo = new THREE.BoxGeometry(2.6, 0.06, 0.9);
+  const curbGeo = new THREE.BoxGeometry(1, 0.22, 0.5);   // 沿长度拉伸
+  const wallH = 2.8, wallW = 1.0;
+  const pillarGeo = new THREE.BoxGeometry(1.3, wallH + 0.8, 1.3);
+
+  // 路网细节
+  for (const r of ROADS) {
+    const [ax, az] = r.a, [bx, bz] = r.b;
+    const seg = Math.hypot(bx - ax, bz - az);
+    if (seg < 1) continue;
+    const ang = Math.atan2(bz - az, bx - ax);
+    const px = -Math.sin(ang), pz = Math.cos(ang);
+    const mx = (ax + bx) / 2, mz = (az + bz) / 2;
+    // 两侧路缘石
+    for (const s of [-1, 1]) {
+      const cxm = mx + px * s * (r.w / 2 + 0.28), czm = mz + pz * s * (r.w / 2 + 0.28);
+      const curb = new THREE.Mesh(new THREE.BoxGeometry(seg, 0.22, 0.5), curbMat);
+      curb.position.set(cxm, ROAD_LEVEL + 0.11, czm);
+      curb.rotation.y = -ang;
+      detailGroup.add(curb);
+    }
+    // MAIN 中位虚线
+    if (r.cls === 'MAIN') {
+      const gap = 6.5;
+      const count = Math.floor(seg / gap);
+      for (let i = 0; i <= count; i++) {
+        const t = Math.min(1, (i * gap + 1.3) / seg);
+        const dash = new THREE.Mesh(dashGeo, dashMat);
+        dash.position.set(ax + (bx - ax) * t, ROAD_LEVEL + 0.05, az + (bz - az) * t);
+        dash.rotation.y = -ang;
+        detailGroup.add(dash);
+      }
+    }
+  }
+
+  // 法庭围墙 / 门柱 / 内台阶
+  COURTS.forEach((court, ci) => {
+    const mat = wallMaterials[ci];
+    const pts = court.hex, n = pts.length;
+    for (let i = 0; i < n; i++) {
+      const A = pts[i], B = pts[(i + 1) % n];
+      const mx = (A[0] + B[0]) / 2, mz = (A[1] + B[1]) / 2;
+      const seg = Math.hypot(B[0] - A[0], B[1] - A[1]);
+      const ang = Math.atan2(B[1] - A[1], B[0] - A[0]);
+      // 门洞：墙段中点靠近大门则留缺口
+      const nearGate = court.gates.some(g => Math.hypot(mx - g[0], mz - g[1]) < 9);
+      if (nearGate) continue;
+      const bottom = heightAtRaw(mx, mz, seed, amp, stampsActive) - 0.4;
+      const wall = new THREE.Mesh(new THREE.BoxGeometry(seg, wallH, wallW), mat);
+      wall.position.set(mx, bottom + wallH / 2, mz);
+      wall.rotation.y = -ang;
+      detailGroup.add(wall);
+    }
+    // 顶点立柱
+    for (const v of pts) {
+      const bottom = heightAtRaw(v[0], v[1], seed, amp, stampsActive) - 0.3;
+      const pillar = new THREE.Mesh(pillarGeo, mat);
+      pillar.position.set(v[0], bottom + (wallH + 0.8) / 2, v[1]);
+      detailGroup.add(pillar);
+    }
+    // 内台阶（沿六边内缩的 2.2m 宽台阶带）
+    const cx0 = court.center[0], cz0 = court.center[1];
+    for (let i = 0; i < n; i++) {
+      const A = pts[i], B = pts[(i + 1) % n];
+      const mx = (A[0] + B[0]) / 2, mz = (A[1] + B[1]) / 2;
+      const seg = Math.hypot(B[0] - A[0], B[1] - A[1]);
+      const ang = Math.atan2(B[1] - A[1], B[0] - A[0]);
+      const inLen = Math.hypot(mx - cx0, mz - cz0) || 1;
+      const ix = mx + (cx0 - mx) / inLen * 1.5, iz = mz + (cz0 - mz) / inLen * 1.5;
+      const step = new THREE.Mesh(new THREE.BoxGeometry(seg * 0.92, 0.45, 2.2), stepMat);
+      step.position.set(ix, 0.225, iz);
+      step.rotation.y = -ang;
+      detailGroup.add(step);
+    }
+    // 大门：两根门柱 + 门洞石板
+    for (const g of court.gates) {
+      const inLen = Math.hypot(g[0] - cx0, g[1] - cz0) || 1;
+      const dx = (g[0] - cx0) / inLen, dz = (g[1] - cz0) / inLen;
+      const px = -dz, pz = dx;
+      for (const s of [-1, 1]) {
+        const post = new THREE.Mesh(new THREE.BoxGeometry(1.2, 3.4, 1.2), mat);
+        post.position.set(g[0] + px * s * 1.9, 1.7, g[1] + pz * s * 1.9);
+        detailGroup.add(post);
+      }
+      const slab = new THREE.Mesh(new THREE.BoxGeometry(6.5, 0.14, 2.4), gateMat);
+      slab.position.set(g[0], 0.07, g[1]);
+      slab.rotation.y = Math.atan2(dx, -dz);
+      detailGroup.add(slab);
+    }
+  });
+}
+
+function rebuild() {
+  const seed = parseInt(document.getElementById('seed').value, 10) || 0;
+  const amp = parseFloat(document.getElementById('amp').value);
+  const step = parseFloat(document.getElementById('step').value);
+  const useStamps = document.getElementById('stamps').checked;
+  const useDetails = document.getElementById('details').checked;
+  const stampsActive = useStamps ? stamps : [];
+
+  const half = RANGE;
+  const n = Math.round((half * 2) / step) + 1;
+  const positions = [], colors = [];
+  for (let iz = 0; iz < n - 1; iz++) {
+    const z = -half + iz * step, z1 = z + step;
+    for (let ix = 0; ix < n - 1; ix++) {
+      const x = -half + ix * step, x1 = x + step;
+      const h00 = heightAt(x, z, seed, amp, stampsActive);
+      const h10 = heightAt(x1, z, seed, amp, stampsActive);
+      const h01 = heightAt(x, z1, seed, amp, stampsActive);
+      const h11 = heightAt(x1, z1, seed, amp, stampsActive);
+      const c00 = colorAt(h00, x, z, stampsActive);
+      const c10 = colorAt(h10, x1, z, stampsActive);
+      const c01 = colorAt(h01, x, z1, stampsActive);
+      const c11 = colorAt(h11, x1, z1, stampsActive);
+      positions.push(x, h00, z,   x1, h10, z,   x, h01, z1);
+      positions.push(x1, h10, z,  x1, h11, z1,  x, h01, z1);
+      colors.push(c00[0], c00[1], c00[2],  c10[0], c10[1], c10[2],  c01[0], c01[1], c01[2]);
+      colors.push(c10[0], c10[1], c10[2],  c11[0], c11[1], c11[2],  c01[0], c01[1], c01[2]);
+    }
+  }
+  if (!mesh) {
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    const mat = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 1, metalness: 0, side: THREE.DoubleSide });
+    mesh = new THREE.Mesh(geo, mat);
+    scene.add(mesh);
+  } else {
+    mesh.geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    mesh.geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    mesh.geometry.computeVertexNormals();
+    mesh.geometry.attributes.position.needsUpdate = true;
+    mesh.geometry.attributes.color.needsUpdate = true;
+  }
+
+  clearDetails();
+  if (useDetails && stampsActive) buildDetails(seed, amp, stampsActive);
+}
+
+/* ============================================================
+ * 8. 控件
+ * ============================================================ */
+document.getElementById('amp').addEventListener('input', e => {
+  document.getElementById('ampVal').textContent = e.target.value + ' m';
+});
+document.getElementById('rebuild').addEventListener('click', rebuild);
+document.getElementById('wire').addEventListener('change', e => { if (mesh) mesh.material.wireframe = e.target.checked; });
+document.getElementById('stamps').addEventListener('change', rebuild);
+document.getElementById('details').addEventListener('change', rebuild);
+document.getElementById('step').addEventListener('change', rebuild);
+document.getElementById('seed').addEventListener('keydown', e => { if (e.key === 'Enter') rebuild(); });
+document.getElementById('rotate').addEventListener('change', e => { controls.autoRotate = e.target.checked; });
+
+window.addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.8;
+rebuild();
+
+(function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+})();
+</script>
+</body>
+</html>

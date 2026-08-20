@@ -1,0 +1,17 @@
+{
+  "name": "Jwgb.Netcode",
+  "rootNamespace": "Jwgb.Netcode",
+  "references": [
+    "Jwgb.Core",
+    "Jwgb.Content",
+    "Jwgb.Sim",
+    "Unity.Burst",
+    "Unity.Collections",
+    "Unity.Entities",
+    "Unity.Mathematics",
+    "Unity.NetCode",
+    "Unity.Networking.Transport",
+    "Unity.Transforms"
+  ],
+  "autoReferenced": true
+}

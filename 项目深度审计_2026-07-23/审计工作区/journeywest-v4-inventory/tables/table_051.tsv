@@ -1,0 +1,27 @@
+﻿工程字段	唯一值 / 执行语义
+server_tick_hz	20
+maximum_accepted_past_input_ms	250
+basic_attack_history_ms	250
+movement_tolerance.window_s	1
+movement_tolerance.extra_m	0.7
+far_ai.decision_may_lower_hz	是
+far_ai.server_movement_collision_and_perception_hz	20
+far_ai.client_snapshot_can_lower_hz	是
+spectator.delay_s	5
+spectator.all_information_from_same_delayed_snapshot	是
+spectator.report_anchor_uses_original_match_tick	是
+lag_comp.locked_cast_rewind_max_ms	250；仅锁定类技能命中判定允许回看
+lag_comp.projectile_no_victim_rewind	是；投射物自服务端生成tick起只向前模拟
+lag_comp.movement_walls_never_rewind	是；位置与墙体状态永不倒带
+prediction.local_movement_only	是；仅本地移动做客户端预测
+prediction.error_smooth_le_1_5m_ms	100；误差≤1.5米在100ms内平滑纠正
+prediction.error_snap_gt_1_5m	立即硬校正到权威位置
+clock.input_carries	单调input_seq + 客户端估算server_tick
+clock.resync_interval_s	5
+clock.authority	服务端只信自身tick；客户端估算仅用于插值与预测
+input.duplicate_or_stale_seq	丢弃；不产生任何回滚
+input.movement_no_backdate	是；移动输入按到达tick生效
+input.basic_attack_history_ms	250；仅用于命中验证，不回滚受害者状态
+input.transaction_at_arrival_tick	是；交易/拾取/商店永远按服务端收到tick结算
+interp.display_delay_ms	100；客户端固定100ms表现插值
+interp.authority_read_20hz_only	碰撞、距离与命中只读20Hz权威位置，不读插值位置

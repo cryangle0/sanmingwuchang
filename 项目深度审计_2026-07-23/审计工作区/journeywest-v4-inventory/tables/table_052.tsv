@@ -1,0 +1,236 @@
+﻿工程字段	唯一值 / 执行语义
+product_id	SANMING_WUCHANG
+merge.preview_required	是
+merge.commit_requires_preview_token	是
+merge.never_silent_overwrite	是
+merge.entitlements	SET_UNION_BY_ENTITLEMENT_ID; REVOKED_WINS_IF_SAME_PURCHASE_ID_REFUNDED
+merge.cosmetics	SET_UNION_BY_COSMETIC_ID
+merge.xiuwei	TAKE_GREATER_CUMULATIVE_XIUWEI; DO_NOT_SUM
+merge.collection	PER_CONTENT_REF_TAKE_MAX_STATE_ORDER_LOCKED_SEEN_USED_MASTERED
+merge.mmr	TAKE_ACCOUNT_WITH_MORE_RATED_MATCHES; TIE_LATER_MMR_UPDATED_AT; TIE_LEXICOGRAPHIC_SMALLER_SOURCE_ACCOUNT_UUID
+merge.lifetime_stats	RECOMPUTE_FROM_UNION_OF_UNIQUE_MATCH_IDS; NEVER_SUM_DUPLICATE_MATCH
+merge.received_likes	UNION_UNIQUE_LIKE_TRANSACTION_IDS
+merge.nickname	IF_DIFFERENT REQUIRE_EXPLICIT_SOURCE_CHOICE_BEFORE_COMMIT
+merge.cloud_settings	PER_FIELD_LATEST_SERVER_UPDATED_AT; TIE_TARGET_ACCOUNT
+merge.device_local_settings	NOT_MERGED; KEEP_CURRENT_DEVICE_LOCAL
+merge.battle_reports	UNION_BY_MATCH_ID_KEEP_NEWEST_20_BY_SETTLEMENT_TIME
+api_groups	SESSION / ACCOUNT_BIND_MERGE_DELETE_EXPORT / MATCHMAKING / MATCH_RECONNECT_SETTLEMENT / PROFILE / COLLECTION / SETTINGS / BATTLE_REPORT / COSMETIC_CATALOG_OWNERSHIP / LIKE / REPORT / PAYMENT
+commerce.entities	COSMETIC_CATALOG / ORDER / RECEIPT / ENTITLEMENT
+commerce.refund_revokes_entitlement	是
+commerce.gameplay_power_sale	否
+age_gate_states	UNKNOWN / ADULT / MINOR / RESTRICTED
+payment_requires_region_compliance	是
+account_delete.cooling_days	7
+account_delete.cancel_allowed_during_cooling	是
+account_delete.export_available	是
+account_delete.final_anonymize_gameplay	是
+account_delete.legal_finance_and_anticheat_retention_by_region	是
+retention.replay_normal_days	7
+retention.replay_flagged_days	180
+retention.battle_report_days	30
+public_api.POST /v2/session/guest.auth	NONE
+public_api.POST /v2/session/guest.idempotent	是
+public_api.POST /v2/account/bind.auth	GUEST_OR_GLOBAL
+public_api.POST /v2/account/bind.idempotent	是
+public_api.POST /v2/account/merge/preview.auth	GLOBAL
+public_api.POST /v2/account/merge/preview.idempotent	是
+public_api.POST /v2/account/merge/commit.auth	GLOBAL
+public_api.POST /v2/account/merge/commit.idempotent	是
+public_api.POST /v2/account/delete/request.auth	GLOBAL
+public_api.POST /v2/account/delete/request.idempotent	是
+public_api.POST /v2/account/delete/cancel.auth	GLOBAL
+public_api.POST /v2/account/delete/cancel.idempotent	是
+public_api.GET /v2/account/export.auth	GLOBAL
+public_api.GET /v2/account/export.idempotent	是
+public_api.GET /v2/profile/{id}.auth	ANY_ACCOUNT
+public_api.GET /v2/profile/{id}.idempotent	是
+public_api.PATCH /v2/profile.auth	GLOBAL
+public_api.PATCH /v2/profile.idempotent	是
+public_api.GET /v2/collection.auth	ANY_ACCOUNT
+public_api.GET /v2/collection.idempotent	是
+public_api.GET /v2/settings.auth	ANY_ACCOUNT
+public_api.GET /v2/settings.idempotent	是
+public_api.PUT /v2/settings.auth	ANY_ACCOUNT
+public_api.PUT /v2/settings.idempotent	是
+public_api.GET /v2/battle-reports.auth	ANY_ACCOUNT
+public_api.GET /v2/battle-reports.idempotent	是
+public_api.GET /v2/cosmetics/catalog.auth	ANY_ACCOUNT
+public_api.GET /v2/cosmetics/catalog.idempotent	是
+public_api.GET /v2/cosmetics/owned.auth	GLOBAL
+public_api.GET /v2/cosmetics/owned.idempotent	是
+public_api.POST /v2/like.auth	GLOBAL
+public_api.POST /v2/like.idempotent	是
+public_api.POST /v2/matchmaking/enqueue.auth	ANY_ACCOUNT
+public_api.POST /v2/matchmaking/enqueue.idempotent	是
+public_api.DELETE /v2/matchmaking/enqueue.auth	ANY_ACCOUNT
+public_api.DELETE /v2/matchmaking/enqueue.idempotent	是
+public_api.POST /v2/match/reconnect.auth	MATCH_SESSION
+public_api.POST /v2/match/reconnect.idempotent	是
+public_api.GET /v2/match/{id}/settlement.auth	PARTICIPANT
+public_api.GET /v2/match/{id}/settlement.idempotent	是
+public_api.POST /v2/report.auth	GLOBAL
+public_api.POST /v2/report.idempotent	是
+public_api.POST /v2/payment/create.auth	GLOBAL
+public_api.POST /v2/payment/create.idempotent	是
+public_api.POST /v2/payment/verify.auth	GLOBAL
+public_api.POST /v2/payment/verify.idempotent	是
+public_api.POST /v2/payment/refund-webhook.auth	PROVIDER_SIGNATURE
+public_api.POST /v2/payment/refund-webhook.idempotent	是
+transaction_request_id_required_for_all_POST_PATCH_PUT	是
+standard_errors	AUTH_REQUIRED / FORBIDDEN / NOT_FOUND / VERSION_CONFLICT / IDEMPOTENT_REPLAY / RATE_LIMITED / REGION_RESTRICTED / VALIDATION_FAILED
+response_envelope.success.fields	request_id / server_time / data / resource_version
+response_envelope.error.fields	request_id / server_time / error_code / message_key / retryable / details
+concurrency.mutable_resources_require_expected_version	是
+concurrency.mismatch_error	VERSION_CONFLICT
+concurrency.idempotency_ttl_hours	48
+concurrency.same_key_different_body	VALIDATION_FAILED
+wire_types.uuid	LOWERCASE_RFC4122_STRING
+wire_types.timestamp	UTC_RFC3339_MILLISECONDS
+wire_types.money	NONNEGATIVE_INT64
+wire_types.version	UINT64
+wire_types.content_ref	本文对应章节
+request_common.request_id	UUID_REQUIRED_FOR_POST_PUT_PATCH_DELETE
+request_common.client_build	SEMVER
+request_common.resource_version	UINT64_REQUIRED_FOR_MUTATION_OF_EXISTING_RESOURCE
+response_common.success_fields	request_id / server_time / data / resource_version
+response_common.error_fields	request_id / server_time / error.code / error.field_path / error.retryable / resource_version
+endpoint_schemas.POST /v2/session/guest.request_required	request_id / device_install_id / platform / region
+endpoint_schemas.POST /v2/session/guest.response_data	account_id / session_token / expires_at
+endpoint_schemas.POST /v2/account/bind.request_required	request_id / provider / provider_token
+endpoint_schemas.POST /v2/account/bind.response_data	account_id / bind_state
+endpoint_schemas.POST /v2/account/merge/preview.request_required	request_id / source_account_id / target_account_id
+endpoint_schemas.POST /v2/account/merge/preview.response_data	preview_token / expires_at / field_results / required_user_choices
+endpoint_schemas.POST /v2/account/merge/commit.request_required	request_id / preview_token / choices
+endpoint_schemas.POST /v2/account/merge/commit.response_data	merged_account_id / merge_receipt_id
+endpoint_schemas.POST /v2/matchmaking/enqueue.request_required	request_id / input_mode / region / party_size
+endpoint_schemas.POST /v2/matchmaking/enqueue.constraints.party_size	1
+endpoint_schemas.POST /v2/matchmaking/enqueue.response_data	ticket_id / estimated_wait_s
+endpoint_schemas.DELETE /v2/matchmaking/enqueue.request_required	request_id / ticket_id
+endpoint_schemas.DELETE /v2/matchmaking/enqueue.response_data	cancelled
+endpoint_schemas.POST /v2/match/reconnect.request_required	request_id / match_id / last_received_server_tick / replay_hash
+endpoint_schemas.POST /v2/match/reconnect.response_data	snapshot / events_after_tick / control_state
+endpoint_schemas.GET /v2/match/{id}/settlement.response_data	match_id / placement / rewards / battle_report_id / settlement_hash
+endpoint_schemas.GET /v2/match/{id}/settlement.path.id	UUID
+endpoint_schemas.PUT /v2/settings.request_required	request_id / resource_version / changed_fields
+endpoint_schemas.PUT /v2/settings.response_data	settings
+endpoint_schemas.POST /v2/like.request_required	request_id / match_id / target_participant_slot
+endpoint_schemas.POST /v2/like.response_data	accepted / remaining_match_likes
+endpoint_schemas.POST /v2/report.request_required	request_id / match_id / target_participant_slot / category / description
+endpoint_schemas.POST /v2/report.response_data	report_id / replay_retention_extended
+endpoint_schemas.POST /v2/payment/create.request_required	request_id / catalog_sku / currency / quoted_price_minor
+endpoint_schemas.POST /v2/payment/create.response_data	order_id / provider_payload
+endpoint_schemas.POST /v2/payment/verify.request_required	request_id / order_id / provider_receipt
+endpoint_schemas.POST /v2/payment/verify.response_data	order_state / entitlement_ids
+endpoint_schemas.POST /v2/account/delete/request.request_required	request_id / confirm_phrase
+endpoint_schemas.POST /v2/account/delete/request.response_data	delete_request_id / cooling_ends_at
+endpoint_schemas.POST /v2/account/delete/cancel.request_required	request_id / delete_request_id
+endpoint_schemas.POST /v2/account/delete/cancel.response_data	cancelled
+endpoint_schemas.GET /v2/account/export.request_required	NONE
+endpoint_schemas.GET /v2/account/export.response_data	export_job_id / state
+endpoint_schemas.GET /v2/account/export.response_optional	download_url_if_ready
+endpoint_schemas.GET /v2/profile/{id}.request_required	NONE
+endpoint_schemas.GET /v2/profile/{id}.response_data	public_profile
+endpoint_schemas.GET /v2/profile/{id}.path.id	UUID
+endpoint_schemas.PATCH /v2/profile.request_required	request_id / resource_version / changed_fields
+endpoint_schemas.PATCH /v2/profile.response_data	profile
+endpoint_schemas.GET /v2/collection.request_required	NONE
+endpoint_schemas.GET /v2/collection.response_data	catalog_states / reward_claim_states
+endpoint_schemas.GET /v2/settings.request_required	NONE
+endpoint_schemas.GET /v2/settings.response_data	settings
+endpoint_schemas.GET /v2/battle-reports.request_required	NONE
+endpoint_schemas.GET /v2/battle-reports.response_data	reports
+endpoint_schemas.GET /v2/battle-reports.response_optional	next_cursor
+endpoint_schemas.GET /v2/battle-reports.query.cursor	OPTIONAL_OPAQUE_CURSOR_MAX256
+endpoint_schemas.GET /v2/battle-reports.query.limit	UINT8_DEFAULT20_MIN1_MAX50
+endpoint_schemas.GET /v2/cosmetics/catalog.request_required	NONE
+endpoint_schemas.GET /v2/cosmetics/catalog.response_data	catalog / catalog_version
+endpoint_schemas.GET /v2/cosmetics/owned.request_required	NONE
+endpoint_schemas.GET /v2/cosmetics/owned.response_data	owned_cosmetic_ids
+endpoint_schemas.POST /v2/payment/refund-webhook.request_required	provider_event_id / provider_signature / order_id / refund_state
+endpoint_schemas.POST /v2/payment/refund-webhook.response_data	acknowledged
+unknown_endpoint_field	REJECT_WITH_INVALID_ARGUMENT
+all_public_endpoints_have_schema	是
+endpoint_field_wire_types.accepted	BOOLEAN
+endpoint_field_wire_types.account_id	LOWERCASE_RFC4122_UUID
+endpoint_field_wire_types.acknowledged	BOOLEAN
+endpoint_field_wire_types.battle_report_id	LOWERCASE_RFC4122_UUID
+endpoint_field_wire_types.bind_state	UTF8_NFC_1_TO_128
+endpoint_field_wire_types.cancelled	BOOLEAN
+endpoint_field_wire_types.catalog	ARRAY_COSMETIC_CATALOG_ENTRY
+endpoint_field_wire_types.catalog_sku	UTF8_NFC_1_TO_128
+endpoint_field_wire_types.catalog_states	MAP_TYPED_CONTENT_REF_TO_COLLECTION_STATE
+endpoint_field_wire_types.catalog_version	INT64
+endpoint_field_wire_types.category	UTF8_NFC_1_TO_128
+endpoint_field_wire_types.changed_fields	MAP_SCHEMA_FIELD_ID_TO_TYPED_VALUE_MAX64
+endpoint_field_wire_types.choices	MAP_MERGE_FIELD_ID_TO_SOURCE_ACCOUNT_ENUM_MAX32
+endpoint_field_wire_types.confirm_phrase	UTF8_NFC_1_TO_128
+endpoint_field_wire_types.control_state	ENUM_PLAYER_OR_BOT_TAKEOVER
+endpoint_field_wire_types.cooling_ends_at	UTC_RFC3339_MILLISECONDS
+endpoint_field_wire_types.currency	UTF8_NFC_1_TO_128
+endpoint_field_wire_types.delete_request_id	LOWERCASE_RFC4122_UUID
+endpoint_field_wire_types.description	UTF8_NFC_MAX500
+endpoint_field_wire_types.device_install_id	LOWERCASE_RFC4122_UUID
+endpoint_field_wire_types.download_url_if_ready	HTTPS_URL_MAX2048
+endpoint_field_wire_types.entitlement_ids	ARRAY_ENTITLEMENT_UUID_MAX128
+endpoint_field_wire_types.estimated_wait_s	INT64
+endpoint_field_wire_types.events_after_tick	ARRAY_CANONICAL_REPLAY_EVENT_MAX4096
+endpoint_field_wire_types.expires_at	UTC_RFC3339_MILLISECONDS
+endpoint_field_wire_types.export_job_id	LOWERCASE_RFC4122_UUID
+endpoint_field_wire_types.field_results	MAP_MERGE_FIELD_ID_TO_MERGE_RESULT_ENUM
+endpoint_field_wire_types.input_mode	UTF8_NFC_1_TO_128
+endpoint_field_wire_types.last_received_server_tick	INT64
+endpoint_field_wire_types.match_id	LOWERCASE_RFC4122_UUID
+endpoint_field_wire_types.merge_receipt_id	LOWERCASE_RFC4122_UUID
+endpoint_field_wire_types.merged_account_id	LOWERCASE_RFC4122_UUID
+endpoint_field_wire_types.next_cursor	UTF8_NFC_1_TO_128
+endpoint_field_wire_types.order_id	LOWERCASE_RFC4122_UUID
+endpoint_field_wire_types.order_state	UTF8_NFC_1_TO_128
+endpoint_field_wire_types.owned_cosmetic_ids	ARRAY_COSMETIC_ID
+endpoint_field_wire_types.party_size	INT64
+endpoint_field_wire_types.placement	INT64
+endpoint_field_wire_types.platform	UTF8_NFC_1_TO_128
+endpoint_field_wire_types.preview_token	OPAQUE_UTF8_NFC_MAX8192
+endpoint_field_wire_types.profile	PRIVATE_PROFILE_OBJECT
+endpoint_field_wire_types.provider	UTF8_NFC_1_TO_128
+endpoint_field_wire_types.provider_event_id	LOWERCASE_RFC4122_UUID
+endpoint_field_wire_types.provider_payload	PROVIDER_SPECIFIC_JSON_OBJECT_MAX16KB
+endpoint_field_wire_types.provider_receipt	OPAQUE_UTF8_NFC_MAX8192
+endpoint_field_wire_types.provider_signature	OPAQUE_UTF8_NFC_MAX8192
+endpoint_field_wire_types.provider_token	OPAQUE_UTF8_NFC_MAX8192
+endpoint_field_wire_types.public_profile	PUBLIC_PROFILE_OBJECT
+endpoint_field_wire_types.quoted_price_minor	INT64
+endpoint_field_wire_types.refund_state	UTF8_NFC_1_TO_128
+endpoint_field_wire_types.region	UTF8_NFC_1_TO_128
+endpoint_field_wire_types.remaining_match_likes	INT64
+endpoint_field_wire_types.replay_hash	LOWERCASE_HEX_SHA256
+endpoint_field_wire_types.replay_retention_extended	BOOLEAN
+endpoint_field_wire_types.report_id	LOWERCASE_RFC4122_UUID
+endpoint_field_wire_types.reports	ARRAY_BATTLE_REPORT_SUMMARY_MAX50
+endpoint_field_wire_types.request_id	LOWERCASE_RFC4122_UUID
+endpoint_field_wire_types.required_user_choices	ARRAY_MERGE_FIELD_ID_MAX32
+endpoint_field_wire_types.resource_version	INT64
+endpoint_field_wire_types.reward_claim_states	MAP_REWARD_ID_TO_CLAIM_STATE
+endpoint_field_wire_types.rewards	MATCH_SETTLEMENT_REWARD_OBJECT
+endpoint_field_wire_types.session_token	OPAQUE_UTF8_NFC_MAX8192
+endpoint_field_wire_types.settings	SETTINGS_OBJECT_SETTINGS_SCHEMA_JSON
+endpoint_field_wire_types.settlement_hash	LOWERCASE_HEX_SHA256
+endpoint_field_wire_types.snapshot	AUTHORITATIVE_MATCH_SNAPSHOT_BINARY_BASE64_MAX4MB
+endpoint_field_wire_types.source_account_id	LOWERCASE_RFC4122_UUID
+endpoint_field_wire_types.state	UTF8_NFC_1_TO_128
+endpoint_field_wire_types.target_account_id	LOWERCASE_RFC4122_UUID
+endpoint_field_wire_types.target_participant_slot	INT64
+endpoint_field_wire_types.ticket_id	LOWERCASE_RFC4122_UUID
+session.access_token_ttl_s	1800
+session.refresh_token_ttl_days	30
+session.refresh_rotation	ONE_TIME_REFRESH_TOKEN; REUSE_REVOKES_TOKEN_FAMILY
+session.logout	REVOKE_CURRENT_SESSION_AND_PUSH_DISCONNECT
+session.logout_all	REVOKE_ACCOUNT_SESSION_EPOCH
+session.max_concurrent_devices	3
+session.fourth_device_login	REQUIRE_USER_CHOOSE_ONE_EXISTING_SESSION_TO_REVOKE
+settlement.outbox	TRANSACTIONAL_OUTBOX_WITH_MATCH_SETTLEMENT_COMMIT
+settlement.retry	EXPONENTIAL_BACKOFF_1S_TO_300S_UNTIL_ACK; IDEMPOTENT_BY_MATCH_ID_ACCOUNT_ID
+server_crash.recovery	RESTORE_LAST_COMMITTED_SNAPSHOT_AND_REPLAY_APPEND_ONLY_EVENTS; ELSE_VOID_ABORT
+idempotency.record_ttl_days	7
+session.max_devices	3；第4设备登录返回现有会话列表（设备名/最近活跃/地区）
+session.revoke_flow	用户明确选择撤销目标→被撤设备立即断线→新会话才签发；无自动踢除
+session.revoke_race	同tick并发撤销按请求到达序原子处理；失败方收到SESSION_SLOT_TAKEN

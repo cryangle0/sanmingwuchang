@@ -1,0 +1,46 @@
+﻿工程字段	唯一值 / 执行语义
+normal.before_s	1200
+normal.check_interval_s	3
+normal.base_hit_probability	0.5
+normal.base_damage_max_hp_percent	20
+normal.stun_s	0.5
+normal.targets	ALIVE_PLAYER_OUTSIDE_SAFE_CIRCLE
+normal.does_not_target	MONSTER / PLAYER_OWNED_SUMMON / SOUL / REVIVE_PROTECTED
+normal.B43_probability_by_level	0.4 / 0.35 / 0.3 / 0.25 / 0.2
+normal.B11_remaining_damage	0.7
+normal.G3_remaining_damage	0.3
+normal.B11_G3_stack	MULTIPLICATIVE_REMAINING=0.21
+normal.other_percent_or_fixed_reduction	否
+normal.shieldable	是
+normal.invulnerability_blocks	是
+normal.active_interval_s_half_open	0 / 1200
+normal.event_at_exact_end_s	NONE
+apocalypse.start_s	1200
+apocalypse.tick_s	1
+apocalypse.initial_max_hp_percent	2
+apocalypse.add_percentage_points_every_s	5
+apocalypse.add_percentage_points	1
+apocalypse.no_hit_probability	是
+apocalypse.stun_s	0
+apocalypse.B43_affects	否
+apocalypse.B11_remaining_damage	0.7
+apocalypse.G3_remaining_damage	0.3
+apocalypse.B11_G3_stack	MULTIPLICATIVE_REMAINING=0.21
+apocalypse.other_percent_or_fixed_reduction	否
+apocalypse.shieldable	是
+apocalypse.invulnerability_blocks	是
+apocalypse.does_not_reveal_or_disable_stealth	是
+apocalypse.targets	ALL_NON_ELIMINATED_PLAYER_BODIES_NOT_SOUL_OR_REVIVE_PROTECTED / LIVING_CORE_BOSS
+apocalypse.does_not_target	ORDINARY_MONSTER / FLYING_MONSTER / PIG / LEADER / DRAGON / PLAYER_OWNED_SUMMON
+apocalypse.core_boss_damage_multiplier_of_player_value	0.5
+apocalypse.starts_globally_regardless_of_position	是
+apocalypse.core_boss_damage_formula	FLOOR(CURRENT_EVENT_PERCENT/100 * CORE_BOSS_MAX_HP_SNAPSHOT * 0.5)
+apocalypse.phase_enter_s	1200
+apocalypse.first_damage_event_s	1201
+apocalypse.damage_event_times_s	1201_PLUS_NONNEGATIVE_INTEGER
+apocalypse.percent_at_event	2 + FLOOR((EVENT_TIME_S-1200)/5)
+position_sample	PLAYER_CAPSULE_CENTER_AT_STORM_EVENT_TICK
+boundary_counts_as_safe	是
+safe_radius_zero_semantics	NO_GEOMETRIC_SAFE_POINT_EXISTS_FOR_PLAYER_TARGETING_OR_GROUND_ITEM_DOOM; BOUNDARY_COUNTS_AS_SAFE_ONLY_WHEN_RADIUS_GT_ZERO
+apocalypse.core_boss_max_hp_snapshot_at_event	CURRENT_COMMITTED_MAX_HP_BEFORE_EVENT
+apocalypse.core_boss_damage_form	STORM; SHIELDABLE=YES; ONLY_B11_G3_REMAINING_MULTIPLIERS_APPLY

@@ -1,0 +1,20 @@
+﻿工程字段	唯一值 / 执行语义
+all_heroes_free	是
+direct_cosmetic_sales_only	是
+paid_random_boxes	否
+ads_enabled	否
+gameplay_paid_modifiers	否
+revive_coin	否
+fourth_life	否
+paid_flying_mount	否
+paid_candidate_slots	否
+skin_stats	否
+paid_drop_rate	否
+allowed_cosmetics	HERO_SKIN / AVATAR / AVATAR_FRAME / PROFILE_BACKGROUND / TITLE_STYLE / KILL_BROADCAST_STYLE
+skin_may_change_collision	否
+skin_may_change_telegraph_geometry	否
+skin_may_reduce_visibility	否
+real_money_black_mountain	否
+launch_matrix.zh_CN.regions	CN=OPEN；其余地区CLOSED
+launch_matrix.other_locales	全部CLOSED；本地化完成+当地法务签字后逐项开启，每项开启记录签字证据ID
+launch_matrix.region_field_authority	服务端region字段；客户端语言设置不改变地区闭合判定

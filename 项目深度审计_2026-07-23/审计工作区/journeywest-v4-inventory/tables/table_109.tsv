@@ -1,0 +1,40 @@
+﻿工程字段	唯一值 / 执行语义
+B35.pickup_level5_percent_base_sell	20
+B35.reward_once_per_item_instance_per_account_per_match	否
+B35.owner_dropped_item_never_rewards_same_owner	是
+B35.item_field	B35_pickup_reward_consumed
+B35.reward_once_per_item_instance_globally	是
+B35.first_eligible_B35_pickup_consumes_reward	是
+B40_G9.hard_cap	NONE
+B40_G9.must_validate_20min_P99_layers	是
+B40_G9.eligible_kills	ORDINARY_MONSTER / FLYING_MONSTER / PIG / LEADER / DRAGON / CORE_BOSS / ENEMY_PLAYER_TRUE_DEATH
+B40_G9.player_owned_summon_kills_grant_layers	否
+storm_resistance.authority	§10天劫规则
+equipment_swap.pvp_out_of_combat_s	3
+equipment_swap.channel_s	0.5
+equipment_swap.move_allowed	是
+equipment_swap.any_actual_damage_interrupts	是
+equipment_swap.cooldown_equip_change	PRESERVE_REMAINING_PERCENT
+equipment_swap.attack_speed_equip_change	CURRENT_COMMITTED_ATTACK_UNCHANGED; NEXT_ATTACK_NEW_SPEED
+equipment_swap.max_hp_equip_change	PRESERVE_HP_PERCENT_FLOOR_MIN_1; UNEQUIP_CANNOT_KILL
+passive_replace.clear_owner_bound_entities_and_future_timers	是
+passive_replace.clear_permanent_layers_of_replaced_passive	是
+passive_replace.existing_independent_dot_continues	是
+passive_replace.new_book_level	1
+gem_sink.land_sell_gold_each	100
+gem_sink.ground_drop_allowed	否
+core_boss_drop.regular_equipment_count	1
+core_boss_drop.regular_quality.PURPLE	75
+core_boss_drop.regular_quality.GOLD	25
+core_boss_drop.G10_independent_extra_chance	0.05
+D12_clear_on	TARGET_TRUE_DEATH / CASTER_TRUE_DEATH / ACTIVE_REPLACED / DURATION_END
+D12_disconnect_does_not_clear	是
+B41.instances_stack_by_source	否
+B41.player_final_blow_collects_all	是
+B41.monster_final_blow_destroys_all	是
+B41.merge_same_target	PAYOUT_MAX; DURATION_MAX; KEEP_ALL_SOURCE_IDS_FOR_AUDIT
+B41.maximum_active_payout_per_target_gold	1500
+B33_gold_pool	G1 / G2 / G3 / G4 / G5 / G6 / G7 / G8 / G9
+G10_only_core_boss	是
+ground_permanent_items.authority	§12地面物与空投规则
+ground_permanent_items.economy_invariant	NEVER_DELETE_FOR_CAPACITY_PRESSURE

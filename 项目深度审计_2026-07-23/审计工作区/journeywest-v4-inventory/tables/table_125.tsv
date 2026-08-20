@@ -1,0 +1,7 @@
+﻿工程字段	唯一值 / 执行语义
+ActiveEffectSchema.BASE_required	effect_type / targeting / cast_type / range_m / shape / duration_s
+ActiveEffectSchema.DAMAGE_family	含任何伤害的载荷必须提供damage_events[]（每事件独立damage_form/hit_kind/element_rule/source_faction/owner_credit/trigger）或等价单事件字段组
+ActiveEffectSchema.HEAL_family	heal类字段 + faction_filter；owner_credit仅伤害/治疗事件必填
+ActiveEffectSchema.SUMMON_family	archetype / count / duration_s；战斗数值一律引用E.34
+ActiveEffectSchema.owner_credit_scope	只在产生伤害/治疗/经济事件的载荷必填；纯位移/视野/状态载荷禁止携带
+ActiveEffectSchema.implicit_defaults_forbidden	是；任何字段禁止从effect_type名称或全局默认推断

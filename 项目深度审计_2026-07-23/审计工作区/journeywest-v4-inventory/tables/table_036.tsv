@@ -1,0 +1,9 @@
+﻿技能ID	使用者	CD	前摇	形状	伤害	附加规则	形态	五行	命中	归属
+PIG_CHARGE	五行肥猪	6	0.6	type=LINE；length_m=3；width_m=1.6	80	knockback_m=2	SKILL	BIDIRECTIONAL_FIVE_ELEMENT	ABILITY	MONSTER
+LEADER_SMASH	肉盾首领	8	1	type=CIRCLE；radius_m=5	150	slow_percent=30；slow_s=2	SKILL	NONE	ABILITY	MONSTER
+LEADER_CONE	输出首领	6	1	type=CONE；range_m=8；angle_deg=60	200	无	SKILL	NONE	ABILITY	MONSTER
+DRAGON_BREATH	五行龙王	7	1.2	type=CONE；range_m=10；angle_deg=70	280	inherits_element=是	SKILL	BIDIRECTIONAL_FIVE_ELEMENT	ABILITY	MONSTER
+DRAGON_TAIL	五行龙王	10	0.6	type=CIRCLE；radius_m=5	180	knockback_m=3；inherits_element=是	SKILL	BIDIRECTIONAL_FIVE_ELEMENT	ABILITY	MONSTER
+DRAGON_DASH	五行龙王	12	1	type=LINE_CAPSULE；length_m=8；width_m=2.4；height_m=3；telegraph_s=1	120	condition=TOP_THREAT_AT_LEAST_12M_FOR_CONTINUOUS_2S_AND_REACHABLE；max_distance_m=8；slow_percent=25；slow_s=1.5；inherits_element=是	SKILL	BIDIRECTIONAL_FIVE_ELEMENT	ABILITY	MONSTER
+CORE_RING	核心BOSS公共骨架	10	1.5	type=CIRCLE；radius_m=10	400	first_cast_delay_s=5	SKILL	NONE	ABILITY	MONSTER
+CORE_METEOR	核心BOSS公共骨架	20	2	type=CIRCLE；radius_m=6	500	first_cast_delay_s=10；target=RANDOM_LIVING_THREAT_TARGET_CAST_POSITION	SKILL	NONE	ABILITY	MONSTER
