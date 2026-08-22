@@ -88,6 +88,17 @@ const PAD_EDGE_MM = 8_000;
 const SHOP_RADIUS_MM = 8_000;
 const MAX_STAMP_SEGMENT_MM = 30_000;
 const ROAD_GRID_MM = 16_000;
+/** Steepest grade a road may hold, in per mille of run. */
+const ROAD_MAX_GRADE_PER_MILLE = 120;
+/** Relaxation sweeps over the route graph. Fixed so the result is reproducible. */
+const ROAD_RELAX_SWEEPS = 24;
+/** Spawn pads are pulled within this of the median spawn elevation. */
+const SPAWN_FAIRNESS_BAND_MM = 1_500;
+/** Ceiling on the equalisation ramp, so one outlier pad cannot reshape a district. */
+const SPAWN_PAD_MAX_EDGE_MM = 40_000;
+/** 伏石圈 sits on a lifted dais, ringed by a worn trench. */
+const ROCK_PAD_LIFT_MM = 550;
+const ROCK_MOAT_MM = -350;
 
 const TERRAIN_SEED = Number.parseInt(MAP_GEOMETRY_HASH.slice(0, 8), 16) >>> 0 || 1;
 
@@ -96,7 +107,9 @@ interface SegmentStamp {
   readonly b: MapPointMm;
   readonly halfWidthMm: number;
   readonly edgeMm: number;
-  readonly targetMm: number;
+  /** Graded surface at each end; the road lerps between them along its run. */
+  readonly targetAMm: number;
+  readonly targetBMm: number;
 }
 
 interface PolyStamp {
@@ -118,7 +131,10 @@ interface StampIndex {
   readonly roadCells: ReadonlyMap<number, readonly number[]>;
   readonly courts: readonly PolyStamp[];
   readonly highlands: readonly PolyStamp[];
-  readonly pads: readonly CircleStamp[];
+  /** Stall levelling, laid before roads so a graded corridor still wins. */
+  readonly shopPads: readonly CircleStamp[];
+  /** Spawn fairness, laid after roads because it is a guarantee, not dressing. */
+  readonly spawnPads: readonly CircleStamp[];
   readonly features: readonly CircleStamp[];
   readonly bowls: readonly CircleStamp[];
 }
@@ -183,12 +199,147 @@ function latticeHeightMm(cellX: number, cellZ: number): number {
   return height;
 }
 
+/** Per-layer height breakdown at a point. Diagnostics only; not used by the sim. */
+export function terrainDebugProfile(
+  xMm: number,
+  zMm: number,
+): {
+  base: number;
+  road: number;
+  pads: number;
+  highlands: number;
+  courts: number;
+  features: number;
+  bowls: number;
+  lattice: number;
+} {
+  const index = stampIndex();
+  const base = baseHeightMm(xMm, zMm);
+  const shops = applyCircleStamps(base, xMm, zMm, index.shopPads);
+  const features = applyCircleStamps(shops, xMm, zMm, index.features);
+  const bowls = applyCircleStamps(features, xMm, zMm, index.bowls);
+  const road = applyRoadStamps(bowls, xMm, zMm, index);
+  const pads = applyCircleStamps(road, xMm, zMm, index.spawnPads);
+  const highlands = applyPolyStamps(pads, xMm, zMm, index.highlands);
+  const courts = applyPolyStamps(highlands, xMm, zMm, index.courts);
+  return {
+    base,
+    road,
+    pads,
+    highlands,
+    courts,
+    features,
+    bowls,
+    lattice: terrainHeightMm(xMm, zMm),
+  };
+}
+
+/**
+ * Where a den's hollow is actually dug, given its authored anchor.
+ *
+ * Every one of the 48 nest anchors measures as sitting inside a route
+ * corridor — the compiled anchors are waypoints on the road network, not
+ * clearings in the wild. Digging a hollow at the anchor therefore craters the
+ * road: laying roads last filled 41 of 48 hollows back in, and laying dens
+ * last broke line of sight along MAIN corridors. Sliding the hollow
+ * perpendicular to the nearest route resolves both — the road stays a road
+ * and the den gets real ground to sit in.
+ *
+ * The side is chosen by whichever offset lands farther from the network, with
+ * ties going to the positive normal, so the result is a pure function of the
+ * compiled map. Renderers must place den dressing on this point rather than on
+ * the anchor, or the props will float beside their own hollow.
+ */
+export function denCentreMm(anchor: MapPointMm, floorRadiusMm: number): MapPointMm {
+  const nodes = routeNodePositions();
+  let bestDistance = Number.POSITIVE_INFINITY;
+  let normalX = 0;
+  let normalZ = 0;
+  let halfWidthMm = 0;
+  for (const edge of MAP_ROUTE_EDGES) {
+    const a = nodes.get(edge.a);
+    const b = nodes.get(edge.b);
+    if (!a || !b) {
+      continue;
+    }
+    const distanceMm = isqrt(distanceSquaredToSegment(anchor, a, b));
+    if (distanceMm >= bestDistance) {
+      continue;
+    }
+    const deltaX = b.x - a.x;
+    const deltaZ = b.z - a.z;
+    const lengthMm = isqrt(deltaX * deltaX + deltaZ * deltaZ);
+    if (lengthMm === 0) {
+      continue;
+    }
+    bestDistance = distanceMm;
+    normalX = Math.trunc((-deltaZ * 1_000) / lengthMm);
+    normalZ = Math.trunc((deltaX * 1_000) / lengthMm);
+    halfWidthMm = Math.trunc(edge.widthMm / 2);
+  }
+  if (normalX === 0 && normalZ === 0) {
+    return anchor;
+  }
+  const reachMm = halfWidthMm + MIN_STAMP_EDGE_MM + floorRadiusMm;
+  const positive = {
+    x: anchor.x + Math.trunc((normalX * reachMm) / 1_000),
+    z: anchor.z + Math.trunc((normalZ * reachMm) / 1_000),
+  };
+  const negative = {
+    x: anchor.x - Math.trunc((normalX * reachMm) / 1_000),
+    z: anchor.z - Math.trunc((normalZ * reachMm) / 1_000),
+  };
+  return distanceToRouteNetworkMm(negative) > distanceToRouteNetworkMm(positive)
+    ? negative
+    : positive;
+}
+
+let routeNodeCache: Map<string, MapPointMm> | null = null;
+
+function routeNodePositions(): ReadonlyMap<string, MapPointMm> {
+  if (!routeNodeCache) {
+    routeNodeCache = new Map(MAP_ROUTE_NODES.map((node) => [node.id, node.position]));
+  }
+  return routeNodeCache;
+}
+
+function distanceToRouteNetworkMm(point: MapPointMm): number {
+  const nodes = routeNodePositions();
+  let best = Number.POSITIVE_INFINITY;
+  for (const edge of MAP_ROUTE_EDGES) {
+    const a = nodes.get(edge.a);
+    const b = nodes.get(edge.b);
+    if (!a || !b) {
+      continue;
+    }
+    best = Math.min(
+      best,
+      isqrt(distanceSquaredToSegment(point, a, b)) - Math.trunc(edge.widthMm / 2),
+    );
+  }
+  return best;
+}
+
 /** Relief before lattice quantisation. Stamp targets are authored against this. */
 function continuousHeightMm(xMm: number, zMm: number): number {
   const index = stampIndex();
   let height = heightBeforeFeatures(xMm, zMm, index);
   height = applyCircleStamps(height, xMm, zMm, index.features);
   height = applyCircleStamps(height, xMm, zMm, index.bowls);
+  // Roads are laid last on purpose. The corridor carries both connectivity and
+  // sightlines along a route, so nothing below may cut into it: a den rim
+  // crossing the road left a crest in the middle of a MAIN corridor that broke
+  // line of sight between its own endpoints. Dens keep their hollows because
+  // they are dug beside the route rather than on it — see denCentreMm.
+  // Authored highlands and court floors still outrank the road, and their
+  // ramps and gates are where the two meet.
+  height = applyRoadStamps(height, xMm, zMm, index);
+  // Spawn fairness outranks the corridor: a road may not hand one of the 30
+  // starts a height advantage. Its skirt is sized to the correction it needs,
+  // so on flat starts it barely touches the road at all.
+  height = applyCircleStamps(height, xMm, zMm, index.spawnPads);
+  height = applyPolyStamps(height, xMm, zMm, index.highlands);
+  height = applyPolyStamps(height, xMm, zMm, index.courts);
   return height;
 }
 
@@ -221,11 +372,80 @@ export function terrainBlocksLineOfSight(
   return false;
 }
 
+/**
+ * Graded surface height at each route node.
+ *
+ * Starting from the raw hillside, a fixed number of sweeps pulls neighbouring
+ * nodes together until no edge exceeds ROAD_MAX_GRADE_PER_MILLE. Roads then
+ * interpolate between node heights instead of draping over the noise, so a
+ * road crossing a ridge cuts through it and a road crossing a hollow fills
+ * it. Because the route graph spans every POI anchor and the graded corridor
+ * is walkable end to end, the graph's own connectivity carries over to the
+ * terrain.
+ *
+ * Sweeps run in compiled edge order for a fixed count, so the result is a
+ * pure function of the map and ports to C# unchanged.
+ */
+function relaxRouteNodeHeights(nodes: ReadonlyMap<string, MapPointMm>): Map<string, number> {
+  const heights = new Map<string, number>();
+  for (const node of MAP_ROUTE_NODES) {
+    heights.set(node.id, baseHeightMm(node.position.x, node.position.z));
+  }
+  for (let sweep = 0; sweep < ROAD_RELAX_SWEEPS; sweep += 1) {
+    let adjusted = false;
+    for (const edge of MAP_ROUTE_EDGES) {
+      const heightA = heights.get(edge.a);
+      const heightB = heights.get(edge.b);
+      if (heightA === undefined || heightB === undefined || !nodes.has(edge.a)) {
+        continue;
+      }
+      const allowedMm = Math.trunc((edge.lengthMm * ROAD_MAX_GRADE_PER_MILLE) / 1_000);
+      const delta = heightB - heightA;
+      const excess = Math.abs(delta) - allowedMm;
+      if (excess <= 0) {
+        continue;
+      }
+      // Split the correction across both ends, rounding away from zero so the
+      // sweep always makes progress on odd millimetre excesses.
+      const shift = Math.trunc(excess / 2) + (excess % 2);
+      if (delta > 0) {
+        heights.set(edge.a, heightA + shift);
+        heights.set(edge.b, heightB - shift);
+      } else {
+        heights.set(edge.a, heightA - shift);
+        heights.set(edge.b, heightB + shift);
+      }
+      adjusted = true;
+    }
+    if (!adjusted) {
+      break;
+    }
+  }
+  return heights;
+}
+
+/** Worst grade left on any route edge after relaxation, in per mille. */
+export function routeGradeExtremePerMille(): number {
+  const nodes = new Map(MAP_ROUTE_NODES.map((node) => [node.id, node.position]));
+  const heights = relaxRouteNodeHeights(nodes);
+  let worst = 0;
+  for (const edge of MAP_ROUTE_EDGES) {
+    const heightA = heights.get(edge.a);
+    const heightB = heights.get(edge.b);
+    if (heightA === undefined || heightB === undefined || edge.lengthMm <= 0) {
+      continue;
+    }
+    worst = Math.max(worst, Math.trunc((Math.abs(heightB - heightA) * 1_000) / edge.lengthMm));
+  }
+  return worst;
+}
+
 function stampIndex(): StampIndex {
   if (stamps) {
     return stamps;
   }
   const nodes = new Map(MAP_ROUTE_NODES.map((node) => [node.id, node.position]));
+  const nodeHeights = relaxRouteNodeHeights(nodes);
   const roads: SegmentStamp[] = [];
   for (const edge of MAP_ROUTE_EDGES) {
     const a = nodes.get(edge.a);
@@ -233,16 +453,20 @@ function stampIndex(): StampIndex {
     if (!a || !b) {
       continue;
     }
+    const heightA = nodeHeights.get(edge.a) ?? baseHeightMm(a.x, a.z);
+    const heightB = nodeHeights.get(edge.b) ?? baseHeightMm(b.x, b.z);
     const halfWidthMm = Math.trunc(edge.widthMm / 2) + 1_000;
-    for (const [start, end] of subdivideSegment(a, b)) {
+    const parts = subdivideSegment(a, b);
+    parts.forEach(([start, end], part) => {
       roads.push({
         a: start,
         b: end,
         halfWidthMm,
-        edgeMm: ROAD_EDGE_MM,
-        targetMm: ROAD_CAMBER_MM,
+        edgeMm: bandLimitEdge(ROAD_EDGE_MM),
+        targetAMm: heightA + Math.trunc(((heightB - heightA) * part) / parts.length),
+        targetBMm: heightA + Math.trunc(((heightB - heightA) * (part + 1)) / parts.length),
       });
-    }
+    });
   }
   const roadCells = new Map<number, number[]>();
   roads.forEach((road, roadIndex) => {
@@ -268,22 +492,33 @@ function stampIndex(): StampIndex {
     }
   });
 
-  const pads = [
-    ...MAP_SPAWN_POINTS.map((spawn) => ({
+  const spawnMedianMm = medianOf(
+    MAP_SPAWN_POINTS.map((spawn) => baseHeightMm(spawn.position.x, spawn.position.z)),
+  );
+  const spawnPads = MAP_SPAWN_POINTS.map((spawn) => {
+    const groundMm = baseHeightMm(spawn.position.x, spawn.position.z);
+    // Nobody starts the match looking down on the other 29, so pads are
+    // pulled into a narrow band around the median spawn elevation. The
+    // approach is only as long as the correction needs at road grade: a
+    // fixed long skirt would have made every pad a 47 m radius terrain
+    // modifier that swamped the graded road corridors running past it.
+    const targetMm = clampToBand(groundMm, spawnMedianMm, SPAWN_FAIRNESS_BAND_MM);
+    const rampMm = Math.trunc((Math.abs(targetMm - groundMm) * 1_000) / ROAD_MAX_GRADE_PER_MILLE);
+    return {
       x: spawn.position.x,
       z: spawn.position.z,
       radiusMm: PAD_RADIUS_MM,
-      edgeMm: PAD_EDGE_MM,
-      targetMm: baseHeightMm(spawn.position.x, spawn.position.z),
-    })),
-    ...MAP_SHOPS.map((shop) => ({
-      x: shop.position.x,
-      z: shop.position.z,
-      radiusMm: SHOP_RADIUS_MM,
-      edgeMm: PAD_EDGE_MM,
-      targetMm: baseHeightMm(shop.position.x, shop.position.z),
-    })),
-  ];
+      edgeMm: Math.min(SPAWN_PAD_MAX_EDGE_MM, bandLimitEdge(rampMm)),
+      targetMm,
+    };
+  });
+  const shopPads = MAP_SHOPS.map((shop) => ({
+    x: shop.position.x,
+    z: shop.position.z,
+    radiusMm: SHOP_RADIUS_MM,
+    edgeMm: bandLimitEdge(PAD_EDGE_MM),
+    targetMm: baseHeightMm(shop.position.x, shop.position.z),
+  }));
   const draft: StampIndex = {
     roads,
     roadCells,
@@ -297,55 +532,118 @@ function stampIndex(): StampIndex {
       targetMm: highland.topHeightMm,
       edgeMm: HIGHLAND_EDGE_MM,
     })),
-    pads,
+    shopPads,
+    spawnPads,
     features: [],
     bowls: [],
   };
   const features: CircleStamp[] = [];
   const bowls: CircleStamp[] = [];
-  const flattenAt = (
+
+  /** Level a disc onto the surrounding hillside, optionally lifting or sinking it. */
+  const terraceAt = (
     x: number,
     z: number,
     radiusMm: number,
     edgeMm: number,
-    bowlMm = 0,
-    bowlRadiusMm = 0,
+    liftMm = 0,
+  ): number => {
+    const groundMm = heightBeforeFeatures(x, z, draft);
+    features.push({ x, z, radiusMm, edgeMm: bandLimitEdge(edgeMm), targetMm: groundMm + liftMm });
+    return groundMm;
+  };
+
+  /**
+   * A hollow with a raised lip.
+   *
+   * Order matters and does the work of a ring stamp we would otherwise need:
+   * the berm is laid down over the whole disc first, then the floor overwrites
+   * its interior, leaving the lip standing as a rim. Both falloffs are band
+   * limited, so the wall is the steepest thing here at roughly 25-30 degrees
+   * — dramatic to look at, still climbable, no authored ramp required.
+   */
+  const denAt = (
+    x: number,
+    z: number,
+    groundMm: number,
+    floorRadiusMm: number,
+    floorMm: number,
+    bermMm: number,
   ): void => {
-    const targetMm = heightBeforeFeatures(x, z, draft);
-    features.push({ x, z, radiusMm, edgeMm: bandLimitEdge(edgeMm), targetMm });
-    if (bowlMm !== 0 && bowlRadiusMm > 0 && !insideHighland(x, z, draft)) {
+    if (insideHighland(x, z, draft)) {
+      return;
+    }
+    const wallMm = bandLimitEdge(0);
+    if (bermMm !== 0) {
       bowls.push({
         x,
         z,
-        radiusMm: bowlRadiusMm,
-        edgeMm: bandLimitEdge(Math.trunc(bowlRadiusMm / 2)),
-        targetMm: targetMm + bowlMm,
+        radiusMm: floorRadiusMm + wallMm + 3_000,
+        edgeMm: wallMm,
+        targetMm: groundMm + bermMm,
       });
     }
+    bowls.push({
+      x,
+      z,
+      radiusMm: floorRadiusMm,
+      edgeMm: wallMm,
+      targetMm: groundMm + floorMm,
+    });
   };
+
+  // 24 伏石圈 read as raised daises rather than discs pressed into the ground:
+  // a flat lifted pad for the stones, ringed by a shallow worn trench.
   for (const rock of MAP_ROCKS) {
-    flattenAt(rock.position.x, rock.position.z, 8_500, 4_000);
+    const groundMm = terraceAt(rock.position.x, rock.position.z, 7_000, 8_000, ROCK_PAD_LIFT_MM);
+    bowls.push({
+      x: rock.position.x,
+      z: rock.position.z,
+      radiusMm: 10_500,
+      edgeMm: bandLimitEdge(0),
+      targetMm: groundMm + ROCK_MOAT_MM,
+    });
+    bowls.push({
+      x: rock.position.x,
+      z: rock.position.z,
+      radiusMm: 7_000,
+      edgeMm: bandLimitEdge(0),
+      targetMm: groundMm + ROCK_PAD_LIFT_MM,
+    });
   }
+
+  // 48 nests become real bowls with a lip. Depth grows toward the inner band
+  // so a player can read how dangerous a den is from its silhouette alone.
   for (const nest of MAP_NESTS) {
     const inner = nest.band === '内';
     const mid = nest.band === '中';
-    flattenAt(
-      nest.base.x,
-      nest.base.z,
-      inner ? 12_000 : mid ? 10_500 : 9_000,
-      5_000,
-      inner ? -900 : mid ? -700 : -520,
-      inner ? 6_500 : mid ? 5_500 : 4_800,
+    const floorRadiusMm = inner ? 8_000 : mid ? 7_000 : 6_000;
+    const centre = denCentreMm(nest.base, floorRadiusMm);
+    const groundMm = terraceAt(centre.x, centre.z, inner ? 12_000 : mid ? 10_500 : 9_000, 8_000);
+    denAt(
+      centre.x,
+      centre.z,
+      groundMm,
+      floorRadiusMm,
+      inner ? -4_000 : mid ? -2_800 : -1_800,
+      inner ? 1_200 : mid ? 900 : 600,
     );
   }
   for (const pig of MAP_PIGS) {
-    flattenAt(pig.position.x, pig.position.z, 12_000, 5_000, -400, 5_500);
+    const centre = denCentreMm(pig.position, 6_500);
+    const groundMm = terraceAt(centre.x, centre.z, 12_000, 8_000);
+    denAt(centre.x, centre.z, groundMm, 6_500, -2_200, 700);
   }
+
+  // Boss sites stop being flat discs and become arenas: a sunken floor walled
+  // by its own rim, which is what makes them legible from outside.
   for (const dragon of MAP_DRAGONS) {
-    flattenAt(dragon.position.x, dragon.position.z, 14_500, 5_500);
+    const groundMm = terraceAt(dragon.position.x, dragon.position.z, 14_500, 8_000);
+    denAt(dragon.position.x, dragon.position.z, groundMm, 16_000, -5_000, 2_000);
   }
   for (const elite of MAP_ELITES) {
-    flattenAt(elite.position.x, elite.position.z, 12_500, 5_000);
+    const groundMm = terraceAt(elite.position.x, elite.position.z, 12_500, 8_000);
+    denAt(elite.position.x, elite.position.z, groundMm, 13_000, -3_500, 1_500);
   }
   stamps = { ...draft, features, bowls };
   return stamps;
@@ -353,10 +651,7 @@ function stampIndex(): StampIndex {
 
 function heightBeforeFeatures(xMm: number, zMm: number, index: StampIndex): number {
   let height = baseHeightMm(xMm, zMm);
-  height = applyRoadStamps(height, xMm, zMm, index);
-  height = applyCircleStamps(height, xMm, zMm, index.pads);
-  height = applyPolyStamps(height, xMm, zMm, index.highlands);
-  height = applyPolyStamps(height, xMm, zMm, index.courts);
+  height = applyCircleStamps(height, xMm, zMm, index.shopPads);
   return height;
 }
 
@@ -487,7 +782,23 @@ function bandLimitEdge(edgeMm: number): number {
   return Math.max(MIN_STAMP_EDGE_MM, edgeMm);
 }
 
-function stampWeight(distanceMm: number, innerMm: number, edgeMm: number): number {  if (distanceMm <= innerMm) {
+function medianOf(values: readonly number[]): number {
+  if (values.length === 0) {
+    return 0;
+  }
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = sorted.length >> 1;
+  return sorted.length % 2 === 1
+    ? (sorted[middle] as number)
+    : Math.trunc(((sorted[middle - 1] as number) + (sorted[middle] as number)) / 2);
+}
+
+function clampToBand(value: number, centre: number, bandMm: number): number {
+  return Math.max(centre - bandMm, Math.min(centre + bandMm, value));
+}
+
+function stampWeight(distanceMm: number, innerMm: number, edgeMm: number): number {
+  if (distanceMm <= innerMm) {
     return 1_000;
   }
   const outer = innerMm + edgeMm;
@@ -517,8 +828,13 @@ function applyRoadStamps(height: number, xMm: number, zMm: number, index: StampI
   const cellX = floorDiv(xMm, ROAD_GRID_MM);
   const cellZ = floorDiv(zMm, ROAD_GRID_MM);
   const seen = new Set<number>();
-  let out = height;
   const point = { x: xMm, z: zMm };
+  // Corridors overlap wherever routes meet. Blending every corridor that
+  // covers this point by weight keeps junctions smooth and makes the result
+  // independent of traversal order; mixing them one after another instead let
+  // the last corridor win outright and left steps in the road surface.
+  let weightSum = 0;
+  let targetSum = 0;
   for (let offsetX = -1; offsetX <= 1; offsetX += 1) {
     for (let offsetZ = -1; offsetZ <= 1; offsetZ += 1) {
       const bucket = index.roadCells.get(cellKey(cellX + offsetX, cellZ + offsetZ));
@@ -534,13 +850,22 @@ function applyRoadStamps(height: number, xMm: number, zMm: number, index: StampI
         if (!road) {
           continue;
         }
-        const distanceMm = isqrt(distanceSquaredToSegment(point, road.a, road.b));
-        const targetMm = baseHeightMm(xMm, zMm) + road.targetMm;
-        out = mixToward(out, targetMm, stampWeight(distanceMm, road.halfWidthMm, road.edgeMm));
+        const { distanceMm, alongPerMille } = segmentProjection(point, road.a, road.b);
+        const weight = stampWeight(distanceMm, road.halfWidthMm, road.edgeMm);
+        if (weight <= 0) {
+          continue;
+        }
+        const gradedMm =
+          road.targetAMm + Math.trunc(((road.targetBMm - road.targetAMm) * alongPerMille) / 1_000);
+        weightSum += weight;
+        targetSum += weight * (gradedMm + ROAD_CAMBER_MM);
       }
     }
   }
-  return out;
+  if (weightSum <= 0) {
+    return height;
+  }
+  return mixToward(height, Math.trunc(targetSum / weightSum), Math.min(1_000, weightSum));
 }
 
 function applyCircleStamps(
@@ -583,6 +908,34 @@ function distanceToRingMm(point: MapPointMm, ring: readonly MapPointMm[]): numbe
     best = Math.min(best, distanceSquaredToSegment(point, a, b));
   }
   return isqrt(best);
+}
+
+/** Distance to a segment plus how far along it the closest point lies, in per mille. */
+function segmentProjection(
+  point: MapPointMm,
+  start: MapPointMm,
+  end: MapPointMm,
+): { distanceMm: number; alongPerMille: number } {
+  const deltaX = end.x - start.x;
+  const deltaZ = end.z - start.z;
+  const lengthSquared = deltaX * deltaX + deltaZ * deltaZ;
+  if (lengthSquared === 0) {
+    const dx = point.x - start.x;
+    const dz = point.z - start.z;
+    return { distanceMm: isqrt(dx * dx + dz * dz), alongPerMille: 0 };
+  }
+  const projection = Math.max(
+    0,
+    Math.min(lengthSquared, (point.x - start.x) * deltaX + (point.z - start.z) * deltaZ),
+  );
+  const closestX = start.x + Math.trunc((deltaX * projection) / lengthSquared);
+  const closestZ = start.z + Math.trunc((deltaZ * projection) / lengthSquared);
+  const dx = point.x - closestX;
+  const dz = point.z - closestZ;
+  return {
+    distanceMm: isqrt(dx * dx + dz * dz),
+    alongPerMille: Math.trunc((projection * 1_000) / lengthSquared),
+  };
 }
 
 function distanceSquaredToSegment(point: MapPointMm, start: MapPointMm, end: MapPointMm): number {

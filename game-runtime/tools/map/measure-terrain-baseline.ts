@@ -103,7 +103,10 @@ function percentile(sorted: readonly number[], fraction: number): number {
   if (sorted.length === 0) {
     return 0;
   }
-  const index = Math.min(sorted.length - 1, Math.max(0, Math.round(fraction * (sorted.length - 1))));
+  const index = Math.min(
+    sorted.length - 1,
+    Math.max(0, Math.round(fraction * (sorted.length - 1))),
+  );
   return sorted[index] as number;
 }
 
@@ -258,7 +261,8 @@ function measureBlindDomains(): {
     largestBlindClusterCells: largest,
     // Equivalent-disc radius of the largest cluster, in metres.
     largestBlindClusterMeters:
-      (Math.sqrt((largest * BLIND_CELL_MM * BLIND_CELL_MM) / Math.PI) / 1_000) * (largest > 0 ? 1 : 0),
+      (Math.sqrt((largest * BLIND_CELL_MM * BLIND_CELL_MM) / Math.PI) / 1_000) *
+      (largest > 0 ? 1 : 0),
   };
 }
 
@@ -317,8 +321,20 @@ function measurePoiFlatness(): Record<string, { count: number; worstSpanMm: numb
     return worst;
   };
   return {
-    rocks: { count: MAP_ROCKS.length, worstSpanMm: probe(MAP_ROCKS.map((r) => r.position), 8_500) },
-    nests: { count: MAP_NESTS.length, worstSpanMm: probe(MAP_NESTS.map((n) => n.base), 9_000) },
+    rocks: {
+      count: MAP_ROCKS.length,
+      worstSpanMm: probe(
+        MAP_ROCKS.map((r) => r.position),
+        8_500,
+      ),
+    },
+    nests: {
+      count: MAP_NESTS.length,
+      worstSpanMm: probe(
+        MAP_NESTS.map((n) => n.base),
+        9_000,
+      ),
+    },
     dragons: {
       count: MAP_DRAGONS.length,
       worstSpanMm: probe(
@@ -333,7 +349,13 @@ function measurePoiFlatness(): Record<string, { count: number; worstSpanMm: numb
         12_500,
       ),
     },
-    courts: { count: MAP_COURTS.length, worstSpanMm: probe(MAP_COURTS.map((c) => c.center), 8_000) },
+    courts: {
+      count: MAP_COURTS.length,
+      worstSpanMm: probe(
+        MAP_COURTS.map((c) => c.center),
+        8_000,
+      ),
+    },
     chests: { count: MAP_CHESTS.length, worstSpanMm: 0 },
   };
 }
