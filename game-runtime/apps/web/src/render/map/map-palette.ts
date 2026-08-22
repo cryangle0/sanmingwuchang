@@ -450,16 +450,21 @@ export function createMapMaterials(seed: number): MapMaterialLibrary {
     clearcoat: 0.72,
     clearcoatRoughness: 0.24,
   });
+  // Depth and foam arrive as vertex colour from buildWaterGeometry, so the
+  // albedo stays white and the surface only supplies its sheen. A flat colour
+  // here is what made ponds read as shadowed ground.
   const valleyWater = new THREE.MeshPhysicalMaterial({
-    color: 0x1f4d4a,
-    roughness: 0.38,
-    metalness: 0.02,
-    emissive: 0x031212,
-    emissiveIntensity: 0.16,
+    color: 0xffffff,
+    vertexColors: true,
+    roughness: 0.16,
+    metalness: 0.0,
+    emissive: 0x0d3540,
+    emissiveIntensity: 0.35,
     transparent: true,
-    opacity: 0.88,
-    clearcoat: 0.45,
-    clearcoatRoughness: 0.32,
+    opacity: 0.9,
+    clearcoat: 0.9,
+    clearcoatRoughness: 0.12,
+    reflectivity: 0.6,
   });
   const eliteArena = new THREE.MeshStandardMaterial({
     color: 0x8f4938,

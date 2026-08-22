@@ -40,8 +40,11 @@ const SLOPE_SEGMENT_METERS = 6;
 /** Facet rows between foot and crest. */
 const SLOPE_STEPS = 5;
 
-const SLOPE_LOW = new THREE.Color(0x4c5340);
-const SLOPE_HIGH = new THREE.Color(0x8d8878);
+/** World metres per texture tile on a slope. */
+const TEXTURE_METERS = 13;
+
+const SLOPE_LOW = new THREE.Color(0x5d6349);
+const SLOPE_HIGH = new THREE.Color(0xa9a48f);
 const SNOW = new THREE.Color(0xdde6ea);
 
 export function buildInteriorRidges(
@@ -102,13 +105,21 @@ export function buildInteriorRidges(
  * line stays sharp and the footprint stays exactly on the compiled polygon
  * the sim collides against.
  */
+interface SlopePoint {
+  readonly x: number;
+  readonly y: number;
+  readonly z: number;
+  /** Ground level under this column, so colour can span the whole massif. */
+  readonly footY: number;
+}
+
 function slopePoint(
   ridge: Ridge,
   a: { x: number; z: number },
   b: { x: number; z: number },
   across: number,
   up: number,
-): { x: number; y: number; z: number } {
+): SlopePoint {
   const footX = a.x + (b.x - a.x) * across;
   const footZ = a.z + (b.z - a.z) * across;
   const crest = ridge.pointFor({ x: footX, z: footZ });
@@ -123,7 +134,7 @@ function slopePoint(
   const rough =
     (noise(x * 0.11, z * 0.11) - 0.5) * ridge.reliefMeters * 0.3 +
     (noise(x * 0.31, z * 0.31) - 0.5) * ridge.reliefMeters * 0.12;
-  return { x, y: y + rough * taper, z };
+  return { x, y: y + rough * taper, z, footY };
 }
 
 /**
@@ -277,32 +288,25 @@ class FacetBuilder {
     return this.positions.length === 0;
   }
 
-  quad(
-    a: { x: number; y: number; z: number },
-    b: { x: number; y: number; z: number },
-    c: { x: number; y: number; z: number },
-    d: { x: number; y: number; z: number },
-    reliefMeters: number,
-  ): void {
+  quad(a: SlopePoint, b: SlopePoint, c: SlopePoint, d: SlopePoint, reliefMeters: number): void {
     this.triangle(a, b, c, reliefMeters);
     this.triangle(a, c, d, reliefMeters);
   }
 
-  private triangle(
-    a: { x: number; y: number; z: number },
-    b: { x: number; y: number; z: number },
-    c: { x: number; y: number; z: number },
-    reliefMeters: number,
-  ): void {
-    const baseY = Math.min(a.y, b.y, c.y);
+  private triangle(a: SlopePoint, b: SlopePoint, c: SlopePoint, reliefMeters: number): void {
     for (const point of [a, b, c]) {
       this.positions.push(point.x, point.y, point.z);
-      this.uvs.push(point.x / 11, point.z / 11);
-      const climb = Math.max(0, Math.min(1, (point.y - baseY) / Math.max(1, reliefMeters)));
-      this.colour.copy(SLOPE_LOW).lerp(SLOPE_HIGH, climb);
-      if (reliefMeters > SNOW_LINE_METERS) {
-        const snow = Math.max(0, Math.min(1, (climb * reliefMeters - SNOW_LINE_METERS) / 7));
-        this.colour.lerp(SNOW, snow * 0.85);
+      // Vertical bedding. A top-down planar projection smears the texture to
+      // nothing on the steep faces, which is most of a mountain.
+      this.uvs.push((point.x + point.z) / TEXTURE_METERS, point.y / TEXTURE_METERS);
+      // Climb is measured from the ground under this column, not from the
+      // lowest corner of the triangle: a per-triangle datum restarts the ramp
+      // on every facet and flattens the whole massif to its darkest tone.
+      const climbMeters = Math.max(0, point.y - point.footY);
+      const climb = Math.min(1, climbMeters / Math.max(1, reliefMeters));
+      this.colour.copy(SLOPE_LOW).lerp(SLOPE_HIGH, climb ** 0.7);
+      if (climbMeters > SNOW_LINE_METERS) {
+        this.colour.lerp(SNOW, Math.min(1, (climbMeters - SNOW_LINE_METERS) / 7) * 0.85);
       }
       this.colours.push(this.colour.r, this.colour.g, this.colour.b);
     }
