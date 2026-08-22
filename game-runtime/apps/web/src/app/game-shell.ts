@@ -1,20 +1,8 @@
-import {
-  AUTHORITATIVE_EQUIPMENT,
-  AUTHORITATIVE_HEROES,
-  AUTHORITATIVE_PASSIVES,
-  getHeroDefinition,
-} from '@jwgb/content';
+import { AUTHORITATIVE_HEROES, getHeroDefinition } from '@jwgb/content';
 import { heroId, type PlayerId, playerId, TICKS_PER_SECOND } from '@jwgb/core';
 import type { ServerMessage } from '@jwgb/protocol';
 import { createElement, HelpCircle, Play, RefreshCw, Settings, Swords, X } from 'lucide';
-import {
-  activeIconUrl,
-  equipmentIconUrl,
-  flowAssetUrl,
-  heroCardUrl,
-  heroPortraitUrl,
-  passiveIconUrl,
-} from '../runtime/asset-url';
+import { activeIconUrl, flowAssetUrl, heroCardUrl, heroPortraitUrl } from '../runtime/asset-url';
 import { MatchmakingClient } from '../runtime/matchmaking-client';
 import { resolveOnlineServerUrl } from '../runtime/online-server-url';
 import { WebAudioRuntime } from '../runtime/web-audio';
@@ -43,16 +31,15 @@ import {
   readMatchHistory,
   readPendingMatch,
   recordMatchResult,
-  summariseHistory,
   writePendingMatch,
 } from './lobby-session';
+import { renderMetaScreen } from './meta-screens';
 
 type AuthoritativeHeroRecord = (typeof AUTHORITATIVE_HEROES)[number];
 /** Seats in an authoritative room; the lobby reports the shortfall, not a guess. */
 const MATCH_ROOM_CAPACITY = 30;
 
 type LobbyPanelKind = 'growth' | 'profile' | 'ranking';
-type LobbyCatalogKind = 'heroes' | 'passives' | 'equipment' | 'runtime';
 
 const HERO_RECORDS: ReadonlyMap<string, AuthoritativeHeroRecord> = new Map(
   AUTHORITATIVE_HEROES.map((hero) => [hero.id, hero]),
@@ -390,21 +377,6 @@ export class GameShell {
             <i aria-hidden="true">设</i><small>设置</small>
           </button>
         </nav>
-        <section
-          class="lobby-catalog-overlay flow-panel"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="lobby-catalog-title"
-          hidden
-        >
-          <header class="lobby-catalog-header">
-            <span><small class="flow-eyebrow">资料库</small><h2 id="lobby-catalog-title"></h2></span>
-            <button class="flow-icon-button lobby-catalog-close" type="button" aria-label="关闭资料库" title="关闭资料库">
-              <span class="lobby-catalog-close-icon"></span>
-            </button>
-          </header>
-          <div class="lobby-catalog-content"></div>
-        </section>
         <aside class="queue-overlay flow-panel" ${matching ? '' : 'hidden'} aria-live="polite">
           <div class="queue-orbit" aria-hidden="true"></div>
           <div class="queue-copy">
@@ -441,9 +413,6 @@ export class GameShell {
       .querySelector('.cancel-match-icon')
       ?.append(createElement(X, { width: 17, height: 17 }));
     this.flowLayer
-      .querySelector('.lobby-catalog-close-icon')
-      ?.append(createElement(X, { width: 18, height: 18 }));
-    this.flowLayer
       .querySelector<HTMLButtonElement>('.start-match-button')
       ?.addEventListener('click', this.startMatch);
     this.flowLayer
@@ -479,9 +448,6 @@ export class GameShell {
     this.flowLayer
       .querySelector<HTMLButtonElement>('.reconnect-card')
       ?.addEventListener('click', this.startMatch);
-    this.flowLayer
-      .querySelector<HTMLButtonElement>('.lobby-catalog-close')
-      ?.addEventListener('click', this.closeLobbyCatalog);
   }
 
   /**
@@ -494,13 +460,15 @@ export class GameShell {
    * and local history are, and 排行榜 says plainly that it is not connected
    * rather than showing a fabricated ladder.
    */
+  /**
+   * Lobby destinations.
+   *
+   * 成长 / 个人 / 排行榜 open as full screens with the prototype's geometry —
+   * header bar, centred tabs, inset content — rather than as panels floating
+   * over the lobby. The lobby stays mounted underneath and is restored on
+   * back, so this costs no flow state.
+   */
   private openLobbyPanel(kind: LobbyPanelKind): void {
-    const overlay = this.flowLayer.querySelector<HTMLElement>('.lobby-catalog-overlay');
-    const title = this.flowLayer.querySelector<HTMLElement>('#lobby-catalog-title');
-    const content = this.flowLayer.querySelector<HTMLElement>('.lobby-catalog-content');
-    if (!overlay || !title || !content) {
-      return;
-    }
     for (const button of this.flowLayer.querySelectorAll<HTMLButtonElement>(
       '.lobby-nav-button[data-lobby-panel]',
     )) {
@@ -508,158 +476,28 @@ export class GameShell {
       button.setAttribute('aria-pressed', String(button.dataset.lobbyPanel === kind));
     }
 
-    if (kind === 'growth') {
-      title.textContent = '成长 · 图鉴';
-      content.className = 'lobby-catalog-content is-panel';
-      content.innerHTML = `
-        <div class="lobby-metric-row">
-          <span><b>${AUTHORITATIVE_HEROES.length}</b><small>英雄</small></span>
-          <span><b>${AUTHORITATIVE_PASSIVES.length}</b><small>被动</small></span>
-          <span><b>${AUTHORITATIVE_EQUIPMENT.length}</b><small>装备</small></span>
-          <span><b>${TICKS_PER_SECOND} Hz</b><small>权威战斗</small></span>
-        </div>
-        <div class="lobby-panel-actions">
-          <button class="flow-secondary-button" type="button" data-catalog-kind="heroes">英雄图鉴</button>
-          <button class="flow-secondary-button" type="button" data-catalog-kind="passives">被动技能</button>
-          <button class="flow-secondary-button" type="button" data-catalog-kind="equipment">装备总览</button>
-        </div>
-      `;
-      for (const button of content.querySelectorAll<HTMLButtonElement>('[data-catalog-kind]')) {
-        button.addEventListener('click', () => {
-          this.openLobbyCatalog(button.dataset.catalogKind as LobbyCatalogKind, kind);
-        });
-      }
-    } else if (kind === 'profile') {
-      const history = readMatchHistory(window.localStorage);
-      const summary = summariseHistory(history);
-      const favourite = summary.favouriteHeroId
-        ? (AUTHORITATIVE_HEROES.find((hero) => hero.id === summary.favouriteHeroId)?.name ??
-          summary.favouriteHeroId)
-        : '暂无';
-      title.textContent = '个人档案';
-      content.className = 'lobby-catalog-content is-panel';
-      content.innerHTML = `
-        <div class="lobby-metric-row">
-          <span><b>${escapeHtml(playerTag(this.matchmakingPlayerId))}</b><small>玩家编号</small></span>
-          <span><b>${summary.matches}</b><small>本机对局</small></span>
-          <span><b>${summary.victories}</b><small>获胜</small></span>
-          <span><b>${summary.bestPlacement ?? '—'}</b><small>最佳名次</small></span>
-        </div>
-        <div class="lobby-metric-row">
-          <span><b>${formatClock(summary.totalSurvivalSeconds * 1_000)}</b><small>累计存活</small></span>
-          <span><b>${escapeHtml(favourite)}</b><small>常用英雄</small></span>
-        </div>
-        <p class="lobby-panel-note">
-          这些数字来自本机已完成的对局记录。修为、境界与胜率需要账号服务，服务端尚未提供，因此不在此显示。
-        </p>
-      `;
-    } else {
-      title.textContent = '排行榜';
-      content.className = 'lobby-catalog-content is-panel';
-      content.innerHTML = `
-        <section class="lobby-unavailable">
-          <i aria-hidden="true">榜</i>
-          <b>排行榜尚未接入</b>
-          <p>权威服务器目前只提供对局撮合与战斗结算，没有跨局排名接口。等账号与结算服务上线后，这里会显示真实名次，而不是先摆一份占位榜单。</p>
-        </section>
-      `;
-    }
-
-    overlay.hidden = false;
-    this.flowLayer
-      .querySelector<HTMLButtonElement>('.lobby-catalog-close')
-      ?.focus({ preventScroll: true });
+    const host = document.createElement('div');
+    host.className = 'meta-screen-host';
+    this.flowLayer.append(host);
+    renderMetaScreen(
+      host,
+      kind,
+      {
+        playerId: this.matchmakingPlayerId,
+        history: readMatchHistory(window.localStorage),
+        backdropUrl: flowAssetUrl('lobby-environment'),
+      },
+      () => {
+        host.remove();
+        for (const button of this.flowLayer.querySelectorAll<HTMLButtonElement>(
+          '.lobby-nav-button[data-lobby-panel]',
+        )) {
+          button.classList.remove('is-active');
+          button.setAttribute('aria-pressed', 'false');
+        }
+      },
+    );
   }
-
-  private openLobbyCatalog(kind: LobbyCatalogKind, activePanel?: LobbyPanelKind): void {
-    const overlay = this.flowLayer.querySelector<HTMLElement>('.lobby-catalog-overlay');
-    const title = this.flowLayer.querySelector<HTMLElement>('#lobby-catalog-title');
-    const content = this.flowLayer.querySelector<HTMLElement>('.lobby-catalog-content');
-    if (!overlay || !title || !content) {
-      return;
-    }
-
-    for (const button of this.flowLayer.querySelectorAll<HTMLButtonElement>(
-      '.lobby-nav-button[data-lobby-panel]',
-    )) {
-      const active = button.dataset.lobbyPanel === (activePanel ?? 'growth');
-      button.classList.toggle('is-active', active);
-      button.setAttribute('aria-pressed', String(active));
-    }
-
-    if (kind === 'heroes') {
-      title.textContent = `英雄图鉴 · ${AUTHORITATIVE_HEROES.length}`;
-      content.className = 'lobby-catalog-content is-grid';
-      content.innerHTML = AUTHORITATIVE_HEROES.map(
-        (hero) => `
-          <article class="lobby-catalog-item">
-            <img src="${heroPortraitUrl(hero.id)}" alt="" />
-            <span>
-              <small>${escapeHtml(hero.id)} · ${escapeHtml(hero.element)}</small>
-              <b>${escapeHtml(hero.name)}</b>
-              <em>${escapeHtml(hero.active.name)}</em>
-            </span>
-          </article>
-        `,
-      ).join('');
-    } else if (kind === 'passives') {
-      title.textContent = `被动技能 · ${AUTHORITATIVE_PASSIVES.length}`;
-      content.className = 'lobby-catalog-content is-grid';
-      content.innerHTML = AUTHORITATIVE_PASSIVES.map(
-        (passive) => `
-          <article class="lobby-catalog-item">
-            <img src="${passiveIconUrl(passive.id)}" alt="" />
-            <span>
-              <small>${escapeHtml(passive.id)} · ${escapeHtml(passive.category)}</small>
-              <b>${escapeHtml(passive.name)}</b>
-              <em>技能书学习 · 宝石升级</em>
-            </span>
-          </article>
-        `,
-      ).join('');
-    } else if (kind === 'equipment') {
-      title.textContent = `装备图鉴 · ${AUTHORITATIVE_EQUIPMENT.length}`;
-      content.className = 'lobby-catalog-content is-grid';
-      content.innerHTML = AUTHORITATIVE_EQUIPMENT.map(
-        (equipment) => `
-          <article class="lobby-catalog-item" data-rarity="${equipment.rarity}">
-            <img src="${equipmentIconUrl(equipment.id)}" alt="" />
-            <span>
-              <small>${escapeHtml(equipment.id)} · ${escapeHtml(equipment.rarity)}</small>
-              <b>${escapeHtml(equipment.name)}</b>
-              <em>${escapeHtml(equipment.summary)}</em>
-            </span>
-          </article>
-        `,
-      ).join('');
-    } else {
-      title.textContent = '权威战斗运行链路';
-      content.className = 'lobby-catalog-content is-runtime';
-      content.innerHTML = `
-        <article><b>${TICKS_PER_SECOND} Hz</b><span>固定步长权威模拟</span></article>
-        <article><b>输入</b><span>客户端提交移动、攻击、施法与交互意图</span></article>
-        <article><b>结算</b><span>伤害、拾取、购买、出售与替换由同一模拟层确认</span></article>
-        <article><b>同步</b><span>快照、事件和交易结果驱动战斗画面与 HUD</span></article>
-      `;
-    }
-
-    overlay.hidden = false;
-    this.flowAudio?.playCue('confirm');
-    overlay.querySelector<HTMLButtonElement>('.lobby-catalog-close')?.focus();
-  }
-
-  private readonly closeLobbyCatalog = (): void => {
-    const overlay = this.flowLayer.querySelector<HTMLElement>('.lobby-catalog-overlay');
-    if (!overlay || overlay.hidden) {
-      return;
-    }
-    overlay.hidden = true;
-    for (const button of this.flowLayer.querySelectorAll<HTMLButtonElement>('.lobby-nav-button')) {
-      button.classList.remove('is-active');
-      button.setAttribute('aria-pressed', 'false');
-    }
-    this.flowAudio?.playCue('cancel');
-  };
 
   private renderHeroSelection(): void {
     this.flowLayer.hidden = false;

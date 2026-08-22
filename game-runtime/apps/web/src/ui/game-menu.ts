@@ -85,23 +85,29 @@ export class GameMenu {
           aria-labelledby="game-menu-title"
         >
           <header class="game-menu-header">
-            <div>
-              <h2 id="game-menu-title">三命无常</h2>
-              <p class="game-menu-section-name">设置</p>
-            </div>
-            <button class="game-menu-close" type="button" aria-label="关闭游戏菜单" title="关闭">
+            <button class="game-menu-close" type="button" aria-label="关闭游戏菜单" title="返回">
               <span class="game-menu-close-icon"></span>
+              <span>返回</span>
             </button>
+            <div>
+              <p class="flow-eyebrow">设置</p>
+              <h2 id="game-menu-title">游戏设置</h2>
+            </div>
+            <span class="game-menu-note">逐项自动保存</span>
           </header>
-          <nav class="game-menu-tabs" aria-label="游戏菜单">
+          <div class="settings-layout">
+          <nav class="settings-rail" aria-label="设置分类">
             <button type="button" data-menu-tab="settings" aria-selected="true">
-              <span class="menu-tab-settings-icon"></span><span>设置</span>
+              <i aria-hidden="true">画</i>
+              <span><b>画面与音频</b><small>画质、镜头与音量</small></span>
             </button>
             <button type="button" data-menu-tab="controls" aria-selected="false">
-              <span class="menu-tab-controls-icon"></span><span>操作</span>
+              <i aria-hidden="true">控</i>
+              <span><b>控制</b><small>触控与 PC 按键</small></span>
             </button>
             <button type="button" data-menu-tab="guide" aria-selected="false">
-              <span class="menu-tab-guide-icon"></span><span>玩法</span>
+              <i aria-hidden="true">玩</i>
+              <span><b>玩法</b><small>规则、循环与终局</small></span>
             </button>
           </nav>
           <div class="game-menu-content">
@@ -274,6 +280,7 @@ export class GameMenu {
                 </section>
               </div>
             </section>
+          </div>
           </div>
         </section>
       </div>

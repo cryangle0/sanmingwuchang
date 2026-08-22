@@ -765,61 +765,6 @@ body,
   font-size: 10px;
 }
 
-.lobby-catalog-overlay {
-  position: absolute;
-  top: max(96px, calc(env(safe-area-inset-top) + 84px));
-  right: max(5%, env(safe-area-inset-right));
-  bottom: max(76px, calc(env(safe-area-inset-bottom) + 66px));
-  left: max(5%, env(safe-area-inset-left));
-  z-index: 10;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  width: min(980px, 90vw);
-  margin: 0 auto;
-  padding: 14px;
-  overflow: hidden;
-  background: rgb(4 34 34 / 96%);
-}
-
-.lobby-catalog-overlay[hidden] {
-  display: none;
-}
-
-.lobby-catalog-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 0 0 12px;
-  border-bottom: 1px solid rgb(225 198 128 / 18%);
-}
-
-.lobby-catalog-header > span {
-  display: grid;
-  min-width: 0;
-  gap: 4px;
-}
-
-.lobby-catalog-header h2 {
-  margin: 0;
-  color: #f0dda8;
-  font-family: "STKaiti", "KaiTi", "Microsoft YaHei", serif;
-  font-size: 24px;
-}
-
-.lobby-catalog-content {
-  min-height: 0;
-  padding-top: 12px;
-  overflow: auto;
-}
-
-.lobby-catalog-content.is-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-  align-content: start;
-  gap: 8px;
-}
-
 .lobby-catalog-item {
   display: grid;
   min-width: 0;
@@ -875,34 +820,6 @@ body,
   font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.lobby-catalog-content.is-runtime {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-content: start;
-  gap: 10px;
-}
-
-.lobby-catalog-content.is-runtime article {
-  display: grid;
-  min-height: 92px;
-  align-content: center;
-  gap: 6px;
-  padding: 14px;
-  border-top: 2px solid #d0aa54;
-  background: rgb(7 55 50 / 72%);
-}
-
-.lobby-catalog-content.is-runtime b {
-  color: #edcf7f;
-  font-size: 20px;
-}
-
-.lobby-catalog-content.is-runtime span {
-  color: #b8cbc2;
-  font-size: 11px;
-  line-height: 1.5;
 }
 
 .queue-overlay {
@@ -4891,4 +4808,707 @@ kbd {
     width: 50px;
     height: 50px;
   }
+}
+
+/* ==========================================================================
+   Lobby and meta-screen layout, taken from the design prototype
+   ==========================================================================
+
+   Geometry only. The prototype is a daylight scene on rice paper; this build
+   keeps its own dark lacquer panels and gold trim, so nothing here touches
+   colour, and corners stay rounded rather than adopting the prototype's cut
+   octagon. What is copied is where things sit:
+
+     hero stage   left 8%, top 8%, 52% x 78%   (was centred)
+     match plaque right 6%, top 22%, 350x430   (was a 38vw column)
+     lobby nav    centred bar, 620 x 84        (was a box in the corner)
+     meta header  full-width bar, 78px tall
+     meta tabs    centred, below the header
+     meta content 5% side margins, under the tabs
+   ========================================================================== */
+
+.lobby-hero-stage {
+  top: 8%;
+  bottom: auto;
+  left: 8%;
+  width: 52%;
+  height: 78%;
+}
+
+.match-plaque {
+  top: 22%;
+  width: 350px;
+  min-height: 430px;
+  padding: 50px 32px 32px;
+}
+
+.lobby-nav {
+  right: auto;
+  left: 50%;
+  width: min(620px, 92vw);
+  height: 84px;
+  padding: 8px 34px;
+  transform: translateX(-50%);
+}
+
+.lobby-nav-button {
+  align-content: center;
+  gap: 4px;
+  border-right: 0;
+  border-left: 1px solid rgb(223 204 151 / 14%);
+}
+
+.lobby-nav-button:first-child {
+  border-left: 0;
+}
+
+.lobby-nav-button:last-child {
+  border-right: 0;
+}
+
+.lobby-nav-button small {
+  font-size: 11px;
+}
+
+.reconnect-card {
+  right: auto;
+  bottom: calc(max(20px, env(safe-area-inset-bottom)) + 96px);
+  left: 50%;
+  width: min(620px, 92vw);
+  transform: translateX(-50%);
+}
+
+/* --------------------------------------------------------------------------
+   Meta screens: 成长 / 个人 / 排行榜
+   -------------------------------------------------------------------------- */
+
+.meta-screen {
+  position: absolute;
+  z-index: 6;
+  inset: 0;
+  background:
+    linear-gradient(rgb(3 22 23 / 42%), rgb(2 21 23 / 62%)),
+    var(--meta-backdrop, none) center / cover;
+}
+
+.meta-header {
+  position: absolute;
+  top: 18px;
+  right: 24px;
+  left: 24px;
+  z-index: 2;
+  display: flex;
+  height: 78px;
+  align-items: center;
+  gap: 20px;
+  padding: 10px 20px;
+}
+
+.meta-header > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.meta-header h2 {
+  margin: 2px 0 0;
+  color: #f5df9f;
+  font-family: "STKaiti", "KaiTi", "Microsoft YaHei", serif;
+  font-size: 26px;
+  line-height: 1.1;
+}
+
+.meta-header > span {
+  color: #9fb9ae;
+  font-size: 11px;
+}
+
+.meta-back {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid rgb(226 197 118 / 34%);
+  border-radius: 4px;
+  color: #e8c975;
+  background: rgb(3 29 29 / 34%);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.meta-back:hover,
+.meta-back:focus-visible {
+  background: rgb(31 92 80 / 52%);
+}
+
+.meta-tabs {
+  position: absolute;
+  top: 112px;
+  left: 50%;
+  z-index: 2;
+  display: flex;
+  gap: 6px;
+  transform: translateX(-50%);
+}
+
+.meta-tabs button {
+  min-height: 44px;
+  padding: 0 26px;
+  border: 1px solid rgb(223 204 151 / 22%);
+  border-radius: 4px;
+  color: #9fb9ae;
+  background: rgb(5 39 39 / 82%);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.meta-tabs button.is-active {
+  border-color: #cba75c;
+  color: #fff4d7;
+  background: linear-gradient(#246f60, #0e413d);
+}
+
+.meta-content {
+  position: absolute;
+  top: 164px;
+  right: 5%;
+  bottom: 30px;
+  left: 5%;
+  z-index: 1;
+  overflow: auto;
+  scrollbar-width: none;
+}
+
+.meta-content::-webkit-scrollbar {
+  display: none;
+}
+
+/* 成长 · 修为: progress on the left, the 50-level track on the right. */
+.cultivation-layout {
+  display: grid;
+  height: 100%;
+  gap: 16px;
+  grid-template-columns: minmax(0, 34%) minmax(0, 1fr);
+}
+
+.meta-card {
+  min-height: 0;
+  padding: 22px;
+  border-radius: 6px;
+}
+
+/* Second column of 成长 · 修为 holds the scrolling track. */
+.cultivation-layout > .meta-card:last-child {
+  display: flex;
+  flex-direction: column;
+}
+
+.cultivation-realm {
+  margin: 6px 0 4px;
+  color: #f5df9f;
+  font-family: "STKaiti", "KaiTi", "Microsoft YaHei", serif;
+  font-size: 40px;
+  line-height: 1.05;
+}
+
+.cultivation-count {
+  margin: 0;
+  color: #d9c795;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.cultivation-bar {
+  height: 10px;
+  margin: 14px 0 16px;
+  border: 1px solid rgb(223 204 151 / 22%);
+  border-radius: 999px;
+  background: rgb(3 29 29 / 55%);
+}
+
+.cultivation-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #6bc0a8, #cba75c);
+}
+
+.cultivation-note {
+  margin: 0 0 16px;
+  color: #9fb9ae;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.realm-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.realm-chips span {
+  padding: 5px 10px;
+  border: 1px solid rgb(223 204 151 / 20%);
+  border-radius: 4px;
+  color: #9fb9ae;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.realm-chips span.is-current {
+  border-color: #cba75c;
+  color: #fff4d7;
+  background: rgb(203 167 92 / 22%);
+}
+
+.track-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.track-head h3 {
+  margin: 0;
+  color: #f5df9f;
+  font-size: 19px;
+}
+
+.track-head p {
+  margin: 4px 0 0;
+  color: #9fb9ae;
+  font-size: 11px;
+}
+
+.track-level {
+  flex: none;
+  padding: 8px 14px;
+  border-radius: 4px;
+  background: #0e413d;
+  color: #fff4d7;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+/* The track is 50 cards. A single scrolling row showed six of them and left
+   the rest of the panel empty, so it wraps into a grid that fills the card and
+   scrolls vertically instead — no horizontal scrollbar, and the whole ladder
+   is browsable without dragging sideways. */
+.track-rail {
+  display: grid;
+  min-height: 0;
+  flex: 1;
+  align-content: start;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(146px, 1fr));
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+}
+
+.track-card {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  padding: 14px 12px;
+  border: 1px solid rgb(223 204 151 / 22%);
+  border-radius: 6px;
+  background: rgb(6 42 40 / 68%);
+  text-align: center;
+}
+
+.track-card.is-unlocked {
+  border-color: rgb(107 192 168 / 55%);
+}
+
+.track-mark {
+  position: relative;
+  display: grid;
+  width: 52px;
+  height: 52px;
+  align-content: center;
+  justify-content: center;
+  justify-self: center;
+  border: 2px solid rgb(203 167 92 / 62%);
+  border-radius: 50%;
+  color: #f0d68f;
+  font-family: "STKaiti", "KaiTi", "Microsoft YaHei", serif;
+  font-size: 22px;
+}
+
+.track-mark em {
+  position: absolute;
+  right: -8px;
+  bottom: -4px;
+  display: grid;
+  width: 22px;
+  height: 22px;
+  align-content: center;
+  justify-content: center;
+  border: 1px solid rgb(203 167 92 / 62%);
+  border-radius: 50%;
+  background: #0b3b38;
+  font-size: 10px;
+  font-style: normal;
+}
+
+.track-card b {
+  color: #e8dcb4;
+  font-size: 12px;
+}
+
+.track-card small {
+  color: #9fb9ae;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.track-card i {
+  color: #7f9a91;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.track-card.is-unlocked i {
+  color: #6bc0a8;
+}
+
+/* 图鉴: category rail on the left, cards on the right. */
+.codex-layout {
+  display: grid;
+  height: 100%;
+  gap: 16px;
+  grid-template-columns: minmax(0, 220px) minmax(0, 1fr);
+}
+
+.codex-rail {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 6px;
+}
+
+.codex-rail button {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  border: 1px solid rgb(223 204 151 / 16%);
+  border-radius: 4px;
+  color: #cfe0d8;
+  background: transparent;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.codex-rail button.is-active {
+  border-color: #cba75c;
+  color: #fff4d7;
+  background: linear-gradient(#246f60, #0e413d);
+}
+
+.codex-rail button b {
+  color: #e8c975;
+  font-size: 12px;
+}
+
+.codex-grid {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 6px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  overflow-y: auto;
+}
+
+/* 个人 and 排行榜 shells. */
+.profile-layout {
+  display: grid;
+  height: 100%;
+  gap: 16px;
+  grid-template-columns: minmax(0, 32%) minmax(0, 1fr);
+}
+
+.rank-shell {
+  display: grid;
+  height: 100%;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 300px);
+}
+
+.match-log {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.match-log article {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgb(223 204 151 / 16%);
+  border-radius: 5px;
+  background: rgb(6 42 40 / 55%);
+}
+
+.match-log b {
+  color: #e8dcb4;
+  font-size: 13px;
+}
+
+.match-log small {
+  color: #9fb9ae;
+  font-size: 11px;
+}
+
+.match-log strong {
+  color: #e8c975;
+  font-size: 15px;
+}
+
+@media (width <= 900px) {
+  .lobby-hero-stage {
+    left: 4%;
+    width: 56%;
+  }
+
+  .match-plaque {
+    top: 58px;
+    bottom: 104px;
+    width: 38%;
+    min-height: 0;
+    padding: 18px 14px 12px;
+  }
+
+  .lobby-nav {
+    height: 62px;
+    padding: 6px 12px;
+  }
+
+  .reconnect-card {
+    bottom: calc(max(18px, env(safe-area-inset-bottom)) + 72px);
+  }
+
+  .meta-header {
+    top: 4px;
+    right: 5px;
+    left: 5px;
+    height: 48px;
+    padding: 4px 8px;
+  }
+
+  .meta-header h2 {
+    font-size: 16px;
+  }
+
+  .meta-tabs {
+    top: 57px;
+  }
+
+  .meta-content {
+    top: 92px;
+    right: 5px;
+    bottom: 5px;
+    left: 5px;
+  }
+
+  .cultivation-layout,
+  .profile-layout,
+  .rank-shell,
+  .codex-layout {
+    gap: 6px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Settings: prototype geometry, this build's palette
+   --------------------------------------------------------------------------
+
+   The prototype lays settings out as a page with a category rail on the left
+   and one panel of rows on the right, each row a name and description against
+   a control. That two-column shape is what is copied. Colour is not: the rail
+   and panel keep the dark lacquer used everywhere else here.
+
+   The rail buttons keep their original data-menu-tab attributes, so the panel
+   switching already wired up drives them unchanged.
+   -------------------------------------------------------------------------- */
+
+.settings-layout {
+  display: grid;
+  min-height: 0;
+  flex: 1;
+  gap: 14px;
+  grid-template-columns: 230px minmax(0, 1fr);
+}
+
+.settings-rail {
+  display: grid;
+  align-content: start;
+  overflow-y: auto;
+  border: 1px solid rgb(223 204 151 / 20%);
+  border-radius: 6px;
+  background: rgb(5 39 39 / 62%);
+}
+
+.settings-rail button {
+  display: flex;
+  width: 100%;
+  min-height: 64px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 0;
+  border-bottom: 1px solid rgb(223 204 151 / 14%);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.settings-rail button:last-child {
+  border-bottom: 0;
+}
+
+.settings-rail button i {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  align-content: center;
+  justify-content: center;
+  border: 1px solid rgb(236 206 130 / 62%);
+  border-radius: 4px;
+  background: linear-gradient(180deg, #a5352a 0%, #7a2018 100%);
+  box-shadow: inset 0 1px 0 rgb(255 216 176 / 34%);
+  color: #ffe9bd;
+  font-family: "STKaiti", "KaiTi", "Microsoft YaHei", serif;
+  font-size: 17px;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.settings-rail button span {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.settings-rail button b {
+  color: #e8dcb4;
+  font-size: 14px;
+}
+
+.settings-rail button small {
+  color: #9fb9ae;
+  font-size: 11px;
+}
+
+.settings-rail button[aria-selected="true"] {
+  background: linear-gradient(90deg, rgb(36 111 96 / 62%), transparent);
+  box-shadow: inset 3px 0 0 #cba75c;
+}
+
+.settings-rail button[aria-selected="true"] b {
+  color: #fff4d7;
+}
+
+.game-menu-note {
+  color: #9fb9ae;
+  font-size: 11px;
+}
+
+.game-menu-close span:last-child {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* Row shape from the prototype: copy left, control right, on one baseline. */
+.setting-row {
+  display: grid;
+  min-height: 64px;
+  align-items: center;
+  gap: 18px;
+  padding: 10px 6px;
+  border-bottom: 1px solid rgb(223 204 151 / 14%);
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.setting-row:last-child {
+  border-bottom: 0;
+}
+
+@media (width <= 900px) {
+  .settings-layout {
+    gap: 6px;
+    grid-template-columns: 125px minmax(0, 1fr);
+  }
+
+  .settings-rail button {
+    min-height: 48px;
+    padding: 8px;
+  }
+
+  .settings-rail button i {
+    width: 26px;
+    height: 26px;
+    font-size: 13px;
+  }
+
+  .settings-rail button b {
+    font-size: 12px;
+  }
+
+  .settings-rail button small {
+    display: none;
+  }
+
+  .setting-row {
+    min-height: 48px;
+    padding: 6px 4px;
+  }
+}
+
+/* The dialog now carries two columns, so it takes the width the prototype's
+   page has rather than the 760px a single stacked list needed. */
+.game-menu-dialog:has(.settings-layout) {
+  width: min(1180px, 100%);
+  max-height: min(860px, calc(100vh - 40px));
+}
+
+.game-menu-header > div {
+  min-width: 0;
+  flex: 1;
+}
+
+.game-menu-header .flow-eyebrow {
+  margin: 0 0 3px;
+}
+
+.game-menu-close {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+}
+
+.settings-layout {
+  padding: 16px 20px 20px;
+}
+
+.settings-layout > .game-menu-content {
+  min-height: 0;
+  border: 1px solid rgb(223 204 151 / 20%);
+  border-radius: 6px;
+  background: rgb(5 39 39 / 62%);
+  overflow-y: auto;
 }
