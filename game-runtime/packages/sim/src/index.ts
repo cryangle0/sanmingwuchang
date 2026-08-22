@@ -12,4 +12,5 @@ export * from './systems/gambling';
 export * from './systems/passive';
 export * from './systems/shield';
 export * from './systems/shop';
+export * from './systems/storm-zone';
 export * from './types';

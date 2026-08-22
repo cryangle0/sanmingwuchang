@@ -25,6 +25,7 @@ import {
   type Vec2Mm,
   vec2Mm,
 } from '@jwgb/core';
+import { distanceSquaredToSegment } from './geometry/integer-geometry';
 import { MapCollisionField } from './geometry/map-collision-field';
 import { initialStormZone } from './systems/storm-zone';
 import type {
@@ -159,6 +160,49 @@ function spawnCapacity(state: MutableSimulationState): number {
   return state.mapField ? MAP_SPAWN_POINTS.length : M0_SPAWN_POINTS.length;
 }
 
+/**
+ * A spawn this close to the boundary starts the match with its back against
+ * the rim. The compiled map places most starts there — the median authored
+ * micro-position sits 8 m from the edge and the two closest sit 0.5 m — which
+ * is the ring start the engineering source calls for, but it means a small
+ * match can seat every one of its players against a wall while the middle of
+ * the map stands empty.
+ */
+const SPAWN_RIM_DISTANCE_MM = 25_000;
+
+let mapSpawnRimFlags: readonly boolean[] | null = null;
+
+/**
+ * Which authored spawns count as rim starts.
+ *
+ * Integer millimetre distance from the boundary polygon, computed once from
+ * the compiled map, so the answer is a pure function of the geometry and ports
+ * to the C# sim unchanged.
+ */
+function mapSpawnRim(): readonly boolean[] {
+  if (mapSpawnRimFlags) {
+    return mapSpawnRimFlags;
+  }
+  const threshold = SPAWN_RIM_DISTANCE_MM * SPAWN_RIM_DISTANCE_MM;
+  mapSpawnRimFlags = MAP_SPAWN_POINTS.map((spawn) => {
+    const point = vec2Mm(spawn.position.x, spawn.position.z);
+    let nearest = Number.POSITIVE_INFINITY;
+    for (let index = 0; index < MAP_BOUNDARY.length; index += 1) {
+      const a = MAP_BOUNDARY[index];
+      const b = MAP_BOUNDARY[(index + 1) % MAP_BOUNDARY.length];
+      if (!a || !b) {
+        continue;
+      }
+      nearest = Math.min(
+        nearest,
+        distanceSquaredToSegment(point, vec2Mm(a.x, a.z), vec2Mm(b.x, b.z)),
+      );
+    }
+    return nearest < threshold;
+  });
+  return mapSpawnRimFlags;
+}
+
 function takeInitialSpawn(state: MutableSimulationState): SpawnSelection {
   const capacity = spawnCapacity(state);
   invariant(state.initialSpawnIndices.size < capacity, 'spawn capacity exhausted');
@@ -167,6 +211,17 @@ function takeInitialSpawn(state: MutableSimulationState): SpawnSelection {
   for (let index = 0; index < capacity; index += 1) {
     if (!state.initialSpawnIndices.has(index)) {
       availableIndices.push(index);
+    }
+  }
+  // Fill the interior starts before the rim ones. Capacity is unchanged, so a
+  // full 30-player room still uses every authored position and the ring start
+  // survives; it is the half-empty room that stops seating people in a corner.
+  if (state.mapField) {
+    const rim = mapSpawnRim();
+    const interior = availableIndices.filter((index) => !rim[index]);
+    if (interior.length > 0) {
+      availableIndices.length = 0;
+      availableIndices.push(...interior);
     }
   }
   const chosenIndex = availableIndices[state.random.spawn.nextInt(availableIndices.length)];

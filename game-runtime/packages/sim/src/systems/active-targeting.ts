@@ -1,3 +1,4 @@
+import { terrainBlocksLineOfSight } from '@jwgb/content';
 import { distanceSquaredMm, type EntityId, type Vec2Mm } from '@jwgb/core';
 import { segmentsIntersect } from '../geometry/integer-geometry';
 import { flightTraversal, WALK_TRAVERSAL, type WallTraversal } from '../geometry/wall-traversal';
@@ -115,6 +116,9 @@ export function hasDirectLineOfSight(
   const mapBlock =
     state.mapField?.firstLineOfSightBlock(start, end, clearanceMm, traversal) ?? null;
   if (mapBlock !== null) {
+    return false;
+  }
+  if (state.mapField && terrainBlocksLineOfSight(start, end)) {
     return false;
   }
   if (hasStaticSolidLineBlock(state, start, end, clearanceMm)) {

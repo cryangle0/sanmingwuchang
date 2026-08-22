@@ -140,8 +140,27 @@ export function replaceSkillBookResult(
   if (!hasDirectLineOfSight(state, player.position, drop.position)) {
     return rejected('skill-book-line-of-sight');
   }
-  if (player.passives.length < 4) {
-    return rejected('invalid-replacement');
+  const canDirectApply =
+    player.passives.some((entry) => entry.passiveId === drop.bookPassiveId) ||
+    player.passives.length < 4;
+  if (canDirectApply) {
+    if (!applySkillBook(state, events, player, drop.bookPassiveId)) {
+      return rejected('invalid-replacement');
+    }
+    state.lootDrops.delete(lootEntityId);
+    events.push({
+      type: 'loot-collected',
+      tick: state.tick,
+      entityId: drop.entityId,
+      collectorEntityId: player.entityId,
+      gold: 0,
+      experience: 0,
+      gems: 0,
+      equipmentId: null,
+      bookPassiveId: drop.bookPassiveId,
+      activeId: null,
+    });
+    return accepted();
   }
   if (player.passives.some((entry) => entry.passiveId === drop.bookPassiveId)) {
     return rejected('invalid-replacement');
