@@ -5,7 +5,6 @@ import {
   MAP_HIGHLANDS,
   MAP_ROCKS,
   MAP_SPAWN_POINTS,
-  MAP_WALL_PIECES,
   type MapPointMm,
   terrainHeightMeters,
 } from '@jwgb/content';
@@ -16,6 +15,7 @@ import { buildRegionDressing } from './dressing/region-dressing';
 import { buildFlora } from './flora';
 import type { FloraModelLayerDiagnostics } from './flora-models';
 import { buildGroundGeometry } from './ground';
+import { buildInteriorRidges } from './interior-ridges';
 import { buildMapLandmarks } from './landmarks';
 import { buildMapAssetLayer, type MapAssetLayerDiagnostics } from './map-asset-layer';
 import {
@@ -109,10 +109,6 @@ export function buildMapEnvironment(
     (geometry, material, options) => addMesh(roads, geometry, material, options),
     materials,
   );
-  buildWalls(
-    (geometry, material, options) => addMesh(walls, geometry, material, options),
-    materials,
-  );
   buildHighlands(
     (geometry, material, options) => addMesh(highlands, geometry, material, options),
     materials,
@@ -134,6 +130,9 @@ export function buildMapEnvironment(
   const floraOcclusion = buildFlora(flora, materials, track, surfaceSeed, renderer, graphicsTier);
   buildScatter(scatter, materials, track, surfaceSeed);
   buildBoundaryCliffs(beyond, materials, track);
+  // Interior barriers become ranges in the walls layer, keeping their footprint.
+  buildInteriorRidges(walls, materials, track);
+
   buildBeyond(beyond, materials, track, surfaceSeed);
   const proceduralRockMarkers = props.getObjectByName('map-procedural-rock-markers');
   const importedAssetLayer = buildMapAssetLayer(importedAssets, {
@@ -218,28 +217,6 @@ function buildWater(material: THREE.Material, addMesh: AddMesh): void {
   const mesh = addMesh(geometry, material);
   mesh.name = 'map-water';
   mesh.receiveShadow = false;
-}
-
-function buildWalls(addMesh: AddMesh, materials: ReturnType<typeof createMapMaterials>): void {
-  const vaultCaps = new PrismGeometryAccumulator();
-  const vaultSides = new PrismGeometryAccumulator();
-  for (const piece of MAP_WALL_PIECES) {
-    const heightMeters = piece.heightMm / MM;
-    // BOUND pieces still block movement and sight, but they are axis-extruded
-    // prisms and drawing them made the map edge a row of flat-topped slabs.
-    // buildBoundaryCliffs draws that edge instead; see boundary-cliffs.ts.
-    if (piece.wallClass === 'BOUND') {
-      continue;
-    }
-    vaultCaps.addDrapedCap(piece.vertices, heightMeters, terrainHeightMeters);
-    vaultSides.addDrapedSides(piece.vertices, heightMeters, terrainHeightMeters);
-  }
-  if (!vaultCaps.isEmpty) {
-    addMesh(vaultCaps.build(), materials.boundaryCliff, { castShadow: true });
-  }
-  if (!vaultSides.isEmpty) {
-    addMesh(vaultSides.build(), materials.vaultWall, { castShadow: true });
-  }
 }
 
 function buildHighlands(addMesh: AddMesh, materials: ReturnType<typeof createMapMaterials>): void {

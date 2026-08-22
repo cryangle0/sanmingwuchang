@@ -33,6 +33,9 @@ export const GROUND_CELL_METERS = TERRAIN_LATTICE_MM / MM;
 /** Sit characters on the rendered triangles, not under bilinear ramps. */
 export const GROUND_FOOTING_BIAS_METERS = 0.05;
 const GROUND_METERS_PER_TILE = 15;
+/** Matches the sim's 450 mm player radius, with a little margin for the model. */
+const CHARACTER_FOOTPRINT_METERS = 0.55;
+const FOOTPRINT_SAMPLES = 4;
 
 export function buildGroundGeometry(): THREE.BufferGeometry {
   const bounds = boundaryBoundsMeters();
@@ -208,6 +211,36 @@ export function walkSurfaceMeters(xMeters: number, zMeters: number): number {
   // point under one absolute level would have floated characters across half
   // the map once the terrain gained real relief.
   return groundSurfaceMeters(xMeters, zMeters) + lift;
+}
+
+/**
+ * Height to stand a character model at, given the ground under its whole
+ * footprint rather than under one point.
+ *
+ * Sampling only the centre works on a plain and fails on a slope: the uphill
+ * side of the model sinks into ground that is higher than the point the model
+ * was placed on, which cuts off the feet and, on steeper ground, the shins.
+ * Taking the highest sample under the footprint puts the model on top of every
+ * triangle it covers. It rides a little high on the downhill side, which is
+ * invisible, rather than being buried on the uphill side, which is not.
+ */
+export function standingSurfaceMeters(
+  xMeters: number,
+  zMeters: number,
+  radiusMeters = CHARACTER_FOOTPRINT_METERS,
+): number {
+  let highest = walkSurfaceMeters(xMeters, zMeters);
+  for (let step = 0; step < FOOTPRINT_SAMPLES; step += 1) {
+    const angle = (step / FOOTPRINT_SAMPLES) * Math.PI * 2;
+    highest = Math.max(
+      highest,
+      walkSurfaceMeters(
+        xMeters + Math.cos(angle) * radiusMeters,
+        zMeters + Math.sin(angle) * radiusMeters,
+      ),
+    );
+  }
+  return highest;
 }
 
 function smoothstep(edge0: number, edge1: number, value: number): number {

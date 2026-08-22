@@ -34,7 +34,7 @@ import { type CameraFollowState, updateCameraFollowState } from './camera-follow
 import { CombatEffectsLayer, effectColorForElement } from './combat-effects';
 import { activePresentationRange, type CombatRangePreviewMode } from './combat-range-preview';
 import { createMapAtmosphere, type MapAtmosphere } from './map/atmosphere';
-import { walkSurfaceMeters } from './map/ground';
+import { standingSurfaceMeters } from './map/ground';
 import type { MapAssetLayerDiagnostics } from './map/map-asset-layer';
 import { buildMapEnvironment, type MapEnvironment } from './map/map-environment';
 import type { MapOcclusionDiagnostics } from './map/map-occlusion';
@@ -441,7 +441,7 @@ export class ArenaRenderer {
   }
 
   private footingMeters(xMm: number, zMm: number): number {
-    return this.mapEnvironment ? walkSurfaceMeters(worldMeters(xMm), worldMeters(zMm)) : 0;
+    return this.mapEnvironment ? standingSurfaceMeters(worldMeters(xMm), worldMeters(zMm)) : 0;
   }
 
   setNavigationWaypoint(point: MapPointMm | null): void {
