@@ -54,8 +54,20 @@ const TIERS: readonly { readonly up: number; readonly out: number; readonly shad
 ];
 /** Depth of the crest cap, so the top edge has thickness against the sky. */
 const CREST_CAP_METERS = 9;
-/** Scree fan at the foot, blending rock into ground. */
-const TALUS_METERS = 4.5;
+/**
+ * How far outside the boundary the wall's foot stands, and how far the scree
+ * fan reaches back toward it.
+ *
+ * Both used to run inward: the foot sat on the boundary line and the fan
+ * covered 4.5 m of playable ground behind it. That is ground players stand on
+ * — 17 of the 30 authored spawn micro-positions are within 25 m of the rim and
+ * the closest two are 0.5 m from it — so a rim spawn put the character inside
+ * the drawn rock, with the chase camera, which sits outward of the player,
+ * buried in the wall. Nothing walkable is covered now: the wall begins outside
+ * the boundary and the fan closes the seam from there.
+ */
+const WALL_STANDOFF_METERS = 2.2;
+const TALUS_METERS = 1.6;
 
 /** World metres per texture tile on the face. */
 const TEXTURE_METERS = 12;
@@ -159,7 +171,7 @@ interface FacePoint {
 function pointOn(sample: RimSample, tier: (typeof TIERS)[number]): FacePoint {
   // The flute rides in with the lean, so ribs widen up the face rather than
   // running as parallel grooves.
-  const reach = tier.out + sample.flute * (0.35 + tier.up * 0.65);
+  const reach = WALL_STANDOFF_METERS + tier.out + sample.flute * (0.35 + tier.up * 0.65);
   return {
     x: sample.x + sample.outX * reach,
     y: sample.groundY + sample.height * tier.up,
@@ -177,9 +189,11 @@ function offsetOut(point: FacePoint, sample: RimSample, reach: number, drop: num
   };
 }
 
+/** Meets the ground on the boundary line itself, never behind it. */
 function inwardSkirt(sample: RimSample): FacePoint {
-  const x = sample.x - sample.outX * TALUS_METERS;
-  const z = sample.z - sample.outZ * TALUS_METERS;
+  const reach = WALL_STANDOFF_METERS - TALUS_METERS;
+  const x = sample.x + sample.outX * reach;
+  const z = sample.z + sample.outZ * reach;
   return { x, y: terrainHeightMeters(x, z) - 0.1, z, u: sample.distance };
 }
 
