@@ -1,5 +1,5 @@
 import {
-  AUTHORITATIVE_HEROES,
+  EQUIPMENT_IDS,
   getActiveDefinition,
   getAuthoritativePassive,
   getEquipmentDefinition,
@@ -7,6 +7,7 @@ import {
 } from '@jwgb/content';
 import { distanceSquaredMm, type EntityId, heroId, TICKS_PER_SECOND } from '@jwgb/core';
 import type { PlayerSnapshot, SimEvent, WorldSnapshot } from '@jwgb/sim';
+import { describeStormForPlayer, type StormPlayerStatus } from '@jwgb/sim';
 import {
   ArrowUp,
   Camera,
@@ -37,6 +38,18 @@ import type {
   WorldHost,
   WorldTransactionResult,
 } from '../runtime/world-host';
+import {
+  clusterLootHeaps,
+  heapFocusKey,
+  lootDropKindLabel,
+  lootDropTitle,
+  nearbyLootDrops,
+  nearbyShop,
+  shopDisplayName,
+  shopStatusLabel,
+  stableTaibaiOffers,
+  WORLD_SHEET_PAGE_SIZE,
+} from './world-proximity';
 
 function requiredElement<T extends Element>(root: ParentNode, selector: string): T {
   const element = root.querySelector<T>(selector);
@@ -52,15 +65,6 @@ function tryCapturePointer(element: Element, pointerId: number): void {
   } catch {
     // Synthetic QA events are not registered as active OS pointers.
   }
-}
-
-function matchPhase(tick: number): string {
-  const seconds = Math.floor(tick / TICKS_PER_SECOND);
-  if (seconds < 300) return '全图发育';
-  if (seconds < 720) return '天劫收缩';
-  if (seconds < 1_080) return '决赛庭';
-  if (seconds < 1_200) return '终局聚合';
-  return '灭世雷暴';
 }
 
 function formatTime(tick: number): string {
@@ -334,6 +338,15 @@ export class GameHud {
   private readonly populationAlive: HTMLElement;
   private readonly populationNearby: HTMLElement;
   private readonly stormRadius: HTMLElement;
+  private readonly stormNext: HTMLElement;
+  private readonly stormVisual: HTMLElement;
+  private readonly stormVisualTitle: HTMLElement;
+  private readonly stormDangerLevel: HTMLElement;
+  private readonly stormVisualCopy: HTMLElement;
+  private readonly stormDistanceCopy: HTMLElement;
+  private readonly stormStrikeCopy: HTMLElement;
+  private readonly stormDamageCopy: HTMLElement;
+  private readonly stormDirectionCopy: HTMLElement;
   private readonly motionIcon: HTMLElement;
   private readonly motionState: HTMLElement;
   private readonly motionDetail: HTMLElement;
@@ -353,6 +366,10 @@ export class GameHud {
   private readonly shopPanel: HTMLElement;
   private readonly shopTitle: HTMLElement;
   private readonly shopContent: HTMLElement;
+  private readonly worldSheet: HTMLElement;
+  private readonly worldSheetKicker: HTMLElement;
+  private readonly worldSheetTitle: HTMLElement;
+  private readonly worldSheetBody: HTMLElement;
   private readonly airdropBanner: HTMLElement;
   private readonly airdropTitle: HTMLElement;
   private readonly airdropMeta: HTMLElement;
@@ -360,10 +377,14 @@ export class GameHud {
   private readonly interactProgressText: HTMLElement;
   private nearbyAirdropId: string | null = null;
   private dismissedShopId: string | null = null;
+  private dismissedLootKey: string | null = null;
+  private focusedLootEntityId: EntityId | null = null;
+  private lootPageIndex = 0;
   private eventExpiresAt = 0;
   private buildSignature = '';
   private progressSignature = '';
   private shopSignature = '';
+  private worldSheetSignature = '';
   private selectedBuildKey: string | null = null;
 
   constructor(
@@ -382,8 +403,19 @@ export class GameHud {
       <section class="storm-hud battle-panel">
         <span class="phase-name"></span>
         <b class="match-time">00:00</b>
-        <small>安全区 <i class="storm-radius">--</i></small>
+        <small>安全区 <i class="storm-radius">--</i> · <i class="storm-next">发育中</i></small>
       </section>
+      <aside class="storm-visual" hidden>
+        <strong class="storm-visual-title">天劫圈外</strong>
+        <span class="storm-danger-level"></span>
+        <p class="storm-visual-copy"></p>
+        <dl class="storm-visual-stats">
+          <div><dt>距安全区</dt><dd class="storm-distance-copy">--</dd></div>
+          <div><dt>下次雷击</dt><dd class="storm-strike-copy">--</dd></div>
+          <div><dt>预计伤害</dt><dd class="storm-damage-copy">--</dd></div>
+        </dl>
+        <small class="storm-direction-copy"></small>
+      </aside>
       <section class="resource-hud battle-panel" aria-label="本局资源">
         <span>金 <b class="resource-gold">0</b></span>
         <span>宝石 <b class="resource-gems">0</b></span>
@@ -498,6 +530,16 @@ export class GameHud {
         <div class="shop-panel-title"><span class="shop-icon"></span><span class="shop-title"></span></div>
         <div class="shop-content"></div>
       </div>
+      <aside class="world-sheet" hidden>
+        <header class="world-sheet-header">
+          <span>
+            <small class="world-sheet-kicker"></small>
+            <b class="world-sheet-title"></b>
+          </span>
+          <button class="world-sheet-close" type="button" aria-label="关闭地面弹窗">关闭</button>
+        </header>
+        <div class="world-sheet-body"></div>
+      </aside>
       <div class="joystick" aria-label="移动">
         <div class="joystick-knob"></div>
       </div>
@@ -564,6 +606,15 @@ export class GameHud {
     this.populationAlive = requiredElement(root, '.population-alive');
     this.populationNearby = requiredElement(root, '.population-nearby');
     this.stormRadius = requiredElement(root, '.storm-radius');
+    this.stormNext = requiredElement(root, '.storm-next');
+    this.stormVisual = requiredElement(root, '.storm-visual');
+    this.stormVisualTitle = requiredElement(root, '.storm-visual-title');
+    this.stormDangerLevel = requiredElement(root, '.storm-danger-level');
+    this.stormVisualCopy = requiredElement(root, '.storm-visual-copy');
+    this.stormDistanceCopy = requiredElement(root, '.storm-distance-copy');
+    this.stormStrikeCopy = requiredElement(root, '.storm-strike-copy');
+    this.stormDamageCopy = requiredElement(root, '.storm-damage-copy');
+    this.stormDirectionCopy = requiredElement(root, '.storm-direction-copy');
     this.motionIcon = requiredElement(root, '.motion-icon');
     this.motionState = requiredElement(root, '.motion-state');
     this.motionDetail = requiredElement(root, '.motion-detail');
@@ -583,6 +634,10 @@ export class GameHud {
     this.shopPanel = requiredElement(root, '.shop-panel');
     this.shopTitle = requiredElement(root, '.shop-title');
     this.shopContent = requiredElement(root, '.shop-content');
+    this.worldSheet = requiredElement(root, '.world-sheet');
+    this.worldSheetKicker = requiredElement(root, '.world-sheet-kicker');
+    this.worldSheetTitle = requiredElement(root, '.world-sheet-title');
+    this.worldSheetBody = requiredElement(root, '.world-sheet-body');
     this.airdropBanner = requiredElement(root, '.airdrop-banner');
     this.airdropTitle = requiredElement(root, '.airdrop-title');
     this.airdropMeta = requiredElement(root, '.airdrop-meta');
@@ -600,6 +655,9 @@ export class GameHud {
       this.progressToggle.setAttribute('aria-expanded', String(expanded));
       this.progressToggle.setAttribute('aria-label', label);
       this.progressToggle.title = label;
+    });
+    requiredElement<HTMLButtonElement>(root, '.world-sheet-close').addEventListener('click', () => {
+      this.dismissWorldSheet();
     });
 
     requiredElement(root, '.connection-icon').append(
@@ -655,6 +713,10 @@ export class GameHud {
   }
 
   dismissCurrentInterface(): boolean {
+    if (!this.worldSheet.hidden) {
+      this.dismissWorldSheet();
+      return true;
+    }
     if (!this.shopPanel.hidden) {
       this.dismissedShopId = this.shopPanel.dataset.shopId ?? null;
       this.shopPanel.hidden = true;
@@ -728,8 +790,11 @@ export class GameHud {
     this.activeButton.setAttribute('aria-label', this.activeButton.title);
     this.attackButton.title = `普攻 · ${(player.attackRangeMm / 1_000).toFixed(0)} 米`;
     this.matchTime.textContent = formatTime(snapshot.tick);
-    this.phaseName.textContent = matchPhase(snapshot.tick);
+    const stormStatus = describeStormForPlayer(snapshot.stormZone, snapshot.tick, player.position);
+    this.phaseName.textContent = stormStatus.phaseName;
     this.stormRadius.textContent = `${Math.max(0, Math.round(snapshot.stormZone.radiusMm / 1_000))}m`;
+    this.stormNext.textContent = stormStatus.nextEventLabel;
+    this.updateStormVisualHud(stormStatus, player);
     this.resourceGold.textContent = player.gold.toString();
     this.resourceGems.textContent = player.gems.toString();
     const alivePlayers = snapshot.players.filter(
@@ -749,6 +814,7 @@ export class GameHud {
     this.updateLives(player);
     this.updateProgressPanel(snapshot, player);
     this.updateShopPanel(snapshot, player);
+    this.updateWorldSheet(snapshot, player);
     this.updateAirdrop(snapshot, player);
     const matchFinished = snapshot.match.status === 'finished';
     const localWon = snapshot.match.winnerEntityId === localEntityId;
@@ -924,6 +990,7 @@ export class GameHud {
       player.activeAbilityId,
     ].join(',');
     if (signature === this.buildSignature) {
+      this.updateActiveSlotCooldown(player);
       return;
     }
     this.buildSignature = signature;
@@ -935,13 +1002,14 @@ export class GameHud {
     for (const passive of player.passives) {
       const definition = getAuthoritativePassive(passive.passiveId);
       this.passiveSlots.append(
-        this.createBuildSlot(
-          passiveIconUrl(passive.passiveId),
-          definition.name,
-          `Lv.${passive.level}`,
-          `passive:${passive.passiveId}`,
-          `${definition.name} Lv.${passive.level}：可在资源面板消耗宝石升级`,
-        ),
+        this.createBuildSlot({
+          url: passiveIconUrl(passive.passiveId),
+          name: definition.name,
+          buildKey: `passive:${passive.passiveId}`,
+          context: `${definition.name} Lv.${passive.level}：可在资源面板消耗宝石升级`,
+          titleMeta: `Lv.${passive.level}`,
+          level: passive.level,
+        }),
       );
     }
     for (let index = player.passives.length; index < 4; index += 1) {
@@ -957,13 +1025,14 @@ export class GameHud {
     for (const instance of player.equipment) {
       const definition = getEquipmentDefinition(instance.equipmentId);
       this.equipmentSlots.append(
-        this.createBuildSlot(
-          equipmentIconUrl(instance.equipmentId),
-          definition.name,
-          '身穿',
-          `equipped:${instance.instanceId}`,
-          `${definition.name}：可卸下到手牌或丢弃`,
-        ),
+        this.createBuildSlot({
+          url: equipmentIconUrl(instance.equipmentId),
+          name: definition.name,
+          buildKey: `equipped:${instance.instanceId}`,
+          context: `${definition.name}：可卸下到手牌或丢弃`,
+          titleMeta: '身穿',
+          rarity: definition.rarity,
+        }),
       );
     }
     for (let index = player.equipment.length; index < 3; index += 1) {
@@ -976,19 +1045,25 @@ export class GameHud {
       );
     }
 
+    const handCapacity = player.equipment.some(
+      (instance) => instance.equipmentId === EQUIPMENT_IDS.clothBag,
+    )
+      ? 2
+      : 1;
     for (const instance of player.inventoryEquipment) {
       const definition = getEquipmentDefinition(instance.equipmentId);
       this.handSlots.append(
-        this.createBuildSlot(
-          equipmentIconUrl(instance.equipmentId),
-          definition.name,
-          '手牌',
-          `inventory:${instance.instanceId}`,
-          `${definition.name}：可穿戴、替换身上装备或丢弃`,
-        ),
+        this.createBuildSlot({
+          url: equipmentIconUrl(instance.equipmentId),
+          name: definition.name,
+          buildKey: `inventory:${instance.instanceId}`,
+          context: `${definition.name}：可穿戴、替换身上装备或丢弃`,
+          titleMeta: '手牌',
+          rarity: definition.rarity,
+        }),
       );
     }
-    if (player.inventoryEquipment.length === 0) {
+    for (let index = player.inventoryEquipment.length; index < handCapacity; index += 1) {
       this.handSlots.append(
         this.createEmptyBuildSlot(
           'empty:hand',
@@ -1000,38 +1075,68 @@ export class GameHud {
 
     const active = getActiveDefinition(player.activeAbilityId);
     this.activeSlot.append(
-      this.createBuildSlot(
-        activeIconUrl(player.activeAbilityId),
-        active.name,
-        '主动',
-        `active:${player.activeAbilityId}`,
-        `${active.name}：靠近地面主动技能后可确认替换`,
-      ),
+      this.createBuildSlot({
+        url: activeIconUrl(player.activeAbilityId),
+        name: active.name,
+        buildKey: `active:${player.activeAbilityId}`,
+        context: `${active.name}：靠近地面主动技能后可确认替换`,
+        titleMeta: '主动',
+      }),
     );
+    this.updateActiveSlotCooldown(player);
   }
 
-  private createBuildSlot(
-    url: string,
-    name: string,
-    meta: string,
-    buildKey: string,
-    context: string,
-  ): HTMLButtonElement {
+  private updateActiveSlotCooldown(player: PlayerSnapshot): void {
+    const slot = this.activeSlot.querySelector<HTMLElement>('.build-slot');
+    if (!slot) {
+      return;
+    }
+    const seconds = Math.ceil(player.activeCooldownTicks / TICKS_PER_SECOND);
+    const overlay = slot.querySelector<HTMLElement>('.cooldown');
+    if (seconds <= 0) {
+      overlay?.remove();
+      return;
+    }
+    if (overlay) {
+      overlay.textContent = String(seconds);
+      return;
+    }
+    const cooldown = document.createElement('span');
+    cooldown.className = 'cooldown';
+    cooldown.textContent = String(seconds);
+    slot.append(cooldown);
+  }
+
+  private createBuildSlot(options: {
+    url: string;
+    name: string;
+    buildKey: string;
+    context: string;
+    titleMeta: string;
+    rarity?: ReturnType<typeof getEquipmentDefinition>['rarity'];
+    level?: number;
+  }): HTMLButtonElement {
     const slot = document.createElement('button');
     slot.type = 'button';
-    slot.className = 'build-slot is-filled';
-    slot.title = `${name} · ${meta}`;
-    slot.setAttribute('aria-label', `管理 ${name}，${meta}`);
-    slot.dataset.buildKey = buildKey;
+    slot.className = options.rarity
+      ? `build-slot is-filled rarity-${options.rarity}`
+      : 'build-slot is-filled';
+    slot.title = `${options.name} · ${options.titleMeta}`;
+    slot.setAttribute('aria-label', `管理 ${options.name}，${options.titleMeta}`);
+    slot.dataset.buildKey = options.buildKey;
     const image = document.createElement('img');
-    image.src = url;
+    image.src = options.url;
     image.alt = '';
-    const label = document.createElement('small');
-    label.textContent = meta;
-    slot.append(image, label);
+    slot.append(image);
+    if (options.level !== undefined) {
+      const level = document.createElement('span');
+      level.className = 'lv';
+      level.textContent = `Lv${options.level}`;
+      slot.append(level);
+    }
     slot.addEventListener('click', (event) => {
       event.stopPropagation();
-      this.focusBuildItem(buildKey, context);
+      this.focusBuildItem(options.buildKey, options.context);
     });
     return slot;
   }
@@ -1090,6 +1195,277 @@ export class GameHud {
     [...this.lives.children].forEach((element, index) => {
       element.classList.toggle('is-spent', index >= player.livesRemaining);
     });
+  }
+
+  private updateStormVisualHud(status: StormPlayerStatus, player: PlayerSnapshot): void {
+    this.stormVisual.hidden = !status.outside || player.lifeState === 'eliminated';
+    this.stormVisual.classList.toggle('is-final', status.apocalypse);
+    this.root.classList.toggle('is-storm-outside', status.outside);
+    if (this.stormVisual.hidden) {
+      return;
+    }
+    const estimate = Math.max(1, Math.trunc((player.maxHp * status.damagePercent) / 100));
+    this.stormVisualTitle.textContent = status.apocalypse ? '灭世雷暴 · 无安全点' : '天劫圈外';
+    this.stormDangerLevel.textContent =
+      player.hp / Math.max(1, player.maxHp) <= 0.25
+        ? '致命 · 生命危急'
+        : status.apocalypse
+          ? '终局威胁'
+          : '高危区域';
+    this.stormDistanceCopy.textContent = status.apocalypse
+      ? '无安全区'
+      : `${status.toSafeMeters.toFixed(1)}米`;
+    this.stormStrikeCopy.textContent = status.apocalypse
+      ? `${status.nextStrikeSeconds}秒`
+      : `${status.nextStrikeSeconds}秒 · ${status.hitChancePercent}%`;
+    this.stormDamageCopy.textContent = `${status.damagePercent}%生命`;
+    this.stormDirectionCopy.textContent = status.apocalypse
+      ? '持续移动并争夺最终生存空间'
+      : `向${status.directionLabel}移动 · 沿最短路径返回安全区`;
+    this.stormVisualCopy.textContent = status.apocalypse
+      ? `每秒确定雷击 · 每5秒增强1%最大生命 · 本次预计${estimate}点`
+      : `圈外每3秒独立判定${status.hitChancePercent}% · 命中预计${estimate}点并眩晕0.5秒`;
+  }
+
+  private dismissWorldSheet(): void {
+    const lootKey = this.worldSheet.dataset.lootKey;
+    if (lootKey) {
+      this.dismissedLootKey = lootKey;
+    }
+    this.worldSheet.hidden = true;
+    this.worldSheetSignature = '';
+    this.worldSheetBody.replaceChildren();
+  }
+
+  private updateWorldSheet(snapshot: WorldSnapshot, player: PlayerSnapshot): void {
+    const nearby = nearbyLootDrops(snapshot, player);
+    const heaps = clusterLootHeaps(nearby);
+    const heap = heaps[0];
+    if (!heap || player.lifeState !== 'alive') {
+      this.dismissedLootKey = null;
+      this.focusedLootEntityId = null;
+      this.lootPageIndex = 0;
+      this.worldSheetSignature = '';
+      this.worldSheet.hidden = true;
+      this.worldSheet.dataset.lootKey = '';
+      this.worldSheetBody.replaceChildren();
+      return;
+    }
+
+    if (this.dismissedLootKey === heap.key) {
+      this.worldSheet.hidden = true;
+      return;
+    }
+    this.dismissedLootKey = null;
+
+    const availableIds = new Set(heap.drops.map((entry) => entry.drop.entityId));
+    if (this.focusedLootEntityId === null || !availableIds.has(this.focusedLootEntityId)) {
+      this.focusedLootEntityId = heap.drops[0]?.drop.entityId ?? null;
+    }
+    const focused =
+      heap.drops.find((entry) => entry.drop.entityId === this.focusedLootEntityId) ?? heap.drops[0];
+    if (!focused) {
+      this.worldSheet.hidden = true;
+      return;
+    }
+
+    const pendingActive = snapshot.pendingActiveReplacements.find(
+      (pending) => pending.playerEntityId === player.entityId,
+    );
+    const pendingEquipment = snapshot.pendingEquipmentPickups.find(
+      (pending) => pending.playerEntityId === player.entityId,
+    );
+    const pageCount = Math.max(1, Math.ceil(heap.drops.length / WORLD_SHEET_PAGE_SIZE));
+    this.lootPageIndex = Math.min(this.lootPageIndex, pageCount - 1);
+    const signature = heapFocusKey(heap, focused.drop.entityId);
+    const combatLock = player.pvpCombatTicks > 0;
+    const fullSignature = [
+      signature,
+      this.lootPageIndex,
+      player.gold,
+      player.activeAbilityId,
+      combatLock ? 'lock' : 'open',
+      pendingActive?.lootEntityId ?? '',
+      pendingEquipment?.lootEntityId ?? '',
+      ...player.passives.map((passive) => `${passive.passiveId}:${passive.level}`),
+      ...player.equipment.map((instance) => instance.instanceId),
+      ...player.inventoryEquipment.map((instance) => instance.instanceId),
+    ].join('|');
+    this.worldSheet.hidden = false;
+    this.worldSheet.dataset.lootKey = heap.key;
+    const isHeap = heap.drops.length > 1;
+    this.worldSheetKicker.textContent = isHeap ? '秘宝堆' : lootDropKindLabel(focused.drop);
+    this.worldSheetTitle.textContent = isHeap
+      ? `${heap.drops.length}件地面物`
+      : lootDropTitle(focused.drop);
+    if (fullSignature === this.worldSheetSignature) {
+      return;
+    }
+    this.worldSheetSignature = fullSignature;
+    this.worldSheetBody.replaceChildren();
+
+    if (combatLock) {
+      const lock = document.createElement('p');
+      lock.className = 'world-sheet-note';
+      lock.textContent = `脱离战斗后可拾取 · 还需 ${Math.ceil(player.pvpCombatTicks / TICKS_PER_SECOND)} 秒`;
+      this.worldSheetBody.append(lock);
+    }
+
+    if (isHeap) {
+      const list = document.createElement('div');
+      list.className = 'world-sheet-heap';
+      const start = this.lootPageIndex * WORLD_SHEET_PAGE_SIZE;
+      const page = heap.drops.slice(start, start + WORLD_SHEET_PAGE_SIZE);
+      for (const entry of page) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'world-sheet-heap-item';
+        button.classList.toggle('is-active', entry.drop.entityId === focused.drop.entityId);
+        button.textContent = lootDropTitle(entry.drop);
+        button.addEventListener('click', () => {
+          this.focusedLootEntityId = entry.drop.entityId;
+          this.worldSheetSignature = '';
+          this.updateWorldSheet(snapshot, player);
+        });
+        list.append(button);
+      }
+      this.worldSheetBody.append(list);
+      if (pageCount > 1) {
+        const pager = document.createElement('div');
+        pager.className = 'world-sheet-pager';
+        pager.append(
+          this.createShopButton('上一页', '上一页', () => {
+            this.lootPageIndex = Math.max(0, this.lootPageIndex - 1);
+            this.worldSheetSignature = '';
+            this.updateWorldSheet(snapshot, player);
+          }),
+          this.createShopButton(
+            `${this.lootPageIndex + 1}/${pageCount}`,
+            '当前页',
+            () => undefined,
+          ),
+          this.createShopButton('下一页', '下一页', () => {
+            this.lootPageIndex = Math.min(pageCount - 1, this.lootPageIndex + 1);
+            this.worldSheetSignature = '';
+            this.updateWorldSheet(snapshot, player);
+          }),
+        );
+        this.worldSheetBody.append(pager);
+      }
+    }
+
+    const actions = document.createElement('div');
+    actions.className = 'world-sheet-actions';
+    const drop = focused.drop;
+    if (drop.bookPassiveId) {
+      const incoming = getAuthoritativePassive(drop.bookPassiveId);
+      const already = player.passives.find((passive) => passive.passiveId === drop.bookPassiveId);
+      if (already || player.passives.length < 4) {
+        actions.append(
+          this.createShopButton(
+            already ? `升级 ${incoming.name}` : `拾取 ${incoming.name}`,
+            already ? `升级技能书 ${incoming.name}` : `学习 ${incoming.name}`,
+            () => {
+              this.host.replaceSkillBook(drop.entityId, drop.bookPassiveId!);
+            },
+          ),
+        );
+      } else {
+        const note = document.createElement('p');
+        note.className = 'world-sheet-note';
+        note.textContent = `被动已满，选择要遗忘的技能以学习 ${incoming.name}`;
+        this.worldSheetBody.append(note);
+        for (const passive of player.passives) {
+          const current = getAuthoritativePassive(passive.passiveId);
+          actions.append(
+            this.createShopButton(`换${current.name}`, `遗忘 ${current.name}，学习 ${incoming.name}`, () => {
+              this.host.replaceSkillBook(drop.entityId, passive.passiveId);
+            }),
+          );
+        }
+      }
+    } else if (drop.activeId) {
+      const incoming = getActiveDefinition(drop.activeId);
+      if (pendingActive?.lootEntityId === drop.entityId) {
+        actions.append(
+          this.createShopButton('替换', `替换为 ${incoming.name}`, () => {
+            this.host.replaceActiveLoot(drop.entityId, true);
+          }),
+          this.createShopButton('保留', '保留当前主动技能', () => {
+            this.host.replaceActiveLoot(drop.entityId, false);
+          }),
+        );
+      } else {
+        actions.append(
+          this.createShopButton(`拾取 ${incoming.name}`, `准备替换为 ${incoming.name}`, () => {
+            this.input.queueInteract();
+          }),
+        );
+      }
+    } else if (drop.equipmentId) {
+      const incoming = getEquipmentDefinition(drop.equipmentId);
+      const canEquipWithoutReplacement =
+        player.equipment.length < 3 &&
+        !player.equipment.some((instance) => instance.equipmentId === drop.equipmentId);
+      if (canEquipWithoutReplacement) {
+        actions.append(
+          this.createShopButton('穿戴', `直接穿戴 ${incoming.name}`, () => {
+            this.host.pickupEquipmentLoot(drop.entityId, 'equipped', null);
+          }),
+        );
+      }
+      if (player.inventoryEquipment.length === 0 || pendingEquipment?.lootEntityId === drop.entityId) {
+        actions.append(
+          this.createShopButton('入手牌', `拾取 ${incoming.name} 到手牌`, () => {
+            this.host.pickupEquipmentLoot(drop.entityId, 'inventory', null);
+          }),
+        );
+      }
+      for (const instance of player.inventoryEquipment) {
+        actions.append(
+          this.createShopButton(
+            `换手牌${getEquipmentDefinition(instance.equipmentId).name}`,
+            `丢弃手牌并拾取 ${incoming.name}`,
+            () => {
+              this.host.pickupEquipmentLoot(drop.entityId, 'inventory', instance.instanceId);
+            },
+          ),
+        );
+      }
+      for (const instance of player.equipment) {
+        const legalAfterReplacement = player.equipment
+          .filter((candidate) => candidate.instanceId !== instance.instanceId)
+          .every((candidate) => candidate.equipmentId !== drop.equipmentId);
+        if (!legalAfterReplacement) {
+          continue;
+        }
+        actions.append(
+          this.createShopButton(
+            `换${getEquipmentDefinition(instance.equipmentId).name}`,
+            `替换身穿并拾取 ${incoming.name}`,
+            () => {
+              this.host.pickupEquipmentLoot(drop.entityId, 'equipped', instance.instanceId);
+            },
+          ),
+        );
+      }
+      if (pendingEquipment?.lootEntityId === drop.entityId) {
+        actions.append(
+          this.createShopButton('取消', '取消拾取并保留地面装备', () => {
+            this.host.pickupEquipmentLoot(drop.entityId, 'cancel', null);
+          }),
+        );
+      }
+    } else {
+      actions.append(
+        this.createShopButton('拾取', lootDropTitle(drop), () => {
+          this.input.queueInteract();
+        }),
+      );
+    }
+    if (actions.childElementCount > 0) {
+      this.worldSheetBody.append(actions);
+    }
   }
 
   private updateProgressPanel(snapshot: WorldSnapshot, player: PlayerSnapshot): void {
@@ -1450,45 +1826,37 @@ export class GameHud {
   }
 
   private updateShopPanel(snapshot: WorldSnapshot, player: PlayerSnapshot): void {
-    let nearbyShop: WorldSnapshot['shops'][number] | undefined;
-    for (const shop of snapshot.shops) {
-      if (distanceSquaredMm(player.position, shop.position) > 2_500 * 2_500) {
-        continue;
-      }
-      if (!nearbyShop || (shop.status === 'open' && nearbyShop.status !== 'open')) {
-        nearbyShop = shop;
-      }
-    }
+    const shop = nearbyShop(snapshot, player);
 
-    if (!nearbyShop) {
+    if (!shop) {
       this.dismissedShopId = null;
       this.shopSignature = '';
       this.shopPanel.hidden = true;
       return;
     }
 
-    if (this.dismissedShopId === nearbyShop.shopId) {
+    if (this.dismissedShopId === shop.shopId) {
       this.shopPanel.hidden = true;
       return;
     }
     this.dismissedShopId = null;
-    this.shopPanel.dataset.shopId = nearbyShop.shopId;
+    this.shopPanel.dataset.shopId = shop.shopId;
     this.shopPanel.hidden = false;
     const relocationSeconds =
-      nearbyShop.status === 'relocating'
-        ? Math.ceil(
-            Math.max(0, nearbyShop.nextRelocationAttemptTick - snapshot.tick) / TICKS_PER_SECOND,
-          )
+      shop.status === 'relocating'
+        ? Math.ceil(Math.max(0, shop.nextRelocationAttemptTick - snapshot.tick) / TICKS_PER_SECOND)
         : 0;
     const taibaiChannelSeconds = Math.ceil(player.taibaiChannelTicks / TICKS_PER_SECOND);
     const taibaiCooldownSeconds = Math.ceil(player.taibaiCooldownTicks / TICKS_PER_SECOND);
+    const combatLockSeconds = Math.ceil(player.pvpCombatTicks / TICKS_PER_SECOND);
     const signature = [
-      nearbyShop.shopId,
-      nearbyShop.kind,
-      nearbyShop.version,
-      nearbyShop.status,
+      shop.shopId,
+      shop.kind,
+      shop.version,
+      shop.status,
       relocationSeconds,
-      ...nearbyShop.inventory.map(
+      combatLockSeconds,
+      ...shop.inventory.map(
         (listing) =>
           `${listing.listingId}:${listing.kind}:${listing.equipmentId ?? ''}:${
             listing.consumableId ?? ''
@@ -1513,114 +1881,112 @@ export class GameHud {
       return;
     }
     this.shopSignature = signature;
-    this.shopTitle.textContent = `${nearbyShop.kind} v${nearbyShop.version}`;
+    this.shopTitle.textContent = `${shopDisplayName(shop)} · ${shopStatusLabel(shop, relocationSeconds)}`;
     this.shopContent.replaceChildren();
-    if (nearbyShop.status === 'relocating') {
+    const locked = player.pvpCombatTicks > 0 || player.lifeState !== 'alive';
+    if (locked) {
       const status = document.createElement('div');
       status.className = 'shop-row';
-      status.textContent = `Relocating - retry in ${relocationSeconds}s`;
+      status.textContent =
+        player.lifeState !== 'alive'
+          ? '存活后才能交易'
+          : `脱离战斗后可交易 · 还需 ${combatLockSeconds} 秒`;
+      this.shopContent.append(status);
+    }
+    if (shop.status === 'relocating') {
+      const status = document.createElement('div');
+      status.className = 'shop-row';
+      status.textContent = `正在迁移 · ${relocationSeconds}秒后重试落点`;
       this.shopContent.append(status);
       return;
     }
-    for (const listing of nearbyShop.inventory) {
+    for (const listing of shop.inventory) {
       const row = document.createElement('div');
       row.className = 'shop-row';
       const label = document.createElement('span');
       const name =
         listing.kind === 'gem'
-          ? 'Gem'
+          ? '宝石'
           : listing.kind === 'consumable'
             ? listing.consumableId === 'clairvoyance-talisman'
-              ? 'Vision talisman'
-              : 'Reveal mirror'
+              ? '千里符'
+              : '照妖镜'
             : listing.equipmentId
               ? getEquipmentDefinition(listing.equipmentId).name
-              : 'Equipment';
-      label.textContent = `${name}  ${listing.price}g`;
+              : '装备';
+      label.textContent = `${name}  ${listing.price}金`;
       row.append(label);
       const actions = document.createElement('span');
       actions.className = 'shop-actions';
       if (listing.kind === 'gem' || listing.kind === 'consumable') {
-        actions.append(
-          this.createShopButton('Buy', `Buy ${name}`, () => {
-            this.host.purchaseShopListing(
-              nearbyShop.shopId,
-              listing.listingId,
-              nearbyShop.version,
-              'inventory',
-            );
-          }),
-        );
+        const button = this.createShopButton('购买', `购买 ${name}`, () => {
+          this.host.purchaseShopListing(shop.shopId, listing.listingId, shop.version, 'inventory');
+        });
+        button.disabled = locked || player.gold < listing.price;
+        actions.append(button);
       } else if (listing.equipmentId !== null) {
-        actions.append(
-          this.createShopButton('Equip', `Buy and equip ${name}`, () => {
-            this.host.purchaseShopListing(
-              nearbyShop.shopId,
-              listing.listingId,
-              nearbyShop.version,
-              'equipped',
-            );
-          }),
-          this.createShopButton('Hand', `Buy ${name} into hand`, () => {
-            this.host.purchaseShopListing(
-              nearbyShop.shopId,
-              listing.listingId,
-              nearbyShop.version,
-              'inventory',
-            );
-          }),
-        );
+        const equip = this.createShopButton('穿戴', `购买并穿戴 ${name}`, () => {
+          this.host.purchaseShopListing(shop.shopId, listing.listingId, shop.version, 'equipped');
+        });
+        const hand = this.createShopButton('入手牌', `购买 ${name} 到手牌`, () => {
+          this.host.purchaseShopListing(shop.shopId, listing.listingId, shop.version, 'inventory');
+        });
+        equip.disabled = locked || player.gold < listing.price;
+        hand.disabled = locked || player.gold < listing.price;
+        actions.append(equip, hand);
       }
       row.append(actions);
       this.shopContent.append(row);
     }
 
-    if (nearbyShop.kind === 'taibai') {
+    if (shop.kind === 'taibai') {
       const status = document.createElement('div');
       status.className = 'shop-row';
       status.textContent =
         player.taibaiChannelTicks > 0
-          ? `Channeling ${taibaiChannelSeconds}s`
+          ? `转命引导中 ${taibaiChannelSeconds}秒`
           : player.taibaiCooldownTicks > 0
-            ? `Service cooldown ${taibaiCooldownSeconds}s`
-            : 'Choose a hero';
+            ? `转命冷却 ${taibaiCooldownSeconds}秒`
+            : '本店提供 5 名转命候选 · 1500金';
       this.shopContent.append(status);
-      for (const candidate of AUTHORITATIVE_HEROES) {
+      for (const candidate of stableTaibaiOffers(shop.shopId, shop.version, player.heroId)) {
         const candidateId = heroId(candidate.id);
         const row = document.createElement('div');
         row.className = 'shop-row';
+        row.dataset.heroId = candidate.id;
         const label = document.createElement('span');
         label.textContent = `${candidate.id} ${candidate.name}`;
         row.append(label);
-        const button = this.createShopButton('Swap', `Swap to ${candidate.name}`, () => {
-          this.host.startHeroSwap(nearbyShop.shopId, nearbyShop.version, candidateId);
+        const button = this.createShopButton('转命', `转命为 ${candidate.name}`, () => {
+          this.host.startHeroSwap(shop.shopId, shop.version, candidateId);
         });
         button.disabled =
+          locked ||
           player.gold < 1_500 ||
           player.taibaiCooldownTicks > 0 ||
-          player.taibaiChannelTicks > 0 ||
-          player.lifeState !== 'alive';
+          player.taibaiChannelTicks > 0;
         row.append(button);
         this.shopContent.append(row);
       }
     }
 
-    if (nearbyShop.kind === 'heishan') {
+    if (shop.kind === 'heishan') {
       const gambleHeader = document.createElement('div');
       gambleHeader.className = 'shop-row';
-      gambleHeader.textContent = `Gambles ${player.heishanGambleCount}/3`;
+      gambleHeader.textContent = `黑山赌命 ${player.heishanGambleCount}/3`;
       this.shopContent.append(gambleHeader);
 
       for (const passive of player.passives) {
         const row = document.createElement('div');
         row.className = 'shop-row';
+        const current = getAuthoritativePassive(passive.passiveId);
         const label = document.createElement('span');
-        label.textContent = `Passive ${passive.passiveId} Lv.${passive.level}`;
+        label.textContent = `被动 ${current.name} Lv.${passive.level}`;
         row.append(label);
-        const button = this.createShopButton('Risk', `Gamble ${passive.passiveId}`, () => {
-          this.host.gamblePassive(nearbyShop.shopId, nearbyShop.version, passive.passiveId);
+        const button = this.createShopButton('赌命', `赌 ${current.name}`, () => {
+          this.host.gamblePassive(shop.shopId, shop.version, passive.passiveId);
         });
-        button.disabled = player.heishanGambleCount >= 3 || player.lifeState !== 'alive';
+        button.disabled = locked || player.heishanGambleCount >= 3;
         row.append(button);
         this.shopContent.append(row);
       }
@@ -1628,64 +1994,67 @@ export class GameHud {
       for (const instance of [...player.equipment, ...player.inventoryEquipment]) {
         const row = document.createElement('div');
         row.className = 'shop-row';
+        const name = getEquipmentDefinition(instance.equipmentId).name;
         const label = document.createElement('span');
-        label.textContent = `Equipment ${getEquipmentDefinition(instance.equipmentId).name}`;
+        label.textContent = `装备 ${name}`;
         row.append(label);
-        const button = this.createShopButton('Risk', `Gamble ${label.textContent}`, () => {
-          this.host.gambleEquipment(nearbyShop.shopId, nearbyShop.version, instance.instanceId);
+        const button = this.createShopButton('赌命', `赌 ${name}`, () => {
+          this.host.gambleEquipment(shop.shopId, shop.version, instance.instanceId);
         });
-        button.disabled = player.heishanGambleCount >= 3 || player.lifeState !== 'alive';
+        button.disabled = locked || player.heishanGambleCount >= 3;
         row.append(button);
         this.shopContent.append(row);
       }
 
+      const activeDefinition = getActiveDefinition(player.activeAbilityId);
       const activeRow = document.createElement('div');
       activeRow.className = 'shop-row';
-      activeRow.textContent = `Active ${player.activeAbilityId}`;
-      const activeButton = this.createShopButton('Risk', 'Gamble active', () => {
-        this.host.gambleActive(nearbyShop.shopId, nearbyShop.version);
+      const activeLabel = document.createElement('span');
+      activeLabel.textContent = `主动 ${activeDefinition.name}`;
+      activeRow.append(activeLabel);
+      const activeButton = this.createShopButton('赌命', '赌当前主动', () => {
+        this.host.gambleActive(shop.shopId, shop.version);
       });
-      activeButton.disabled = player.heishanGambleCount >= 3 || player.lifeState !== 'alive';
+      activeButton.disabled = locked || player.heishanGambleCount >= 3;
       activeRow.append(activeButton);
       this.shopContent.append(activeRow);
 
       const goldRow = document.createElement('div');
       goldRow.className = 'shop-row';
-      goldRow.textContent = 'Double wager';
+      goldRow.textContent = '金币翻倍';
       for (const wager of [500, 1_000, 2_000, 5_000]) {
-        const button = this.createShopButton(`${wager}g`, `Wager ${wager} gold`, () => {
-          this.host.gambleGold(nearbyShop.shopId, nearbyShop.version, wager, 'double');
+        const button = this.createShopButton(`${wager}金`, `押 ${wager} 金翻倍`, () => {
+          this.host.gambleGold(shop.shopId, shop.version, wager, 'double');
         });
-        button.disabled =
-          player.heishanGambleCount >= 3 || player.gold < wager || player.lifeState !== 'alive';
+        button.disabled = locked || player.heishanGambleCount >= 3 || player.gold < wager;
         goldRow.append(button);
       }
       this.shopContent.append(goldRow);
 
       const purpleRow = document.createElement('div');
       purpleRow.className = 'shop-row';
-      purpleRow.textContent = 'Purple equipment wager';
-      const purpleButton = this.createShopButton('2000g', 'Wager for purple equipment', () => {
-        this.host.gambleGold(nearbyShop.shopId, nearbyShop.version, 2_000, 'purple');
+      purpleRow.textContent = '赌紫装';
+      const purpleButton = this.createShopButton('2000金', '押 2000 金赌紫装', () => {
+        this.host.gambleGold(shop.shopId, shop.version, 2_000, 'purple');
       });
-      purpleButton.disabled =
-        player.heishanGambleCount >= 3 || player.gold < 2_000 || player.lifeState !== 'alive';
+      purpleButton.disabled = locked || player.heishanGambleCount >= 3 || player.gold < 2_000;
       purpleRow.append(purpleButton);
       this.shopContent.append(purpleRow);
     }
 
-    if (nearbyShop.kind !== 'taibai' && nearbyShop.kind !== 'heishan') {
+    if (shop.kind !== 'taibai' && shop.kind !== 'heishan') {
       for (const instance of [...player.equipment, ...player.inventoryEquipment]) {
         const row = document.createElement('div');
         row.className = 'shop-row';
+        const name = getEquipmentDefinition(instance.equipmentId).name;
         const label = document.createElement('span');
-        label.textContent = `Sell ${getEquipmentDefinition(instance.equipmentId).name}`;
+        label.textContent = `出售 ${name}`;
         row.append(label);
-        row.append(
-          this.createShopButton('Sell', `Sell ${label.textContent}`, () => {
-            this.host.sellShopEquipment(nearbyShop.shopId, instance.instanceId, nearbyShop.version);
-          }),
-        );
+        const button = this.createShopButton('出售', `出售 ${name}`, () => {
+          this.host.sellShopEquipment(shop.shopId, instance.instanceId, shop.version);
+        });
+        button.disabled = locked;
+        row.append(button);
         this.shopContent.append(row);
       }
     }

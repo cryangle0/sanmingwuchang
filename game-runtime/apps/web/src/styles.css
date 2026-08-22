@@ -67,19 +67,67 @@ body,
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: linear-gradient(180deg, rgb(239 249 245 / 8%), transparent 44%, rgb(1 20 21 / 30%));
+  /* Vignette plus a warm sky wash: pulls the eye to the centre stage and sets
+     the panels against a darker surround so their brass edges read. */
+  background:
+    radial-gradient(128% 88% at 50% 34%, transparent 42%, rgb(1 16 18 / 62%) 100%),
+    linear-gradient(180deg, rgb(255 246 224 / 10%), transparent 40%, rgb(1 20 21 / 42%));
   content: "";
   pointer-events: none;
 }
 
 .flow-panel {
-  border: 1px solid rgb(222 193 119 / 52%);
-  border-radius: 5px;
-  background: rgb(5 39 39 / 90%);
+  /* Lacquer body, brass hairline, lit top edge. The flat single-stroke
+     rectangle this replaces was legible but generic: it read as an admin
+     surface dropped over the artwork rather than as part of the same world. */
+  position: relative;
+  border: 1px solid rgb(228 195 118 / 62%);
+  border-radius: 6px;
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgb(24 84 78 / 45%), transparent 62%),
+    linear-gradient(180deg, rgb(11 56 53 / 94%), rgb(3 28 29 / 96%));
   box-shadow:
-    0 18px 45px rgb(0 17 18 / 26%),
-    inset 0 0 0 1px rgb(255 255 255 / 4%);
-  backdrop-filter: blur(8px);
+    0 22px 54px rgb(0 12 14 / 46%),
+    inset 0 1px 0 rgb(255 240 202 / 16%),
+    inset 0 0 0 1px rgb(0 0 0 / 34%),
+    inset 0 0 30px rgb(0 18 20 / 40%);
+  backdrop-filter: blur(9px);
+}
+
+/* Corner brackets. Two pseudo-elements give a lacquer panel its four-corner
+   binding without an image, and they are the cheapest single cue separating a
+   game frame from a browser card. */
+.match-plaque::before,
+.match-plaque::after,
+.lobby-nav::before,
+.lobby-nav::after,
+.reconnect-card::before,
+.reconnect-card::after {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-color: rgb(240 214 143 / 78%);
+  border-style: solid;
+  content: "";
+  pointer-events: none;
+}
+
+.match-plaque::before,
+.lobby-nav::before,
+.reconnect-card::before {
+  top: 5px;
+  left: 5px;
+  border-width: 1px 0 0 1px;
+  border-radius: 4px 0 0;
+}
+
+.match-plaque::after,
+.lobby-nav::after,
+.reconnect-card::after {
+  right: 5px;
+  bottom: 5px;
+  border-width: 0 1px 1px 0;
+  border-radius: 0 0 4px;
 }
 
 .flow-eyebrow {
@@ -115,14 +163,42 @@ body,
 }
 
 .flow-primary-button {
-  color: #0b312f;
-  background: #e7c66d;
-  box-shadow: 0 8px 24px rgb(118 79 18 / 24%);
+  /* Struck brass rather than a flat swatch: a vertical gradient for the
+     rounding, a bright inner top edge and a dark inner bottom edge for the
+     bevel, so the primary action reads as a physical plate. */
+  position: relative;
+  overflow: hidden;
+  border-color: rgb(255 234 176 / 72%);
+  color: #2b1906;
+  background: linear-gradient(180deg, #f8dfa2 0%, #e8c369 46%, #cda449 100%);
+  box-shadow:
+    0 12px 28px rgb(92 59 9 / 40%),
+    inset 0 1px 0 rgb(255 251 231 / 88%),
+    inset 0 -2px 0 rgb(122 79 20 / 42%);
+  text-shadow: 0 1px 0 rgb(255 246 214 / 55%);
+}
+
+.flow-primary-button::after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -60%;
+  width: 45%;
+  background: linear-gradient(100deg, transparent, rgb(255 255 255 / 55%), transparent);
+  content: "";
+  pointer-events: none;
+  transition: transform 620ms ease;
+  transform: translateX(0);
+}
+
+.flow-primary-button:hover:not(:disabled)::after,
+.flow-primary-button:focus-visible::after {
+  transform: translateX(340%);
 }
 
 .flow-primary-button:hover:not(:disabled),
 .flow-primary-button:focus-visible {
-  background: #f3d98d;
+  background: linear-gradient(180deg, #fdecc0 0%, #f2d180 46%, #d9b158 100%);
 }
 
 .flow-secondary-button {
@@ -274,8 +350,12 @@ body,
 .lobby-identity img {
   width: 46px;
   height: 46px;
-  border: 1px solid #d9b45d;
+  border: 2px solid #e0bd68;
   border-radius: 50%;
+  box-shadow:
+    0 0 0 1px rgb(6 40 38 / 90%),
+    0 0 0 3px rgb(224 189 104 / 34%),
+    0 6px 16px rgb(0 15 16 / 45%);
   object-fit: cover;
 }
 
@@ -361,11 +441,52 @@ body,
 }
 
 .match-plaque h1 {
+  position: relative;
   margin: 9px 0 8px;
-  color: #f5df9f;
+  color: #f7e3a6;
   font-family: "STKaiti", "KaiTi", "Microsoft YaHei", serif;
-  font-size: 48px;
+  font-size: 50px;
   line-height: 1;
+  text-shadow:
+    0 2px 0 rgb(24 12 2 / 45%),
+    0 0 26px rgb(238 199 108 / 34%);
+}
+
+/* Ink seal behind the plaque copy: the mark the game is named for, sunk far
+   enough into the lacquer to stay a texture rather than a graphic. */
+.plaque-seal {
+  position: absolute;
+  right: 14px;
+  bottom: 6px;
+  color: rgb(240 214 143 / 7%);
+  font-family: "STKaiti", "KaiTi", "Microsoft YaHei", serif;
+  font-size: 150px;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Rule with a centred lozenge, the divider used on carved plaques. */
+.plaque-divider {
+  display: block;
+  height: 9px;
+  margin: 2px 0 12px;
+  background:
+    linear-gradient(90deg, transparent, rgb(233 203 128 / 55%) 22%, transparent 48%),
+    linear-gradient(90deg, transparent 52%, rgb(233 203 128 / 55%) 78%, transparent);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 1px;
+}
+
+.plaque-divider::after {
+  display: block;
+  width: 7px;
+  height: 7px;
+  margin: 1px auto;
+  border: 1px solid rgb(240 214 143 / 72%);
+  content: "";
+  transform: rotate(45deg);
 }
 
 .match-mode-copy {
@@ -406,11 +527,12 @@ body,
 }
 
 .match-tags span {
-  padding: 5px 8px;
-  border: 1px solid rgb(209 193 151 / 20%);
+  padding: 5px 9px;
+  border: 1px solid rgb(226 197 118 / 34%);
   border-radius: 3px;
-  color: #a9c3b8;
-  background: rgb(3 29 29 / 28%);
+  color: #d6c496;
+  background: linear-gradient(180deg, rgb(31 92 84 / 42%), rgb(4 32 32 / 52%));
+  box-shadow: inset 0 1px 0 rgb(255 240 200 / 12%);
   font-size: 10px;
   font-weight: 750;
 }
@@ -456,12 +578,191 @@ body,
   font-size: 14px;
 }
 
+/* Seal glyph. A single character in a bordered square is the prototype's
+   navigation mark; it stays legible at the size a stat number would blur. */
+.lobby-nav-button i {
+  /* Cinnabar seal. Lacquer-red stone with a brass rim reads as a game mark at
+     a glance; the same glyph on a translucent tile read as a toolbar. */
+  display: grid;
+  width: 32px;
+  height: 32px;
+  align-content: center;
+  justify-content: center;
+  justify-self: center;
+  border: 1px solid rgb(236 206 130 / 62%);
+  border-radius: 4px;
+  background: linear-gradient(180deg, #a5352a 0%, #7a2018 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 216 176 / 34%),
+    inset 0 -2px 4px rgb(48 8 4 / 45%),
+    0 5px 14px rgb(52 9 5 / 38%);
+  color: #ffe9bd;
+  font-family: "STKaiti", "KaiTi", "Microsoft YaHei", serif;
+  font-size: 17px;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.lobby-nav-button:hover i,
+.lobby-nav-button:focus-visible i,
+.lobby-nav-button.is-active i {
+  border-color: rgb(250 226 162 / 92%);
+  background: linear-gradient(180deg, #c24334 0%, #93291d 100%);
+  color: #fff6dc;
+}
+
 .lobby-nav-button small {
   overflow: hidden;
   color: #9fb9ae;
   font-size: 9px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Reconnect card. Sits above the navigation so a live seat is the first thing
+   read on return, and is hidden outright when no seat is recoverable. */
+.reconnect-card {
+  position: absolute;
+  right: max(6%, env(safe-area-inset-right));
+  bottom: calc(max(20px, env(safe-area-inset-bottom)) + 82px);
+  z-index: 3;
+  display: flex;
+  width: min(430px, 38vw);
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 14px;
+  border-color: rgb(233 200 116 / 78%);
+  background: rgb(58 34 14 / 88%);
+  color: #f7e7c2;
+  cursor: pointer;
+  text-align: left;
+}
+
+.reconnect-card[hidden] {
+  display: none;
+}
+
+.reconnect-card span {
+  display: grid;
+  gap: 3px;
+}
+
+.reconnect-card b {
+  font-size: 13px;
+}
+
+.reconnect-card small {
+  color: #d8bd8c;
+  font-size: 10px;
+}
+
+.reconnect-card i {
+  flex: none;
+  padding: 6px 10px;
+  border-radius: 3px;
+  background: #e8c975;
+  color: #23150a;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 850;
+}
+
+.reconnect-card:hover,
+.reconnect-card:focus-visible {
+  background: rgb(74 44 18 / 92%);
+}
+
+/* Lobby overlay panels: 成长 / 个人 / 排行榜 share one measured layout so the
+   three destinations do not each invent their own. */
+.lobby-catalog-content.is-panel {
+  display: grid;
+  gap: 12px;
+  padding: 4px 2px;
+}
+
+.lobby-metric-row {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
+}
+
+.lobby-metric-row span {
+  display: grid;
+  gap: 3px;
+  padding: 10px 8px;
+  border: 1px solid rgb(223 204 151 / 18%);
+  border-radius: 4px;
+  background: rgb(9 46 44 / 58%);
+  text-align: center;
+}
+
+.lobby-metric-row b {
+  color: #f0d68f;
+  font-size: 17px;
+}
+
+.lobby-metric-row small {
+  color: #9fb9ae;
+  font-size: 10px;
+}
+
+.lobby-panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.lobby-panel-note {
+  margin: 0;
+  color: #9db7ac;
+  font-size: 11px;
+  line-height: 1.65;
+}
+
+/* Honest empty state. Used where the client has nothing authoritative to show,
+   in place of a placeholder ladder that would read as real. */
+.lobby-unavailable {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 26px 18px;
+  border: 1px dashed rgb(223 204 151 / 26%);
+  border-radius: 5px;
+  text-align: center;
+}
+
+.lobby-unavailable i {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  align-content: center;
+  justify-content: center;
+  border: 1px solid rgb(226 197 118 / 40%);
+  border-radius: 4px;
+  color: #e8c975;
+  font-size: 20px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.lobby-unavailable b {
+  color: #f4e6be;
+  font-size: 14px;
+}
+
+.lobby-unavailable p {
+  max-width: 42ch;
+  margin: 0;
+  color: #9db7ac;
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.queue-eta {
+  color: #cbb98b;
+  font-size: 10px;
 }
 
 .lobby-catalog-overlay {
@@ -3247,6 +3548,174 @@ kbd {
   font-variant-numeric: tabular-nums;
 }
 
+.storm-visual {
+  position: absolute;
+  top: max(58px, calc(env(safe-area-inset-top) + 46px));
+  left: 50%;
+  z-index: 6;
+  display: grid;
+  width: min(360px, calc(100vw - 28px));
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid rgb(255 140 120 / 42%);
+  border-radius: 6px;
+  color: #ffe7d6;
+  background: rgb(48 12 16 / 88%);
+  box-shadow: 0 10px 28px rgb(40 0 8 / 35%);
+  backdrop-filter: blur(10px);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.storm-visual[hidden] {
+  display: none;
+}
+
+.storm-visual.is-final {
+  border-color: rgb(255 214 110 / 48%);
+  background: rgb(42 18 8 / 90%);
+}
+
+.storm-visual-title {
+  color: #ffd3b8;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.storm-danger-level {
+  color: #ff8d7a;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.storm-visual-copy {
+  margin: 0;
+  color: #f0d7c6;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.storm-visual-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin: 2px 0 0;
+}
+
+.storm-visual-stats div {
+  display: grid;
+  gap: 1px;
+}
+
+.storm-visual-stats dt {
+  color: #c9a394;
+  font-size: 9px;
+}
+
+.storm-visual-stats dd {
+  margin: 0;
+  color: #fff1d6;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+}
+
+.storm-direction-copy {
+  color: #e8c4b0;
+  font-size: 10px;
+}
+
+.world-sheet {
+  position: absolute;
+  right: max(18px, env(safe-area-inset-right));
+  bottom: 118px;
+  z-index: 7;
+  display: grid;
+  width: min(340px, calc(100vw - 36px));
+  max-height: min(46vh, 420px);
+  gap: 8px;
+  padding: 10px 11px;
+  overflow: auto;
+  border: 1px solid rgb(225 198 128 / 38%);
+  border-radius: 6px;
+  color: #f3ead2;
+  background: rgb(7 35 34 / 92%);
+  box-shadow: 0 12px 28px rgb(0 13 14 / 36%);
+  backdrop-filter: blur(10px);
+  pointer-events: auto;
+}
+
+.world-sheet[hidden] {
+  display: none;
+}
+
+.world-sheet-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.world-sheet-kicker {
+  display: block;
+  color: #9dbbb0;
+  font-size: 10px;
+}
+
+.world-sheet-title {
+  display: block;
+  color: #ead69f;
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.world-sheet-close,
+.world-sheet-actions .mini-action,
+.world-sheet-pager .mini-action,
+.world-sheet-heap-item {
+  pointer-events: auto;
+}
+
+.world-sheet-close {
+  flex: 0 0 auto;
+  padding: 3px 8px;
+  border: 1px solid rgb(225 198 128 / 28%);
+  border-radius: 4px;
+  color: #d9c38b;
+  background: rgb(255 255 255 / 4%);
+  font-size: 11px;
+}
+
+.world-sheet-note {
+  margin: 0;
+  color: #c9c3b2;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.world-sheet-heap,
+.world-sheet-actions,
+.world-sheet-pager {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.world-sheet-heap-item {
+  padding: 5px 8px;
+  border: 1px solid rgb(225 198 128 / 22%);
+  border-radius: 4px;
+  color: #f3ead2;
+  background: rgb(255 255 255 / 4%);
+  font-size: 11px;
+}
+
+.world-sheet-heap-item.is-active {
+  border-color: rgb(232 201 112 / 70%);
+  color: #fff0c4;
+  background: rgb(232 201 112 / 12%);
+}
+
 .resource-hud {
   position: absolute;
   top: max(14px, env(safe-area-inset-top));
@@ -3671,32 +4140,55 @@ kbd {
 
 .build-strip {
   position: absolute;
-  bottom: max(16px, calc(env(safe-area-inset-bottom) + 10px));
+  bottom: max(14px, calc(env(safe-area-inset-bottom) + 8px));
   left: 50%;
   z-index: 5;
   display: flex;
-  width: 430px;
-  max-width: none;
+  width: auto;
+  max-width: calc(100vw - 300px);
   min-width: 0;
-  align-items: end;
+  height: 78px;
+  align-items: center;
   justify-content: center;
   gap: 9px;
-  padding: 7px 9px;
+  padding: 8px 11px;
+  border-radius: 8px;
   transform: translateX(-50%);
   pointer-events: auto;
+  background: linear-gradient(180deg, rgb(5 49 50 / 96%), rgb(8 67 61 / 94%));
+  border: 1px solid rgb(231 188 94 / 70%);
+  box-shadow:
+    0 16px 36px rgb(2 33 32 / 38%),
+    inset 0 1px rgb(255 255 255 / 12%);
+}
+
+.hud:has(.shop-panel:not([hidden])) .build-strip {
+  left: 36%;
+  transition: left 0.18s ease;
 }
 
 .build-group {
   display: grid;
+  grid-template-columns: auto auto;
   min-width: 0;
-  gap: 4px;
+  align-items: center;
+  gap: 5px;
+  padding-right: 9px;
+  border-right: 1px solid rgb(226 184 91 / 25%);
+}
+
+.build-group:last-child {
+  padding-right: 0;
+  border-right: 0;
 }
 
 .build-group label {
-  color: #8fa99e;
-  font-size: 8px;
+  color: #efd28b;
+  font-size: 9px;
   font-weight: 800;
+  letter-spacing: 0.12em;
   text-align: center;
+  writing-mode: vertical-rl;
 }
 
 .passive-slots,
@@ -3704,59 +4196,107 @@ kbd {
 .hand-slots,
 .active-slot {
   display: flex;
-  gap: 3px;
+  gap: 4px;
 }
 
 .build-slot {
   position: relative;
   display: grid;
-  width: 38px;
-  height: 38px;
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
   place-items: center;
-  padding: 0;
+  padding: 3px;
   overflow: hidden;
-  border: 1px solid rgb(225 198 128 / 30%);
-  border-radius: 3px;
+  border: 1px solid rgb(213 171 81 / 44%);
+  border-radius: 6px;
   color: #d6c99f;
-  background: rgb(2 24 25 / 66%);
+  background: radial-gradient(circle, #133f3d, #071f22);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 8%);
   cursor: pointer;
+}
+
+.build-group.passives .build-slot {
+  width: 44px;
+  height: 44px;
+  border-color: rgb(97 196 169 / 58%);
+  border-radius: 50%;
+}
+
+.build-group.equipment .build-slot {
+  border-color: #d1a650;
+  clip-path: polygon(8% 0, 92% 0, 100% 20%, 88% 100%, 12% 100%, 0 20%);
+}
+
+.build-group.hand .build-slot {
+  border: 2px dashed #a98142;
+  background: linear-gradient(145deg, #46321f, #1b3130);
+}
+
+.build-group.active .build-slot {
+  width: 54px;
+  height: 54px;
+  border: 2px solid #efcc73;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 3px rgb(225 181 75 / 16%),
+    inset 0 0 12px rgb(241 202 112 / 22%);
 }
 
 .build-slot:hover,
 .build-slot:focus-visible,
 .build-slot.is-active {
-  border-color: #e1bd64;
-  background: rgb(24 72 64 / 90%);
-  outline: 2px solid rgb(225 189 100 / 24%);
+  border-color: #efcc73;
+  filter: brightness(1.08);
+  outline: 2px solid rgb(225 189 100 / 28%);
   outline-offset: 1px;
 }
 
 .build-slot img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 
-.build-slot small {
+.build-slot .lv {
   position: absolute;
+  top: 1px;
   right: 1px;
-  bottom: 1px;
-  max-width: calc(100% - 2px);
-  padding: 1px 2px;
-  overflow: hidden;
-  border-radius: 1px;
-  color: #fff2ce;
-  background: rgb(0 20 21 / 78%);
-  font-size: 6px;
+  padding: 1px 3px;
+  border-radius: 6px;
+  color: #fff;
+  background: #1e9b7e;
+  font-size: 8px;
   font-weight: 850;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+}
+
+.build-slot .cooldown {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: rgb(2 18 20 / 72%);
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.build-slot.rarity-blue {
+  border-color: #278bd2;
+}
+
+.build-slot.rarity-purple {
+  border-color: #8653c7;
+}
+
+.build-slot.rarity-gold {
+  border-color: #d89b26;
 }
 
 .build-slot.is-empty::after {
-  color: rgb(177 196 187 / 28%);
+  color: rgb(177 196 187 / 34%);
   content: "+";
-  font-size: 18px;
+  font-size: 22px;
 }
 
 .action-button .active-skill-icon {
@@ -3786,16 +4326,24 @@ kbd {
 
 @media (max-width: 1320px) and (min-width: 781px) {
   .build-strip {
-    width: 370px;
+    height: 70px;
+    gap: 7px;
+    padding: 6px 9px;
   }
 
   .build-slot {
-    width: 33px;
-    height: 33px;
+    width: 36px;
+    height: 36px;
   }
 
-  .build-group {
-    gap: 3px;
+  .build-group.passives .build-slot {
+    width: 38px;
+    height: 38px;
+  }
+
+  .build-group.active .build-slot {
+    width: 46px;
+    height: 46px;
   }
 
   .hud .player-hud {
@@ -3817,22 +4365,31 @@ kbd {
   }
 
   .build-strip {
-    width: 300px;
-    gap: 5px;
-    padding: 5px;
+    height: 62px;
+    max-width: calc(100vw - 250px);
+    gap: 6px;
+    padding: 5px 8px;
   }
 
-  .build-group label {
-    display: none;
+  .build-group {
+    gap: 4px;
+    padding-right: 6px;
   }
 
   .build-slot {
-    width: 27px;
-    height: 27px;
+    width: 32px;
+    height: 32px;
+    padding: 2px;
   }
 
-  .build-slot small {
-    display: none;
+  .build-group.passives .build-slot {
+    width: 34px;
+    height: 34px;
+  }
+
+  .build-group.active .build-slot {
+    width: 42px;
+    height: 42px;
   }
 
   .action-cluster {
@@ -3871,12 +4428,23 @@ kbd {
   }
 
   .build-strip {
-    width: 260px;
+    height: 56px;
+    max-width: calc(100vw - 220px);
   }
 
   .build-slot {
-    width: 24px;
-    height: 24px;
+    width: 28px;
+    height: 28px;
+  }
+
+  .build-group.passives .build-slot {
+    width: 30px;
+    height: 30px;
+  }
+
+  .build-group.active .build-slot {
+    width: 36px;
+    height: 36px;
   }
 }
 
@@ -3985,23 +4553,44 @@ kbd {
 
   .build-strip {
     bottom: max(79px, calc(env(safe-area-inset-bottom) + 71px));
-    min-width: 260px;
-    max-width: min(310px, calc(100vw - 300px));
-    gap: 5px;
-    padding: 4px 5px;
+    height: 56px;
+    min-width: 0;
+    max-width: min(420px, calc(100vw - 240px));
+    gap: 4px;
+    padding: 4px 6px;
+  }
+
+  .build-group {
+    grid-template-columns: auto;
+    gap: 2px;
+    padding-right: 5px;
   }
 
   .build-group label {
-    display: none;
+    writing-mode: horizontal-tb;
+    letter-spacing: 0;
+    font-size: 7px;
   }
 
   .build-slot {
-    width: 27px;
-    height: 27px;
+    width: 26px;
+    height: 26px;
+    padding: 2px;
   }
 
-  .build-slot small {
-    display: none;
+  .build-group.passives .build-slot {
+    width: 26px;
+    height: 26px;
+  }
+
+  .build-group.active .build-slot {
+    width: 32px;
+    height: 32px;
+  }
+
+  .build-slot .lv,
+  .build-slot .cooldown {
+    font-size: 7px;
   }
 
   .hud > .progress-panel {
@@ -4164,6 +4753,18 @@ kbd {
     width: auto;
     min-width: 0;
   }
+
+  .world-sheet {
+    right: 12px;
+    left: 12px;
+    bottom: max(108px, calc(env(safe-area-inset-bottom) + 96px));
+    width: auto;
+  }
+
+  .storm-visual {
+    top: max(46px, calc(env(safe-area-inset-top) + 38px));
+    width: min(320px, calc(100vw - 16px));
+  }
 }
 
 .flow-menu-host .game-menu-button,
@@ -4215,13 +4816,9 @@ kbd {
   }
 
   .build-strip {
-    width: 540px;
-    gap: 12px;
-    padding: 10px 12px;
-  }
-
-  .build-group {
-    gap: 6px;
+    height: 82px;
+    gap: 10px;
+    padding: 8px 12px;
   }
 
   .build-group label {
@@ -4236,12 +4833,18 @@ kbd {
   }
 
   .build-slot {
-    width: 48px;
-    height: 48px;
+    width: 44px;
+    height: 44px;
   }
 
-  .build-slot small {
-    font-size: 7px;
+  .build-group.passives .build-slot {
+    width: 46px;
+    height: 46px;
+  }
+
+  .build-group.active .build-slot {
+    width: 58px;
+    height: 58px;
   }
 
   .action-cluster {

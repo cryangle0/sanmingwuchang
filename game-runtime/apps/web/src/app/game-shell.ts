@@ -37,8 +37,21 @@ import {
   selectHero,
   startMatchmaking,
 } from './game-flow';
+import {
+  clearPendingMatch,
+  playerTag,
+  readMatchHistory,
+  readPendingMatch,
+  recordMatchResult,
+  summariseHistory,
+  writePendingMatch,
+} from './lobby-session';
 
 type AuthoritativeHeroRecord = (typeof AUTHORITATIVE_HEROES)[number];
+/** Seats in an authoritative room; the lobby reports the shortfall, not a guess. */
+const MATCH_ROOM_CAPACITY = 30;
+
+type LobbyPanelKind = 'growth' | 'profile' | 'ranking';
 type LobbyCatalogKind = 'heroes' | 'passives' | 'equipment' | 'runtime';
 
 const HERO_RECORDS: ReadonlyMap<string, AuthoritativeHeroRecord> = new Map(
@@ -224,9 +237,26 @@ export class GameShell {
       this.disposeMatchmaking();
       this.disposeFlowServices();
     }
+    // A seat exists from the moment the match is entered until it is settled.
+    // The lobby's reconnect card reads this, so it offers to rejoin only a
+    // match that was genuinely left in progress.
+    if (nextState.screen === 'battle' && previousScreen !== 'battle' && nextState.matchId) {
+      writePendingMatch(window.sessionStorage, {
+        matchId: nextState.matchId,
+        heroId: nextState.selectedHeroId,
+        startedAtMs: Date.now(),
+      });
+    }
     if (nextState.screen === 'result' && previousScreen !== 'result') {
+      clearPendingMatch(window.sessionStorage);
+      if (nextState.result) {
+        recordMatchResult(window.localStorage, nextState.result, Date.now());
+      }
       this.destroyGameRuntime();
       this.ensureFlowServices();
+    }
+    if (nextState.screen === 'lobby' && previousScreen === 'battle') {
+      clearPendingMatch(window.sessionStorage);
     }
     if (
       (nextState.screen === 'lobby' ||
@@ -299,13 +329,18 @@ export class GameShell {
 
   private renderLobby(): void {
     const matching = this.state.screen === 'matching';
+    const pending = readPendingMatch(window.sessionStorage, Date.now());
+    // Only claims a connection when one exists. The prototype hard-codes
+    // "金丹 · 36级" here; the server issues no realm, level or account number,
+    // so the line reports the match service instead of inventing progression.
+    const identityLine = this.matchmakingPlayerId ? '百眼迷城 · 已连接匹配' : '百眼迷城 · 离线练习';
     this.flowLayer.hidden = false;
     this.flowLayer.innerHTML = `
       <section class="flow-screen lobby-flow-screen" data-screen="${this.state.screen}">
         <header class="lobby-toolbar flow-panel">
-          <button class="lobby-identity" type="button" aria-label="当前玩家">
+          <button class="lobby-identity" type="button" aria-label="查看个人档案" title="个人档案">
             <img src="${heroPortraitUrl('H009')}" alt="" />
-            <span><b>无常客</b><small>百眼迷城 · 在线</small></span>
+            <span><b>无常客 ${escapeHtml(playerTag(this.matchmakingPlayerId))}</b><small>${escapeHtml(identityLine)}</small></span>
           </button>
           <div class="lobby-tools">
             <button class="flow-icon-button lobby-help" type="button" aria-label="玩法帮助" title="玩法帮助">
@@ -321,27 +356,38 @@ export class GameShell {
           <img src="${flowAssetUrl('lobby-wukong')}" alt="" />
         </div>
         <article class="match-plaque flow-panel">
+          <span class="plaque-seal" aria-hidden="true">命</span>
           <p class="flow-eyebrow">30 人 · 单人竞技 · 在线同池</p>
           <h1>百眼迷城</h1>
+          <span class="plaque-divider" aria-hidden="true"></span>
           <p class="match-mode-copy">三条命。搜集技能与装备，活到最后。</p>
           <button class="flow-primary-button start-match-button" type="button" ${matching ? 'disabled' : ''}>
             <span class="start-match-icon"></span>
             <span><b>开始对战</b><small>30 人单排</small></span>
           </button>
-          <div class="match-tags"><span>三命制</span><span>无组队</span><span>权威服务器</span></div>
+          <div class="match-tags"><span>三命制</span><span>无组队</span><span>无文字社交</span><span>权威服务器</span></div>
         </article>
+        <button
+          class="reconnect-card flow-panel"
+          type="button"
+          ${pending ? '' : 'hidden'}
+          aria-label="继续未完成的对局"
+        >
+          <span><b>未完成对局</b><small>席位仍有效，点击继续</small></span>
+          <i>继续对局</i>
+        </button>
         <nav class="lobby-nav flow-panel" aria-label="主导航">
-          <button class="lobby-nav-button" type="button" data-catalog-kind="heroes">
-            <b>${AUTHORITATIVE_HEROES.length}</b><small>英雄</small>
+          <button class="lobby-nav-button" type="button" data-lobby-panel="growth">
+            <i aria-hidden="true">修</i><small>成长</small>
           </button>
-          <button class="lobby-nav-button" type="button" data-catalog-kind="passives">
-            <b>${AUTHORITATIVE_PASSIVES.length}</b><small>被动</small>
+          <button class="lobby-nav-button" type="button" data-lobby-panel="profile">
+            <i aria-hidden="true">录</i><small>个人</small>
           </button>
-          <button class="lobby-nav-button" type="button" data-catalog-kind="equipment">
-            <b>${AUTHORITATIVE_EQUIPMENT.length}</b><small>装备</small>
+          <button class="lobby-nav-button" type="button" data-lobby-panel="ranking">
+            <i aria-hidden="true">榜</i><small>排行榜</small>
           </button>
-          <button class="lobby-nav-button" type="button" data-catalog-kind="runtime">
-            <b>${TICKS_PER_SECOND} Hz</b><small>权威战斗</small>
+          <button class="lobby-nav-button lobby-nav-settings" type="button">
+            <i aria-hidden="true">设</i><small>设置</small>
           </button>
         </nav>
         <section
@@ -368,6 +414,7 @@ export class GameShell {
           </div>
           <strong class="queue-time">${formatClock(this.state.queueElapsedMs)}</strong>
           <small class="queue-position"></small>
+          <small class="queue-eta"></small>
           <small class="queue-error"></small>
           <button class="flow-secondary-button cancel-match-button" type="button" ${
             this.matchmakingCancelPending ? 'disabled' : ''
@@ -417,18 +464,114 @@ export class GameShell {
         this.openFlowMenu('guide');
       });
     for (const button of this.flowLayer.querySelectorAll<HTMLButtonElement>(
-      '.lobby-nav-button[data-catalog-kind]',
+      '.lobby-nav-button[data-lobby-panel]',
     )) {
       button.addEventListener('click', () => {
-        this.openLobbyCatalog(button.dataset.catalogKind as LobbyCatalogKind);
+        this.openLobbyPanel(button.dataset.lobbyPanel as LobbyPanelKind);
       });
     }
+    this.flowLayer
+      .querySelector<HTMLButtonElement>('.lobby-nav-settings')
+      ?.addEventListener('click', () => this.openFlowMenu('settings'));
+    this.flowLayer
+      .querySelector<HTMLButtonElement>('.lobby-identity')
+      ?.addEventListener('click', () => this.openLobbyPanel('profile'));
+    this.flowLayer
+      .querySelector<HTMLButtonElement>('.reconnect-card')
+      ?.addEventListener('click', this.startMatch);
     this.flowLayer
       .querySelector<HTMLButtonElement>('.lobby-catalog-close')
       ?.addEventListener('click', this.closeLobbyCatalog);
   }
 
-  private openLobbyCatalog(kind: LobbyCatalogKind): void {
+  /**
+   * Lobby destinations.
+   *
+   * The prototype routes 成长 / 个人 / 排行榜 to three separate screens. Those
+   * screens do not exist here, and half of what they display — cultivation
+   * totals, win rate, global rank — has no server behind it. They are lobby
+   * overlays instead: the two that can be filled from authoritative content
+   * and local history are, and 排行榜 says plainly that it is not connected
+   * rather than showing a fabricated ladder.
+   */
+  private openLobbyPanel(kind: LobbyPanelKind): void {
+    const overlay = this.flowLayer.querySelector<HTMLElement>('.lobby-catalog-overlay');
+    const title = this.flowLayer.querySelector<HTMLElement>('#lobby-catalog-title');
+    const content = this.flowLayer.querySelector<HTMLElement>('.lobby-catalog-content');
+    if (!overlay || !title || !content) {
+      return;
+    }
+    for (const button of this.flowLayer.querySelectorAll<HTMLButtonElement>(
+      '.lobby-nav-button[data-lobby-panel]',
+    )) {
+      button.classList.toggle('is-active', button.dataset.lobbyPanel === kind);
+      button.setAttribute('aria-pressed', String(button.dataset.lobbyPanel === kind));
+    }
+
+    if (kind === 'growth') {
+      title.textContent = '成长 · 图鉴';
+      content.className = 'lobby-catalog-content is-panel';
+      content.innerHTML = `
+        <div class="lobby-metric-row">
+          <span><b>${AUTHORITATIVE_HEROES.length}</b><small>英雄</small></span>
+          <span><b>${AUTHORITATIVE_PASSIVES.length}</b><small>被动</small></span>
+          <span><b>${AUTHORITATIVE_EQUIPMENT.length}</b><small>装备</small></span>
+          <span><b>${TICKS_PER_SECOND} Hz</b><small>权威战斗</small></span>
+        </div>
+        <div class="lobby-panel-actions">
+          <button class="flow-secondary-button" type="button" data-catalog-kind="heroes">英雄图鉴</button>
+          <button class="flow-secondary-button" type="button" data-catalog-kind="passives">被动技能</button>
+          <button class="flow-secondary-button" type="button" data-catalog-kind="equipment">装备总览</button>
+        </div>
+      `;
+      for (const button of content.querySelectorAll<HTMLButtonElement>('[data-catalog-kind]')) {
+        button.addEventListener('click', () => {
+          this.openLobbyCatalog(button.dataset.catalogKind as LobbyCatalogKind, kind);
+        });
+      }
+    } else if (kind === 'profile') {
+      const history = readMatchHistory(window.localStorage);
+      const summary = summariseHistory(history);
+      const favourite = summary.favouriteHeroId
+        ? (AUTHORITATIVE_HEROES.find((hero) => hero.id === summary.favouriteHeroId)?.name ??
+          summary.favouriteHeroId)
+        : '暂无';
+      title.textContent = '个人档案';
+      content.className = 'lobby-catalog-content is-panel';
+      content.innerHTML = `
+        <div class="lobby-metric-row">
+          <span><b>${escapeHtml(playerTag(this.matchmakingPlayerId))}</b><small>玩家编号</small></span>
+          <span><b>${summary.matches}</b><small>本机对局</small></span>
+          <span><b>${summary.victories}</b><small>获胜</small></span>
+          <span><b>${summary.bestPlacement ?? '—'}</b><small>最佳名次</small></span>
+        </div>
+        <div class="lobby-metric-row">
+          <span><b>${formatClock(summary.totalSurvivalSeconds * 1_000)}</b><small>累计存活</small></span>
+          <span><b>${escapeHtml(favourite)}</b><small>常用英雄</small></span>
+        </div>
+        <p class="lobby-panel-note">
+          这些数字来自本机已完成的对局记录。修为、境界与胜率需要账号服务，服务端尚未提供，因此不在此显示。
+        </p>
+      `;
+    } else {
+      title.textContent = '排行榜';
+      content.className = 'lobby-catalog-content is-panel';
+      content.innerHTML = `
+        <section class="lobby-unavailable">
+          <i aria-hidden="true">榜</i>
+          <b>排行榜尚未接入</b>
+          <p>权威服务器目前只提供对局撮合与战斗结算，没有跨局排名接口。等账号与结算服务上线后，这里会显示真实名次，而不是先摆一份占位榜单。</p>
+        </section>
+      `;
+    }
+
+    overlay.hidden = false;
+    this.flowLayer
+      .querySelector<HTMLButtonElement>('.lobby-catalog-close')
+      ?.focus({ preventScroll: true });
+  }
+
+  private openLobbyCatalog(kind: LobbyCatalogKind, activePanel?: LobbyPanelKind): void {
     const overlay = this.flowLayer.querySelector<HTMLElement>('.lobby-catalog-overlay');
     const title = this.flowLayer.querySelector<HTMLElement>('#lobby-catalog-title');
     const content = this.flowLayer.querySelector<HTMLElement>('.lobby-catalog-content');
@@ -437,10 +580,11 @@ export class GameShell {
     }
 
     for (const button of this.flowLayer.querySelectorAll<HTMLButtonElement>(
-      '.lobby-nav-button[data-catalog-kind]',
+      '.lobby-nav-button[data-lobby-panel]',
     )) {
-      button.classList.toggle('is-active', button.dataset.catalogKind === kind);
-      button.setAttribute('aria-pressed', String(button.dataset.catalogKind === kind));
+      const active = button.dataset.lobbyPanel === (activePanel ?? 'growth');
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-pressed', String(active));
     }
 
     if (kind === 'heroes') {
@@ -907,6 +1051,16 @@ export class GameShell {
     if (queuePosition) {
       queuePosition.textContent =
         this.state.queuePosition === null ? '' : `当前队列位：${this.state.queuePosition}`;
+    }
+    const queueEta = this.flowLayer.querySelector<HTMLElement>('.queue-eta');
+    if (queueEta) {
+      // The prototype shows a countdown. The match service reports a queue
+      // position and nothing else, so this reports how many seats a room still
+      // needs — a real number — instead of a predicted wait it cannot know.
+      queueEta.textContent =
+        this.state.queuePosition === null
+          ? '等待服务器分配席位'
+          : `房间尚缺 ${Math.max(0, MATCH_ROOM_CAPACITY - this.state.queuePosition)} 人开局`;
     }
     const queueError = this.flowLayer.querySelector<HTMLElement>('.queue-error');
     if (queueError) {
