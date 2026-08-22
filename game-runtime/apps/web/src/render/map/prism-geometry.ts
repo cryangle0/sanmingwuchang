@@ -54,6 +54,102 @@ export class PrismGeometryAccumulator {
     }
   }
 
+  /** Extrudes a wall so both the foot and the cap follow sampled ground. */
+  addDrapedPrism(
+    ring: readonly MapPointMm[],
+    wallHeightMeters: number,
+    sampleY: (xMeters: number, zMeters: number) => number,
+  ): void {
+    this.addDrapedCap(ring, wallHeightMeters, sampleY);
+    this.addDrapedSides(ring, wallHeightMeters, sampleY);
+  }
+
+  addDrapedCap(
+    ring: readonly MapPointMm[],
+    wallHeightMeters: number,
+    sampleY: (xMeters: number, zMeters: number) => number,
+  ): void {
+    for (let index = 1; index + 1 < ring.length; index += 1) {
+      const a = ring[0] as MapPointMm;
+      const b = ring[index] as MapPointMm;
+      const c = ring[index + 1] as MapPointMm;
+      this.pushCapVertex(
+        a.x / MM_PER_METER,
+        sampleY(a.x / MM_PER_METER, a.z / MM_PER_METER) + wallHeightMeters,
+        a.z / MM_PER_METER,
+      );
+      this.pushCapVertex(
+        c.x / MM_PER_METER,
+        sampleY(c.x / MM_PER_METER, c.z / MM_PER_METER) + wallHeightMeters,
+        c.z / MM_PER_METER,
+      );
+      this.pushCapVertex(
+        b.x / MM_PER_METER,
+        sampleY(b.x / MM_PER_METER, b.z / MM_PER_METER) + wallHeightMeters,
+        b.z / MM_PER_METER,
+      );
+    }
+  }
+
+  addDrapedSides(
+    ring: readonly MapPointMm[],
+    wallHeightMeters: number,
+    sampleY: (xMeters: number, zMeters: number) => number,
+  ): void {
+    let perimeter = 0;
+    for (let index = 0; index < ring.length; index += 1) {
+      const a = ring[index] as MapPointMm;
+      const b = ring[(index + 1) % ring.length] as MapPointMm;
+      const ax = a.x / MM_PER_METER;
+      const az = a.z / MM_PER_METER;
+      const bx = b.x / MM_PER_METER;
+      const bz = b.z / MM_PER_METER;
+      const baseA = sampleY(ax, az);
+      const baseB = sampleY(bx, bz);
+      const edgeLength = Math.hypot(bx - ax, bz - az);
+      const u0 = perimeter;
+      const u1 = perimeter + edgeLength;
+      perimeter = u1;
+      this.pushSideVertex(ax, baseA, az, u0);
+      this.pushSideVertex(ax, baseA + wallHeightMeters, az, u0);
+      this.pushSideVertex(bx, baseB + wallHeightMeters, bz, u1);
+      this.pushSideVertex(ax, baseA, az, u0);
+      this.pushSideVertex(bx, baseB + wallHeightMeters, bz, u1);
+      this.pushSideVertex(bx, baseB, bz, u1);
+    }
+  }
+
+  /** Adds a cliff face from sampled ground up to a plateau height. */
+  addPlateauSkirt(
+    ring: readonly MapPointMm[],
+    topYMeters: number,
+    sampleY: (xMeters: number, zMeters: number) => number,
+  ): void {
+    let perimeter = 0;
+    for (let index = 0; index < ring.length; index += 1) {
+      const a = ring[index] as MapPointMm;
+      const b = ring[(index + 1) % ring.length] as MapPointMm;
+      const ax = a.x / MM_PER_METER;
+      const az = a.z / MM_PER_METER;
+      const bx = b.x / MM_PER_METER;
+      const bz = b.z / MM_PER_METER;
+      const baseA = sampleY(ax, az);
+      const baseB = sampleY(bx, bz);
+      const topA = Math.max(baseA + 0.45, topYMeters);
+      const topB = Math.max(baseB + 0.45, topYMeters);
+      const edgeLength = Math.hypot(bx - ax, bz - az);
+      const u0 = perimeter;
+      const u1 = perimeter + edgeLength;
+      perimeter = u1;
+      this.pushSideVertex(ax, baseA, az, u0);
+      this.pushSideVertex(ax, topA, az, u0);
+      this.pushSideVertex(bx, topB, bz, u1);
+      this.pushSideVertex(ax, baseA, az, u0);
+      this.pushSideVertex(bx, topB, bz, u1);
+      this.pushSideVertex(bx, baseB, bz, u1);
+    }
+  }
+
   /** Adds outward-facing side quads for an extruded ring. */
   addSides(ring: readonly MapPointMm[], baseYMeters: number, topYMeters: number): void {
     // Perimeter distance accumulates across edges so stone courses continue

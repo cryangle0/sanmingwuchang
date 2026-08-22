@@ -1,4 +1,4 @@
-import type { MapPointMm } from '@jwgb/content';
+import { type MapPointMm, terrainHeightMeters } from '@jwgb/content';
 import * as THREE from 'three';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -642,7 +642,7 @@ function composeModelMatrix(
   euler.set(tiltX, yaw, tiltZ);
   quaternion.setFromEuler(euler);
   scale.set(modelScale, modelScale, modelScale);
-  position.set(x, -template.minY * modelScale, z);
+  position.set(x, terrainHeightMeters(x, z) - template.minY * modelScale, z);
   matrix.compose(position, quaternion, scale);
   return matrix.clone();
 }

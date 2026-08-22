@@ -8,8 +8,8 @@ export const WORLD_SCALE_PROFILE = {
     playerModelScale: 1,
     monsterModelScale: 1,
     playerSelectionRing: {
-      innerRadius: 1.08,
-      outerRadius: 1.36,
+      innerRadius: 0.7,
+      outerRadius: 0.94,
       elevation: 0.085,
     },
     playerHealthBar: {

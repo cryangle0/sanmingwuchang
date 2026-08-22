@@ -1,4 +1,4 @@
-import type { MapPointMm } from '@jwgb/content';
+import { type MapPointMm, terrainHeightMeters } from '@jwgb/content';
 import * as THREE from 'three';
 import { regionAt } from './map-regions';
 import { createRandomStream, isOpenGround, sampleOpenGround } from './map-sampling';
@@ -247,7 +247,11 @@ function placeGrassInstances(
     rotation.set(0, nextRandom() * Math.PI * 2, 0);
     quaternion.setFromEuler(rotation);
     scale.setScalar(uniformScale);
-    position.set(point.x / MM, 0.018 * uniformScale, point.z / MM);
+    position.set(
+      point.x / MM,
+      terrainHeightMeters(point.x / MM, point.z / MM) + 0.018 * uniformScale,
+      point.z / MM,
+    );
     matrix.compose(position, quaternion, scale);
     mesh.setMatrixAt(index, matrix);
     colour.setHex(regionAt(point.x / MM, point.z / MM).scatter);
@@ -287,7 +291,11 @@ function placePebbleInstances(
     rotation.set(nextRandom() * 0.32, nextRandom() * Math.PI * 2, nextRandom() * 0.32);
     quaternion.setFromEuler(rotation);
     scale.set(size * (0.72 + nextRandom() * 0.5), size * 0.65, size);
-    position.set(point.x / MM, size * 0.075, point.z / MM);
+    position.set(
+      point.x / MM,
+      terrainHeightMeters(point.x / MM, point.z / MM) + size * 0.075,
+      point.z / MM,
+    );
     matrix.compose(position, quaternion, scale);
     mesh.setMatrixAt(index, matrix);
     colour.setHex(regionAt(point.x / MM, point.z / MM).groundAlt);
@@ -337,7 +345,11 @@ function placeGroundCoverInstances(
     quaternion.setFromEuler(rotation);
     scale.set(xScale, 1, zScale);
     const lift = kind === 'moss' ? 0.014 : kind === 'soil' ? 0.018 : 0.022;
-    position.set(point.x / MM, lift + nextRandom() * 0.004, point.z / MM);
+    position.set(
+      point.x / MM,
+      terrainHeightMeters(point.x / MM, point.z / MM) + lift + nextRandom() * 0.004,
+      point.z / MM,
+    );
     matrix.compose(position, quaternion, scale);
     mesh.setMatrixAt(index, matrix);
     if (kind === 'soil') {

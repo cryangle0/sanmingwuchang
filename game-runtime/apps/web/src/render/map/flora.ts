@@ -1,4 +1,4 @@
-import { MAP_BOUNDARY, MAP_WALL_PIECES, type MapPointMm } from '@jwgb/content';
+import { MAP_BOUNDARY, MAP_WALL_PIECES, type MapPointMm, terrainHeightMeters } from '@jwgb/content';
 import * as THREE from 'three';
 import { mergeMixedParts } from './dressing/prop-kit';
 import {
@@ -495,7 +495,7 @@ function buildTrees(
     euler.set(0, yaw, trunkTilt);
     quaternion.setFromEuler(euler);
     scale.set(size, size, size);
-    position.set(x, 0, z);
+    position.set(x, terrainHeightMeters(x, z), z);
     matrix.compose(position, quaternion, scale);
     trunks.setMatrixAt(index, matrix);
     const trunkMatrix = matrix.clone();
@@ -504,7 +504,11 @@ function buildTrees(
     euler.set(0, yaw, 0);
     quaternion.setFromEuler(euler);
     scale.set(size * 2.25, 1, size * 1.7);
-    position.set(x + Math.cos(yaw) * lean * 0.32, 0.021, z + Math.sin(yaw) * lean * 0.32);
+    position.set(
+      x + Math.cos(yaw) * lean * 0.32,
+      terrainHeightMeters(x, z) + 0.021,
+      z + Math.sin(yaw) * lean * 0.32,
+    );
     matrix.compose(position, quaternion, scale);
     shadows.setMatrixAt(index, matrix);
     const shadowMatrix = matrix.clone();
@@ -514,7 +518,10 @@ function buildTrees(
     const shade = 0.6 + nextRandom() * 0.16;
     const dead = region.id === 'jinshui' && nextRandom() < 0.36;
     const colour = new THREE.Color(dead ? 0x614735 : 0x4a6842)
-      .lerp(districtColour, dead ? 0.16 : 0.18)
+      .lerp(
+        districtColour,
+        dead ? 0.42 : region.id === 'jinshui' ? 0.58 : region.id === 'mihun' ? 0.46 : 0.34,
+      )
       .multiplyScalar(shade);
     const placement: TreePlacement = {
       id: `tree-${index.toString().padStart(3, '0')}`,
@@ -562,7 +569,8 @@ function buildTrees(
       scale.setScalar(placement.size);
       position.set(
         placement.canopyX,
-        (placement.dead ? 3.48 : 3.92) * placement.size,
+        terrainHeightMeters(placement.canopyX, placement.canopyZ) +
+          (placement.dead ? 3.48 : 3.92) * placement.size,
         placement.canopyZ,
       );
       matrix.compose(position, quaternion, scale);
@@ -728,7 +736,7 @@ function buildBamboo(
     euler.set(0, nextRandom() * Math.PI * 2, 0);
     quaternion.setFromEuler(euler);
     scale.set(size, size, size);
-    position.set(x, 0, z);
+    position.set(x, terrainHeightMeters(x, z), z);
     matrix.compose(position, quaternion, scale);
     clusters.setMatrixAt(index, matrix);
     districtColour.setHex(regionAt(x, z).scatter);
@@ -831,7 +839,7 @@ function buildBoulders(
     euler.set(nextRandom() * 0.4, nextRandom() * Math.PI * 2, nextRandom() * 0.4);
     quaternion.setFromEuler(euler);
     scale.set(size * (0.8 + nextRandom() * 0.5), size, size);
-    position.set(x, size * 0.18, z);
+    position.set(x, terrainHeightMeters(x, z) + size * 0.18, z);
     matrix.compose(position, quaternion, scale);
     boulders.setMatrixAt(index, matrix);
     // Boulders lean toward neutral stone but keep a whisper of the district.

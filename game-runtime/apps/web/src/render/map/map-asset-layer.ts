@@ -1,4 +1,4 @@
-import { MAP_HIGHLANDS, MAP_ROCKS, type MapPointMm } from '@jwgb/content';
+import { MAP_HIGHLANDS, MAP_ROCKS, type MapPointMm, terrainHeightMeters } from '@jwgb/content';
 import * as THREE from 'three';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -391,9 +391,9 @@ function landmarkPlacement(
   id: string,
   assetId: string,
   point: { readonly x: number; readonly z: number },
-  y: number,
   worldHeight: number,
   yaw: number,
+  lift = 0.08,
 ): MapAssetPlacement {
   const targetHeight = catalogEntry(assetId).targetHeight;
   return {
@@ -401,7 +401,7 @@ function landmarkPlacement(
     assetId,
     kind: 'landmark',
     x: point.x,
-    y,
+    y: terrainHeightMeters(point.x, point.z) + lift,
     z: point.z,
     yaw,
     worldHeight,
@@ -431,7 +431,6 @@ export function createMapAssetPlacementPlan(seed = 1): readonly MapAssetPlacemen
       'imported-landmark-east-highland',
       'wuxia-citadel',
       eastHighlandSite,
-      MAP_HIGHLANDS[0]?.topHeightMm / MM || 0,
       WORLD_SCALE_PROFILE.map.landmarkWorldHeights['wuxia-citadel'],
       yawToward(eastHighlandSite.x, eastHighlandSite.z, highlandEast.x, highlandEast.z) + 0.12,
     ),
@@ -439,15 +438,14 @@ export function createMapAssetPlacementPlan(seed = 1): readonly MapAssetPlacemen
       'imported-landmark-central-hall',
       'wuxia-east-asia-hall',
       centralHallSite,
-      0.06,
       WORLD_SCALE_PROFILE.map.landmarkWorldHeights['wuxia-east-asia-hall'],
       yawToward(centralHallSite.x, centralHallSite.z, -12.3, -58.6) - 0.18,
+      0.06,
     ),
     landmarkPlacement(
       'imported-landmark-north-highland',
       'wuxia-mountain-gate',
       northHighlandSite,
-      MAP_HIGHLANDS[2]?.topHeightMm / MM || 0,
       WORLD_SCALE_PROFILE.map.landmarkWorldHeights['wuxia-mountain-gate'],
       yawToward(northHighlandSite.x, northHighlandSite.z, highlandNorth.x, highlandNorth.z) + 0.2,
     ),
@@ -455,7 +453,6 @@ export function createMapAssetPlacementPlan(seed = 1): readonly MapAssetPlacemen
       'imported-landmark-west-village',
       'lowpoly-asian-village',
       westVillageSite,
-      0.08,
       WORLD_SCALE_PROFILE.map.landmarkWorldHeights['lowpoly-asian-village'],
       yawToward(westVillageSite.x, westVillageSite.z, -330.7, -82) + 0.12,
     ),
@@ -463,7 +460,6 @@ export function createMapAssetPlacementPlan(seed = 1): readonly MapAssetPlacemen
       'imported-landmark-west-gate',
       'wuxia-gate-court',
       westGateSite,
-      0.08,
       WORLD_SCALE_PROFILE.map.landmarkWorldHeights['wuxia-gate-court'],
       yawToward(westGateSite.x, westGateSite.z, 0, 0),
     ),
@@ -471,7 +467,6 @@ export function createMapAssetPlacementPlan(seed = 1): readonly MapAssetPlacemen
       'imported-landmark-west-house',
       'lowpoly-asian-house',
       westHouseSite,
-      0.08,
       WORLD_SCALE_PROFILE.map.landmarkWorldHeights['lowpoly-asian-house'],
       yawToward(westHouseSite.x, westHouseSite.z, westVillageSite.x, westVillageSite.z) + 0.18,
     ),
@@ -479,7 +474,6 @@ export function createMapAssetPlacementPlan(seed = 1): readonly MapAssetPlacemen
       'imported-landmark-west-torii',
       'lowpoly-torii',
       { x: westVillageSite.x - 3, z: westVillageSite.z + 19 },
-      0.08,
       WORLD_SCALE_PROFILE.map.landmarkWorldHeights['lowpoly-torii'],
       yawToward(westVillageSite.x - 3, westVillageSite.z + 19, -330.7, -82),
     ),
@@ -487,7 +481,6 @@ export function createMapAssetPlacementPlan(seed = 1): readonly MapAssetPlacemen
       'imported-landmark-north-rock-formation',
       'lowpoly-rock-formation',
       { x: northHighlandSite.x + 13, z: northHighlandSite.z + 8 },
-      0.08,
       WORLD_SCALE_PROFILE.map.landmarkWorldHeights['lowpoly-rock-formation'],
       yawToward(
         northHighlandSite.x + 13,
@@ -509,7 +502,7 @@ export function createMapAssetPlacementPlan(seed = 1): readonly MapAssetPlacemen
       assetId,
       kind: 'rock',
       x,
-      y: 0.04,
+      y: terrainHeightMeters(x, z) + 0.04,
       z,
       yaw: hashAt(record.position.x, record.position.z, 19, seed) * Math.PI * 2,
       worldHeight: Math.min(

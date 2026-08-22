@@ -1,3 +1,4 @@
+import { terrainHeightMeters } from '@jwgb/content';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
@@ -250,7 +251,7 @@ export function addHorizontalTorus(
 ): void {
   const geometry = new THREE.TorusGeometry(radius, tube, 7, segments);
   geometry.rotateX(Math.PI / 2);
-  geometry.translate(x, y, z);
+  geometry.translate(x, y + terrainHeightMeters(x, z), z);
   bag.push(geometry);
 }
 
@@ -281,7 +282,7 @@ export function addHorizontalRing(
 ): void {
   const geometry = new THREE.RingGeometry(innerRadius, outerRadius, segments);
   geometry.rotateX(-Math.PI / 2);
-  geometry.translate(x, y, z);
+  geometry.translate(x, y + terrainHeightMeters(x, z), z);
   bag.push(geometry);
 }
 
@@ -364,7 +365,7 @@ export function transformAtSite(
 ): void {
   const position = offsetFromSite(site, localX, localZ);
   geometry.rotateY(site.yaw + localYaw);
-  geometry.translate(position.x, y, position.z);
+  geometry.translate(position.x, y + terrainHeightMeters(position.x, position.z), position.z);
 }
 
 export function shiftedSite(site: Site, localX: number, localZ: number): Site {

@@ -51,5 +51,9 @@ describe('web world scale profile', () => {
     expect(WORLD_SCALE_PROFILE.character.playerSelectionRing.elevation).toBeGreaterThan(
       MAX_ROAD_SURFACE_Y,
     );
+    expect(WORLD_SCALE_PROFILE.character.playerSelectionRing.innerRadius).toBeLessThan(0.85);
+    expect(WORLD_SCALE_PROFILE.character.playerSelectionRing.outerRadius).toBeGreaterThan(
+      WORLD_SCALE_PROFILE.character.playerSelectionRing.innerRadius,
+    );
   });
 });

@@ -9,3 +9,4 @@ export * from './map-geometry-types';
 export * from './passive';
 export * from './rules';
 export * from './scripted-active';
+export * from './terrain-height';

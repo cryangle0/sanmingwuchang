@@ -1,73 +1,84 @@
+import { terrainHeightMeters } from '@jwgb/content';
 import * as THREE from 'three';
-import { type RegionId, regionBlendAt } from './map-regions';
 import { createRandomStream } from './map-sampling';
+import { blendClimateAt } from './region-climate';
+import { MapWeather } from './weather';
 
 /**
- * Map-mode atmosphere: a painted ink-wash sky gradient plus district-aware
- * fog, replacing the flat olive backdrop that made every frame read murky.
- *
- * The fog colour drifts toward the local district's `mist` tone as the player
- * crosses borders (the BIOME_FOG idea from world-of-claudecraft), so 蛛丝峡
- * reads cold and dense while 万劫三庭 stays golden and open — without touching
- * any material or triggering a single shader recompile.
+ * Map-mode atmosphere: ink-wash sky, district fog, lighting, and
+ * render-only rain/snow. None of this writes sim state.
  */
 
 export interface MapAtmosphere {
-  /** Drifts fog toward the district under the local player. */
-  update(localXMeters: number, localZMeters: number): void;
+  update(localXMeters: number, localZMeters: number, focus: THREE.Vector3, dt: number): void;
   dispose(): void;
 }
 
-/** Per-district fog density; unlisted districts use the base value. */
-const FOG_DENSITY_BY_REGION: Partial<Record<RegionId, number>> = {
-  zhusi: 0.0034,
-  mihun: 0.0032,
-  longji: 0.0028,
-  santing: 0.0025,
-};
-const BASE_FOG_DENSITY = 0.00225;
+export interface MapAtmosphereLights {
+  readonly sun: THREE.DirectionalLight;
+  readonly hemisphere: THREE.HemisphereLight;
+  readonly fill: THREE.DirectionalLight;
+  readonly graphicsReduced: boolean;
+}
 
-/** How strongly district mist tones are pulled back toward the ink base. */
-const INK_ANCHOR = 0.34;
+const INK_ANCHOR = 0.22;
 const INK_BASE = 0x858c7d;
 
-export function createMapAtmosphere(scene: THREE.Scene): MapAtmosphere {
+export function createMapAtmosphere(
+  scene: THREE.Scene,
+  lights: MapAtmosphereLights,
+): MapAtmosphere {
   const skyTexture = paintSkyTexture();
   scene.background = skyTexture;
-
-  const fog = new THREE.FogExp2(INK_BASE, BASE_FOG_DENSITY);
+  const fog = new THREE.FogExp2(INK_BASE, 0.00225);
   scene.fog = fog;
+  const weather = new MapWeather(scene, lights.graphicsReduced);
 
   const targetColour = new THREE.Color();
   const secondaryColour = new THREE.Color();
   const inkBase = new THREE.Color(INK_BASE);
-  let currentDensity = BASE_FOG_DENSITY;
+  const sunColour = new THREE.Color();
+  const hemiSky = new THREE.Color();
+  const hemiGround = new THREE.Color();
+  let currentDensity = 0.00225;
+  const baseFill = lights.fill.intensity;
 
   return {
-    update(localXMeters: number, localZMeters: number): void {
-      const blend = regionBlendAt(localXMeters, localZMeters);
-      targetColour.setHex(blend.primary.mist);
-      secondaryColour.setHex(blend.secondary.mist);
-      targetColour.lerp(secondaryColour, blend.mix);
+    update(localXMeters: number, localZMeters: number, focus: THREE.Vector3, dt: number): void {
+      const { primary, secondary, mix, climate } = blendClimateAt(localXMeters, localZMeters);
+      targetColour.setHex(primary.mist);
+      secondaryColour.setHex(secondary.mist);
+      targetColour.lerp(secondaryColour, mix);
       targetColour.lerp(inkBase, INK_ANCHOR);
-      fog.color.lerp(targetColour, 0.045);
+      fog.color.lerp(targetColour, 0.06);
 
-      const primaryDensity = FOG_DENSITY_BY_REGION[blend.primary.id] ?? BASE_FOG_DENSITY;
-      const secondaryDensity = FOG_DENSITY_BY_REGION[blend.secondary.id] ?? BASE_FOG_DENSITY;
-      const targetDensity = primaryDensity + (secondaryDensity - primaryDensity) * blend.mix;
-      currentDensity += (targetDensity - currentDensity) * 0.03;
-      fog.density = currentDensity;
+      currentDensity += (climate.fogDensity - currentDensity) * 0.04;
+      const height = terrainHeightMeters(localXMeters, localZMeters);
+      const valley = height < 0 ? Math.min(0.42, -height / 3.4) : 0;
+      fog.density = currentDensity * (1 + valley);
+
+      sunColour.setHex(climate.sunColor);
+      lights.sun.color.lerp(sunColour, 0.05);
+      lights.sun.intensity += (climate.sunIntensity - lights.sun.intensity) * 0.05;
+      hemiSky.setHex(climate.hemiSky);
+      hemiGround.setHex(climate.hemiGround);
+      lights.hemisphere.color.lerp(hemiSky, 0.05);
+      lights.hemisphere.groundColor.lerp(hemiGround, 0.05);
+      const dim = climate.weather === 'clear' ? 1 : 0.72;
+      lights.fill.intensity += (baseFill * dim - lights.fill.intensity) * 0.05;
+      if ('backgroundIntensity' in scene) {
+        const sky = climate.weather === 'clear' ? 1.05 : 0.82;
+        scene.backgroundIntensity += (sky - scene.backgroundIntensity) * 0.04;
+      }
+      weather.update(focus, dt);
     },
     dispose(): void {
+      weather.dispose();
       skyTexture.dispose();
     },
   };
 }
 
-/**
- * A 256² vertical wash from pale mist into deep pine ink, with a few soft
- * horizontal cloud strokes so the empty half of the frame is not a flat fill.
- */
 function paintSkyTexture(): THREE.CanvasTexture {
   const size = 256;
   const canvas = document.createElement('canvas');
@@ -101,6 +112,20 @@ function paintSkyTexture(): THREE.CanvasTexture {
     context.ellipse(x, y, width / 2, height / 2, 0, 0, Math.PI * 2);
     context.fill();
   }
+
+  const sun = context.createRadialGradient(
+    size * 0.72,
+    size * 0.18,
+    4,
+    size * 0.72,
+    size * 0.18,
+    size * 0.22,
+  );
+  sun.addColorStop(0, 'rgba(255, 236, 196, 0.55)');
+  sun.addColorStop(0.35, 'rgba(232, 214, 168, 0.16)');
+  sun.addColorStop(1, 'rgba(208, 214, 197, 0)');
+  context.fillStyle = sun;
+  context.fillRect(0, 0, size, size);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;

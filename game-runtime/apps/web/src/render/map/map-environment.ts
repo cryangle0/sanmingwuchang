@@ -7,9 +7,11 @@ import {
   MAP_SPAWN_POINTS,
   MAP_WALL_PIECES,
   type MapPointMm,
+  terrainHeightMeters,
 } from '@jwgb/content';
 import * as THREE from 'three';
 import { buildBeyond } from './beyond';
+import { buildBoundaryCliffs } from './boundary-cliffs';
 import { buildRegionDressing } from './dressing/region-dressing';
 import { buildFlora } from './flora';
 import type { FloraModelLayerDiagnostics } from './flora-models';
@@ -25,6 +27,7 @@ import { createMapMaterials } from './map-palette';
 import { PrismGeometryAccumulator } from './prism-geometry';
 import { buildRoadRibbons } from './roads';
 import { buildScatter } from './scatter';
+import { buildWaterGeometry } from './water';
 
 const MM = 1_000;
 
@@ -99,6 +102,9 @@ export function buildMapEnvironment(
     (geometry, material, options) => addMesh(ground, geometry, material, options),
     materials.ground,
   );
+  buildWater(materials.valleyWater, (geometry, material, options) =>
+    addMesh(ground, geometry, material, options),
+  );
   buildRoadRibbons(
     (geometry, material, options) => addMesh(roads, geometry, material, options),
     materials,
@@ -108,10 +114,8 @@ export function buildMapEnvironment(
     materials,
   );
   buildHighlands(
-    highlands,
     (geometry, material, options) => addMesh(highlands, geometry, material, options),
     materials,
-    track,
   );
   buildCourts(
     courts,
@@ -129,6 +133,7 @@ export function buildMapEnvironment(
   });
   const floraOcclusion = buildFlora(flora, materials, track, surfaceSeed, renderer, graphicsTier);
   buildScatter(scatter, materials, track, surfaceSeed);
+  buildBoundaryCliffs(beyond, materials, track);
   buildBeyond(beyond, materials, track, surfaceSeed);
   const proceduralRockMarkers = props.getObjectByName('map-procedural-rock-markers');
   const importedAssetLayer = buildMapAssetLayer(importedAssets, {
@@ -205,25 +210,29 @@ function buildGround(addMesh: AddMesh, material: THREE.Material): void {
   addMesh(buildGroundGeometry(), material);
 }
 
+function buildWater(material: THREE.Material, addMesh: AddMesh): void {
+  const geometry = buildWaterGeometry();
+  if (!geometry) {
+    return;
+  }
+  const mesh = addMesh(geometry, material);
+  mesh.name = 'map-water';
+  mesh.receiveShadow = false;
+}
+
 function buildWalls(addMesh: AddMesh, materials: ReturnType<typeof createMapMaterials>): void {
-  const cliffs = new PrismGeometryAccumulator();
   const vaultCaps = new PrismGeometryAccumulator();
   const vaultSides = new PrismGeometryAccumulator();
   for (const piece of MAP_WALL_PIECES) {
     const heightMeters = piece.heightMm / MM;
+    // BOUND pieces still block movement and sight, but they are axis-extruded
+    // prisms and drawing them made the map edge a row of flat-topped slabs.
+    // buildBoundaryCliffs draws that edge instead; see boundary-cliffs.ts.
     if (piece.wallClass === 'BOUND') {
-      cliffs.addConvexPrism(piece.vertices, 0, heightMeters);
-    } else {
-      // Large VAULT polygons are terrain-scale collision volumes rather than
-      // narrow walls. A quiet rock cap keeps the top from reading as a giant
-      // tiled platform, while the darker masonry remains on the vertical
-      // faces.
-      vaultCaps.addConvexCap(piece.vertices, heightMeters);
-      vaultSides.addSides(piece.vertices, 0, heightMeters);
+      continue;
     }
-  }
-  if (!cliffs.isEmpty) {
-    addMesh(cliffs.build(), materials.boundaryCliff, { castShadow: true });
+    vaultCaps.addDrapedCap(piece.vertices, heightMeters, terrainHeightMeters);
+    vaultSides.addDrapedSides(piece.vertices, heightMeters, terrainHeightMeters);
   }
   if (!vaultCaps.isEmpty) {
     addMesh(vaultCaps.build(), materials.boundaryCliff, { castShadow: true });
@@ -233,59 +242,36 @@ function buildWalls(addMesh: AddMesh, materials: ReturnType<typeof createMapMate
   }
 }
 
-function buildHighlands(
-  group: THREE.Group,
-  addMesh: AddMesh,
-  materials: ReturnType<typeof createMapMaterials>,
-  track: Track,
-): void {
-  const plateauTops = new PrismGeometryAccumulator();
-  const plateauSides = new PrismGeometryAccumulator();
+function buildHighlands(addMesh: AddMesh, materials: ReturnType<typeof createMapMaterials>): void {
+  const skirts = new PrismGeometryAccumulator();
   for (const highland of MAP_HIGHLANDS) {
-    plateauTops.addTriangulatedCap(
-      highland.vertices,
-      highland.triangles,
-      highland.topHeightMm / MM,
-    );
-    plateauSides.addSides(highland.vertices, 0, highland.topHeightMm / MM);
+    const skirt = expandRingMeters(highland.vertices, 8);
+    skirts.addPlateauSkirt(skirt, highland.topHeightMm / MM, terrainHeightMeters);
   }
-  addMesh(plateauTops.build(), materials.highlandTop, { castShadow: true });
-  addMesh(plateauSides.build(), materials.highland, { castShadow: true });
-
-  const rampGeometry = track(new THREE.BoxGeometry(1, 0.4, 6));
-  for (const highland of MAP_HIGHLANDS) {
-    const centroid = ringCentroidMeters(highland.vertices);
-    for (const ramp of highland.ramps) {
-      const ax = ramp.a.x / MM;
-      const az = ramp.a.z / MM;
-      const bx = ramp.b.x / MM;
-      const bz = ramp.b.z / MM;
-      // The endpoint nearer the plateau centroid is the top of the ramp.
-      const aIsTop =
-        (ax - centroid.x) ** 2 + (az - centroid.z) ** 2 <
-        (bx - centroid.x) ** 2 + (bz - centroid.z) ** 2;
-      const length = Math.hypot(bx - ax, bz - az);
-      const topMeters = highland.topHeightMm / MM;
-      const mesh = new THREE.Mesh(rampGeometry, materials.ramp);
-      mesh.scale.x = Math.max(1, Math.hypot(length, topMeters));
-      mesh.position.set((ax + bx) / 2, topMeters / 2, (az + bz) / 2);
-      mesh.rotation.y = Math.atan2(-(bz - az), bx - ax);
-      mesh.rotation.z = (aIsTop ? -1 : 1) * Math.atan2(topMeters, length);
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      group.add(mesh);
-    }
+  if (!skirts.isEmpty) {
+    addMesh(skirts.build(), materials.highland, { castShadow: true });
   }
 }
 
-function ringCentroidMeters(ring: readonly MapPointMm[]): { x: number; z: number } {
-  let sumX = 0;
-  let sumZ = 0;
+function expandRingMeters(ring: readonly MapPointMm[], meters: number): MapPointMm[] {
+  let cx = 0;
+  let cz = 0;
   for (const point of ring) {
-    sumX += point.x;
-    sumZ += point.z;
+    cx += point.x;
+    cz += point.z;
   }
-  return { x: sumX / ring.length / MM, z: sumZ / ring.length / MM };
+  cx /= ring.length;
+  cz /= ring.length;
+  const extraMm = meters * MM;
+  return ring.map((point) => {
+    const dx = point.x - cx;
+    const dz = point.z - cz;
+    const length = Math.hypot(dx, dz) || 1;
+    return {
+      x: Math.round(point.x + (dx / length) * extraMm),
+      z: Math.round(point.z + (dz / length) * extraMm),
+    };
+  });
 }
 
 function buildCourts(
@@ -296,9 +282,9 @@ function buildCourts(
 ): void {
   const floors = new PrismGeometryAccumulator();
   for (const court of MAP_COURTS) {
-    floors.addConvexPrism(court.hexVertices, 0, 0.28);
+    floors.addDrapedCap(court.hexVertices, 0.05, terrainHeightMeters);
   }
-  addMesh(floors.build(), materials.courtFloor, { castShadow: true });
+  addMesh(floors.build(), materials.courtFloor, { castShadow: true, receiveShadow: true });
 
   // Ceremonial gold inlay: three concentric rings on each court floor.
   const inlay = track(new THREE.RingGeometry(0.975, 1, 64));
@@ -314,7 +300,11 @@ function buildCourts(
   for (const court of MAP_COURTS) {
     for (const radius of inlayRadii) {
       inlayMatrix.makeScale(radius, 1, radius);
-      inlayMatrix.setPosition(court.center.x / MM, 0.3, court.center.z / MM);
+      inlayMatrix.setPosition(
+        court.center.x / MM,
+        terrainHeightMeters(court.center.x / MM, court.center.z / MM) + 0.07,
+        court.center.z / MM,
+      );
       inlays.setMatrixAt(inlayIndex, inlayMatrix);
       inlayIndex += 1;
     }
@@ -323,8 +313,9 @@ function buildCourts(
   group.add(inlays);
 
   for (const court of MAP_COURTS) {
+    const courtY = terrainHeightMeters(court.center.x / MM, court.center.z / MM);
     const points = court.hexVertices.map(
-      (vertex) => new THREE.Vector3(vertex.x / MM, 0.42, vertex.z / MM),
+      (vertex) => new THREE.Vector3(vertex.x / MM, courtY + 0.09, vertex.z / MM),
     );
     points.push(points[0] as THREE.Vector3);
     const ring = new THREE.Line(
@@ -366,7 +357,7 @@ function buildProps(
   );
   group.add(chests);
 
-  const rockGeometry = track(new THREE.CylinderGeometry(1, 1.15, 1.7, 7));
+  const rockGeometry = track(new THREE.CylinderGeometry(1.08, 1.22, 0.26, 10));
   const rocks = new THREE.InstancedMesh(rockGeometry, materials.rock, MAP_ROCKS.length);
   rocks.name = 'map-procedural-rock-markers';
   rocks.castShadow = true;
@@ -374,7 +365,11 @@ function buildProps(
   MAP_ROCKS.forEach((record, index) => {
     const radius = record.radiusMm / MM;
     rockMatrix.makeScale(radius, 1, radius);
-    rockMatrix.setPosition(record.position.x / MM, 0.85, record.position.z / MM);
+    rockMatrix.setPosition(
+      record.position.x / MM,
+      terrainHeightMeters(record.position.x / MM, record.position.z / MM) + 0.13,
+      record.position.z / MM,
+    );
     rocks.setMatrixAt(index, rockMatrix);
   });
   rocks.instanceMatrix.needsUpdate = true;
@@ -388,7 +383,11 @@ function placeInstances(
 ): void {
   const matrix = new THREE.Matrix4();
   positions.forEach((position, index) => {
-    matrix.makeTranslation(position.x / MM, yMeters, position.z / MM);
+    matrix.makeTranslation(
+      position.x / MM,
+      terrainHeightMeters(position.x / MM, position.z / MM) + yMeters,
+      position.z / MM,
+    );
     mesh.setMatrixAt(index, matrix);
   });
   mesh.instanceMatrix.needsUpdate = true;

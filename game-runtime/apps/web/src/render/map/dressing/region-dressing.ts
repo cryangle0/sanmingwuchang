@@ -17,6 +17,7 @@ import { dressLongji } from './longji';
 import { dressMihun } from './mihun';
 import { buildNestMarkers } from './nests';
 import { type BagRenderSpec, type GeometryBag, mergeBagsIntoGroup, type Site } from './prop-kit';
+import { buildRockCircles } from './rock-circles';
 import { dressSanting } from './santing';
 import { dressZhusi } from './zhusi';
 
@@ -74,6 +75,7 @@ export interface RegionDressingSummary {
   readonly courtBannerPoles: number;
   readonly chokeGates: number;
   readonly nestMarkers: Readonly<Record<'MEL' | 'RNG' | 'FLY', number>>;
+  readonly rockCircles: number;
   readonly drawCalls: number;
   /** Cluster anchor points in metres, for placement-legality tests. */
   readonly clusterSites: readonly { readonly x: number; readonly z: number }[];
@@ -162,6 +164,7 @@ export function buildRegionDressing(
   const roofOccluders: MapRoofOccluderSource[] = [];
   const chokeGates = buildChokeGates(bags, roofOccluders);
   const nestMarkers = buildNestMarkers(bags, nextRandom);
+  const rockCircles = buildRockCircles(bags, nextRandom);
 
   const renderSpecs: readonly BagRenderSpec[] = [
     {
@@ -227,6 +230,7 @@ export function buildRegionDressing(
     courtBannerPoles: santing.bannerPoles,
     chokeGates,
     nestMarkers,
+    rockCircles,
     drawCalls,
     clusterSites: Object.values(siteBuckets)
       .flat()

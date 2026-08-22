@@ -3,7 +3,11 @@ import { entityId, playerId, vec2Mm } from '@jwgb/core';
 import { GameSimulation } from '@jwgb/sim';
 import { describe, expect, it } from 'vitest';
 import { advanceLifeStates, beginTrueDeath } from '../packages/sim/src/systems/life';
-import { advanceStormZone } from '../packages/sim/src/systems/storm-zone';
+import {
+  advanceStormZone,
+  describeStormForPlayer,
+  stormPhaseName,
+} from '../packages/sim/src/systems/storm-zone';
 import type { MutableSimulationState, SimEvent } from '../packages/sim/src/types';
 
 const tickAt = (minutes: number, seconds = 0): number => (minutes * 60 + seconds) * 20;
@@ -131,5 +135,38 @@ describe('authoritative storm zone', () => {
     expect(player.lifeState).toBe('revive-protection');
     expect(player.respawnTarget).toBeNull();
     expect(events.some((event) => event.type === 'respawn')).toBe(true);
+  });
+
+  it('reports circle-out status, shrink countdown and apocalypse presentation', () => {
+    expect(stormPhaseName(0)).toBe('全图发育');
+    expect(stormPhaseName(300 * 20)).toBe('天劫收缩');
+    const safe = describeStormForPlayer(
+      { center: vec2Mm(0, 0), radiusMm: 520_000, apocalypseStarted: false },
+      20,
+      vec2Mm(0, 0),
+    );
+    expect(safe.outside).toBe(false);
+    expect(safe.nextEventLabel).toContain('秒后缩圈');
+
+    const outside = describeStormForPlayer(
+      { center: vec2Mm(0, 0), radiusMm: 10_000, apocalypseStarted: false },
+      301 * 20,
+      vec2Mm(80_000, 0),
+    );
+    expect(outside.outside).toBe(true);
+    expect(outside.directionLabel).toBe('西');
+    expect(outside.toSafeMeters).toBeGreaterThan(60);
+    expect(outside.damagePercent).toBe(20);
+    expect(outside.hitChancePercent).toBe(50);
+
+    const apocalypse = describeStormForPlayer(
+      { center: vec2Mm(0, 0), radiusMm: 0, apocalypseStarted: true },
+      1_210 * 20,
+      vec2Mm(1_000, 0),
+    );
+    expect(apocalypse.apocalypse).toBe(true);
+    expect(apocalypse.outside).toBe(true);
+    expect(apocalypse.phaseName).toBe('灭世雷暴');
+    expect(apocalypse.damagePercent).toBe(4);
   });
 });

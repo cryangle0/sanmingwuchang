@@ -1,4 +1,4 @@
-import { MAP_ROUTE_EDGES, MAP_ROUTE_NODES } from '@jwgb/content';
+import { MAP_ROUTE_EDGES, MAP_ROUTE_NODES, terrainHeightMeters } from '@jwgb/content';
 import * as THREE from 'three';
 import type { MapMaterialLibrary } from './map-palette';
 
@@ -54,12 +54,12 @@ class RibbonGeometryAccumulator {
     const leftB = { x: b.x + nx, z: b.z + nz };
     const width = halfWidth * 2;
 
-    this.pushVertex(leftA, y, 0, width);
-    this.pushVertex(rightB, y, length, 0);
-    this.pushVertex(rightA, y, 0, 0);
-    this.pushVertex(leftA, y, 0, width);
-    this.pushVertex(leftB, y, length, width);
-    this.pushVertex(rightB, y, length, 0);
+    this.pushVertex(leftA, surfaceY(leftA, y), 0, width);
+    this.pushVertex(rightB, surfaceY(rightB, y), length, 0);
+    this.pushVertex(rightA, surfaceY(rightA, y), 0, 0);
+    this.pushVertex(leftA, surfaceY(leftA, y), 0, width);
+    this.pushVertex(leftB, surfaceY(leftB, y), length, width);
+    this.pushVertex(rightB, surfaceY(rightB, y), length, 0);
   }
 
   addJoint(centre: PointMeters, radius: number, y: number): void {
@@ -75,9 +75,19 @@ class RibbonGeometryAccumulator {
         x: centre.x + Math.cos(angleB) * radius,
         z: centre.z + Math.sin(angleB) * radius,
       };
-      this.pushVertex(centre, y, radius, radius);
-      this.pushVertex(b, y, radius + Math.cos(angleB) * radius, radius + Math.sin(angleB) * radius);
-      this.pushVertex(a, y, radius + Math.cos(angleA) * radius, radius + Math.sin(angleA) * radius);
+      this.pushVertex(centre, surfaceY(centre, y), radius, radius);
+      this.pushVertex(
+        b,
+        surfaceY(b, y),
+        radius + Math.cos(angleB) * radius,
+        radius + Math.sin(angleB) * radius,
+      );
+      this.pushVertex(
+        a,
+        surfaceY(a, y),
+        radius + Math.cos(angleA) * radius,
+        radius + Math.sin(angleA) * radius,
+      );
     }
   }
 
@@ -99,6 +109,10 @@ class RibbonGeometryAccumulator {
     this.positions.push(point.x, y, point.z);
     this.uvs.push(u, v);
   }
+}
+
+function surfaceY(point: PointMeters, lift: number): number {
+  return terrainHeightMeters(point.x, point.z) + lift;
 }
 
 function visualClassOf(roadClass: string): VisualClass {
@@ -134,9 +148,8 @@ function configureRoadOverlay(mesh: THREE.Mesh, layer: RoadLayer): void {
   // deterministically instead of producing camera-dependent z-fighting.
   const material = mesh.material as THREE.Material;
   material.depthWrite = false;
-  material.polygonOffset = true;
-  material.polygonOffsetFactor = -1;
-  material.polygonOffsetUnits = -1;
+  material.depthTest = true;
+  material.polygonOffset = false;
   material.needsUpdate = true;
 }
 

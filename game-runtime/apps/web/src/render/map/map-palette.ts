@@ -21,6 +21,7 @@ export interface MapMaterialLibrary {
   /** Playfield floor. Reads per-vertex district tint from vertex colours. */
   readonly ground: THREE.MeshStandardMaterial;
   readonly boundaryCliff: THREE.MeshStandardMaterial;
+  readonly boundaryCliffFace: THREE.MeshStandardMaterial;
   readonly vaultWall: THREE.MeshStandardMaterial;
   readonly wallTrim: THREE.MeshStandardMaterial;
   readonly highland: THREE.MeshStandardMaterial;
@@ -37,6 +38,8 @@ export interface MapMaterialLibrary {
   readonly pigDen: THREE.MeshStandardMaterial;
   readonly dragonPalace: THREE.MeshStandardMaterial;
   readonly dragonWater: THREE.MeshPhysicalMaterial;
+  /** Valley ponds on the heightfield; darker and less emissive than palace pools. */
+  readonly valleyWater: THREE.MeshPhysicalMaterial;
   readonly eliteArena: THREE.MeshStandardMaterial;
   readonly grass: THREE.MeshStandardMaterial;
   readonly grassDark: THREE.MeshStandardMaterial;
@@ -150,12 +153,15 @@ function applyGroundLayerBlend(
       .replace(
         '#include <common>',
         `#include <common>
-varying vec2 vJwgbGroundWorldXZ;`,
+attribute vec3 climate;
+varying vec2 vJwgbGroundWorldXZ;
+varying vec3 vJwgbClimate;`,
       )
       .replace(
         '#include <begin_vertex>',
         `#include <begin_vertex>
-vJwgbGroundWorldXZ = transformed.xz;`,
+vJwgbGroundWorldXZ = transformed.xz;
+vJwgbClimate = climate;`,
       );
     shader.fragmentShader = shader.fragmentShader
       .replace(
@@ -163,6 +169,7 @@ vJwgbGroundWorldXZ = transformed.xz;`,
         `#include <common>
 uniform sampler2D uJwgbGroundSoil;
 varying vec2 vJwgbGroundWorldXZ;
+varying vec3 vJwgbClimate;
 
 float jwgbGroundHash(vec2 point) {
   vec3 value = fract(vec3(point.xyx) * vec3(0.1031, 0.1030, 0.0973));
@@ -196,12 +203,15 @@ float jwgbGroundNoise(vec2 point) {
   float dryField = broadDry * 0.58 + fieldDry * 0.3 + fineDry * 0.12;
   float soilMask = smoothstep(0.54, 0.78, dryField) * 0.62;
   soilMask += smoothstep(0.72, 0.9, fieldDry) * 0.14;
-  vec3 terrainTexel = mix(grassTexel.rgb, soilTexel, min(0.76, soilMask));
+  soilMask = min(0.86, soilMask + vJwgbClimate.x * 0.52);
+  vec3 terrainTexel = mix(grassTexel.rgb, soilTexel, soilMask);
+  terrainTexel *= mix(vec3(1.0), vec3(0.58, 0.68, 0.64), vJwgbClimate.y);
+  terrainTexel = mix(terrainTexel, vec3(0.84, 0.88, 0.9), vJwgbClimate.z * 0.58);
   diffuseColor *= vec4(terrainTexel, grassTexel.a);
 #endif`,
       );
   };
-  material.customProgramCacheKey = () => 'jwgb-ground-layer-blend-v1';
+  material.customProgramCacheKey = () => 'jwgb-ground-layer-blend-v2';
 }
 
 function createMapAssetTextures(): {
@@ -284,6 +294,18 @@ export function createMapMaterials(seed: number): MapMaterialLibrary {
     roughness: 1,
     metalness: 0.04,
     normalScale: new THREE.Vector2(0.48, 0.48),
+  });
+
+  // Escarpment face. Vertex colour carries the crest-to-abyss gradient, so the
+  // albedo stays neutral and the same material covers 60 m of drop.
+  const boundaryCliffFace = standard(tiled(surfaces.cliff, 13), {
+    map: assetTextures.texture('Rock026_Color.jpg', 1 / 13),
+    color: 0xffffff,
+    vertexColors: true,
+    roughness: 1,
+    metalness: 0.03,
+    normalScale: new THREE.Vector2(0.85, 0.85),
+    side: THREE.DoubleSide,
   });
 
   const vaultWall = standard(tiled(surfaces.masonry, 6), {
@@ -427,6 +449,17 @@ export function createMapMaterials(seed: number): MapMaterialLibrary {
     opacity: 0.82,
     clearcoat: 0.72,
     clearcoatRoughness: 0.24,
+  });
+  const valleyWater = new THREE.MeshPhysicalMaterial({
+    color: 0x1f4d4a,
+    roughness: 0.38,
+    metalness: 0.02,
+    emissive: 0x031212,
+    emissiveIntensity: 0.16,
+    transparent: true,
+    opacity: 0.88,
+    clearcoat: 0.45,
+    clearcoatRoughness: 0.32,
   });
   const eliteArena = new THREE.MeshStandardMaterial({
     color: 0x8f4938,
@@ -641,6 +674,7 @@ export function createMapMaterials(seed: number): MapMaterialLibrary {
   const owned: THREE.Material[] = [
     ground,
     boundaryCliff,
+    boundaryCliffFace,
     vaultWall,
     wallTrim,
     highland,
@@ -660,6 +694,7 @@ export function createMapMaterials(seed: number): MapMaterialLibrary {
     pigDen,
     dragonPalace,
     dragonWater,
+    valleyWater,
     eliteArena,
     timber,
     lacquer,
@@ -693,6 +728,7 @@ export function createMapMaterials(seed: number): MapMaterialLibrary {
   return {
     ground,
     boundaryCliff,
+    boundaryCliffFace,
     vaultWall,
     wallTrim,
     highland,
@@ -708,6 +744,7 @@ export function createMapMaterials(seed: number): MapMaterialLibrary {
     pigDen,
     dragonPalace,
     dragonWater,
+    valleyWater,
     eliteArena,
     grass,
     grassDark,

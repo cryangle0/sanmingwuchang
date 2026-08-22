@@ -250,7 +250,7 @@ function cloneTemplate(root: THREE.Group): {
     if (!(child instanceof THREE.Mesh)) {
       return;
     }
-    child.castShadow = false;
+    child.castShadow = true;
     child.receiveShadow = true;
     const sourceMaterials = Array.isArray(child.material) ? child.material : [child.material];
     const clonedMaterials = sourceMaterials.map((material) => {
@@ -555,7 +555,7 @@ export class CharacterModelLibrary {
                   const root = createCharacterPresentationRoot(sourceRoot, definition.height);
                   root.traverse((child) => {
                     if (child instanceof THREE.Mesh) {
-                      child.castShadow = false;
+                      child.castShadow = true;
                       child.receiveShadow = true;
                     }
                   });

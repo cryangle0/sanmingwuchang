@@ -1,4 +1,4 @@
-import { MAP_BOUNDARY, type MapPointMm } from '@jwgb/content';
+import { MAP_BOUNDARY, type MapPointMm, terrainHeightMeters } from '@jwgb/content';
 import * as THREE from 'three';
 import type { MapMaterialLibrary } from './map-palette';
 import { createRandomStream } from './map-sampling';
@@ -18,6 +18,12 @@ const MM = 1_000;
 
 /** How far the apron extends past the boundary, metres. */
 const APRON_DEPTH = 320;
+/**
+ * Floor level beyond the rim. The boundary is now an escarpment falling ~60 m,
+ * so the apron and its ridges sit at the bottom of that drop; at the old
+ * shallow level they hung in mid-air across the cliff face.
+ */
+const BEYOND_FLOOR = -58;
 
 export function buildBeyond(
   group: THREE.Group,
@@ -42,8 +48,8 @@ function buildApron(
 ): void {
   const centroid = boundaryCentroidMeters();
   const positions: number[] = [];
-  const push = (x: number, z: number): void => {
-    positions.push(x, -0.12, z);
+  const push = (x: number, z: number, y: number): void => {
+    positions.push(x, y, z);
   };
   for (let index = 0; index < MAP_BOUNDARY.length; index += 1) {
     const a = MAP_BOUNDARY[index] as MapPointMm;
@@ -52,13 +58,14 @@ function buildApron(
     const outer = [toOuterPoint(a, centroid, APRON_DEPTH), toOuterPoint(b, centroid, APRON_DEPTH)];
     const [ia, ib] = inner as [{ x: number; z: number }, { x: number; z: number }];
     const [oa, ob] = outer as [{ x: number; z: number }, { x: number; z: number }];
-    // Boundary rings are sim-CCW, so inner→outer quads wound this way face +Y.
-    push(ia.x, ia.z);
-    push(ob.x, ob.z);
-    push(oa.x, oa.z);
-    push(ia.x, ia.z);
-    push(ib.x, ib.z);
-    push(ob.x, ob.z);
+    const innerYa = terrainHeightMeters(ia.x, ia.z) - 0.08;
+    const innerYb = terrainHeightMeters(ib.x, ib.z) - 0.08;
+    push(ia.x, ia.z, innerYa);
+    push(ob.x, ob.z, BEYOND_FLOOR);
+    push(oa.x, oa.z, BEYOND_FLOOR);
+    push(ia.x, ia.z, innerYa);
+    push(ib.x, ib.z, innerYb);
+    push(ob.x, ob.z, BEYOND_FLOOR);
   }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
@@ -91,23 +98,23 @@ function buildRidges(
     readonly maxHeight: number;
     readonly phase: number;
   }[] = [
-    // The orthographic camera only ever sees ~45 m past the boundary, so the
-    // ridges hug the cliffs: a dense low band right outside, then a taller
-    // sparser band behind it.
+    // Two ridge lines standing in the gorge below the rim: a near band whose
+    // tops clear the crest, and a taller sparser band behind it, so a player
+    // looking outward sees mountains across a chasm rather than a backdrop.
     {
       material: materials.beyondRidgeNear,
-      offset: 5,
+      offset: 34,
       spacing: 1,
-      minHeight: 4,
-      maxHeight: 9,
+      minHeight: 26,
+      maxHeight: 48,
       phase: 0,
     },
     {
       material: materials.beyondRidgeFar,
-      offset: 16,
+      offset: 62,
       spacing: 2,
-      minHeight: 8,
-      maxHeight: 16,
+      minHeight: 44,
+      maxHeight: 78,
       phase: 1,
     },
   ];
@@ -138,8 +145,9 @@ function buildRidges(
       scale.set(radius, height, radius * (0.7 + nextRandom() * 0.6));
       position.set(
         slot.x + outward.x * jitter,
-        // Sunk slightly so ragged cone bases never hover over the apron.
-        -2,
+        // Rooted in the far valley floor, so the peaks rise past the rim and
+        // give the horizon something behind the drop.
+        BEYOND_FLOOR,
         slot.z + outward.z * jitter,
       );
       matrix.compose(position, quaternion, scale);

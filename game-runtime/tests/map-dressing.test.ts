@@ -1,4 +1,4 @@
-import { MAP_CHOKES, MAP_COURTS, MAP_NESTS, MAP_WALL_PIECES } from '@jwgb/content';
+import { MAP_CHOKES, MAP_COURTS, MAP_NESTS, MAP_ROCKS, MAP_WALL_PIECES } from '@jwgb/content';
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import {
@@ -102,6 +102,7 @@ describe('district dressing', () => {
     expect(
       built.summary.nestMarkers.MEL + built.summary.nestMarkers.RNG + built.summary.nestMarkers.FLY,
     ).toBe(MAP_NESTS.length);
+    expect(built.summary.rockCircles).toBe(MAP_ROCKS.length);
 
     expect(built.summary.drawCalls).toBeLessThanOrEqual(14);
     const root = built.parent.getObjectByName('map-dressing');
@@ -117,7 +118,7 @@ describe('district dressing', () => {
       expect(Array.from(position.array).every(Number.isFinite)).toBe(true);
       totalVertices += position.count;
     }
-    expect(totalVertices).toBeLessThanOrEqual(260_000);
+    expect(totalVertices).toBeLessThanOrEqual(380_000);
 
     dispose(built);
   });

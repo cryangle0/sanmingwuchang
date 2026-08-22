@@ -34,6 +34,7 @@ import { type CameraFollowState, updateCameraFollowState } from './camera-follow
 import { CombatEffectsLayer, effectColorForElement } from './combat-effects';
 import { activePresentationRange, type CombatRangePreviewMode } from './combat-range-preview';
 import { createMapAtmosphere, type MapAtmosphere } from './map/atmosphere';
+import { walkSurfaceMeters } from './map/ground';
 import type { MapAssetLayerDiagnostics } from './map/map-asset-layer';
 import { buildMapEnvironment, type MapEnvironment } from './map/map-environment';
 import type { MapOcclusionDiagnostics } from './map/map-occlusion';
@@ -249,10 +250,28 @@ const CAMERA_VIEWS: Readonly<
     }
   >
 > = {
-  standard: { label: '标准视角', offset: [14, 16, 14], zoom: 1.12 },
-  close: { label: '近景视角', offset: [10.5, 12.5, 10.5], zoom: 1.38 },
-  tactical: { label: '战术视角', offset: [24, 31, 24], zoom: 0.84 },
+  // Only the direction of these offsets matters now: under a perspective
+  // camera the distance is solved from how much world has to fit on screen,
+  // not authored per preset. The pitches are 32 / 26 / 48 degrees — lower than
+  // the 39 degrees the orthographic rig used, because relief is only legible
+  // when you can see the side of a hill rather than its plan.
+  standard: { label: '标准视角', offset: [12, 10.6, 12], zoom: 1.12 },
+  close: { label: '近景视角', offset: [12.7, 8.77, 12.7], zoom: 1.38 },
+  tactical: { label: '战术视角', offset: [9.46, 14.86, 9.46], zoom: 0.84 },
 };
+/**
+ * Narrow field of view.
+ *
+ * Perspective is what buys depth, a horizon and aerial perspective, none of
+ * which an orthographic projection can produce at any amount of relief. A
+ * narrow angle keeps the price down: at 30 degrees the size difference
+ * between a character at the near edge of the view and one at the far edge
+ * stays small enough that the 30-player readability the orthographic rig was
+ * chosen for survives.
+ */
+const CAMERA_FOV_DEGREES = 30;
+/** Portrait sees very little ahead at a shallow pitch, so it looks down more. */
+const PORTRAIT_MIN_PITCH_DEGREES = 38;
 const DEFAULT_CAMERA_ORBIT = cameraOrbitFromOffset(CAMERA_VIEWS.standard.offset);
 
 function worldMeters(millimeters: number): number {
@@ -262,7 +281,7 @@ function worldMeters(millimeters: number): number {
 export class ArenaRenderer {
   private readonly renderer: THREE.WebGLRenderer;
   private readonly scene = new THREE.Scene();
-  private readonly camera: THREE.OrthographicCamera;
+  private readonly camera: THREE.PerspectiveCamera;
   private readonly playerVisuals = new Map<EntityId, PlayerVisual>();
   private readonly windWallVisuals = new Map<EntityId, WindWallVisual>();
   private readonly projectileVisuals = new Map<EntityId, ProjectileVisual>();
@@ -300,6 +319,9 @@ export class ArenaRenderer {
     THREE.BufferGeometry,
     THREE.LineBasicMaterial | THREE.LineDashedMaterial
   >;
+  private readonly stormGroup: THREE.Group;
+  private readonly stormRing: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>;
+  private readonly stormWall: THREE.Mesh<THREE.CylinderGeometry, THREE.MeshBasicMaterial>;
   private readonly combatEffects: CombatEffectsLayer;
   private readonly renderFrameIntervalsMs: number[] = [];
   private graphicsTier: 'balanced' | 'reduced';
@@ -313,11 +335,17 @@ export class ArenaRenderer {
   private cameraViewMode: CameraViewMode = 'standard';
   private cameraOrbitYaw = DEFAULT_CAMERA_ORBIT.yaw;
   private cameraOrbitPitch = DEFAULT_CAMERA_ORBIT.pitch;
+  /** Metres of world that must fit across the viewport's height at zoom 1. */
+  private viewportVerticalSize = 24;
+  private minCameraPitch = 0;
   private cameraZoomScale = 1;
   private environmentKind: 'none' | 'legacy' | 'map' = 'none';
   private mapEnvironment: MapEnvironment | null = null;
   private mapAtmosphere: MapAtmosphere | null = null;
   private sun: THREE.DirectionalLight | null = null;
+  private hemisphere: THREE.HemisphereLight | null = null;
+  private fillLight: THREE.DirectionalLight | null = null;
+  private previousAtmosphereSeconds: number | null = null;
   private combatRangePreviewMode: CombatRangePreviewMode = 'none';
   private attackRangeMm = 0;
   private activeRangeMm: number | null = null;
@@ -353,15 +381,20 @@ export class ArenaRenderer {
     this.scene.background = new THREE.Color(0x2a3630);
     this.scene.fog = new THREE.FogExp2(0x2a3630, 0.0045);
 
-    this.camera = new THREE.OrthographicCamera(-20, 20, 12, -12, 0.1, 180);
+    // Far plane reaches the ridge line beyond the boundary cliffs; the
+    // orthographic rig only ever needed 180 m.
+    this.camera = new THREE.PerspectiveCamera(CAMERA_FOV_DEGREES, 1, 0.1, 600);
     this.camera.position.set(...CAMERA_VIEWS.standard.offset);
-    this.camera.zoom = CAMERA_VIEWS.standard.zoom;
     this.camera.lookAt(0, 0, 0);
 
     this.createLighting();
     this.navigationWaypoint = this.createNavigationWaypoint();
     this.attackRangeRing = this.createCombatRangeRing(0xe3aa57, false);
     this.activeRangeRing = this.createCombatRangeRing(0x70d2c2, true);
+    const storm = this.createStormVisuals();
+    this.stormGroup = storm.group;
+    this.stormRing = storm.ring;
+    this.stormWall = storm.wall;
     this.combatEffects = new CombatEffectsLayer(this.scene, this.graphicsTier);
     this.resize();
 
@@ -407,12 +440,20 @@ export class ArenaRenderer {
     this.applyGraphicsTier(this.resolveGraphicsTier(preference));
   }
 
+  private footingMeters(xMm: number, zMm: number): number {
+    return this.mapEnvironment ? walkSurfaceMeters(worldMeters(xMm), worldMeters(zMm)) : 0;
+  }
+
   setNavigationWaypoint(point: MapPointMm | null): void {
     if (!point) {
       this.navigationWaypoint.visible = false;
       return;
     }
-    this.navigationWaypoint.position.set(worldMeters(point.x), 0, worldMeters(point.z));
+    this.navigationWaypoint.position.set(
+      worldMeters(point.x),
+      this.footingMeters(point.x, point.z) + 0.04,
+      worldMeters(point.z),
+    );
     this.navigationWaypoint.visible = true;
   }
 
@@ -481,8 +522,8 @@ export class ArenaRenderer {
 
   panCameraByPixels(deltaX: number, deltaY: number): void {
     const metersPerPixel = orthographicMetersPerPixel(
-      this.camera.top - this.camera.bottom,
-      this.camera.zoom,
+      this.viewportVerticalSize,
+      this.cameraFollowState.zoom,
       this.canvas.clientHeight,
     );
     const pan = dragCameraPan(
@@ -496,8 +537,7 @@ export class ArenaRenderer {
   }
 
   panCameraByScreenDirection(screenX: number, screenY: number): void {
-    const visibleVerticalSpan =
-      (this.camera.top - this.camera.bottom) / Math.max(0.001, this.camera.zoom);
+    const visibleVerticalSpan = this.visibleVerticalSpan();
     const pan = moveCameraPan(
       { x: this.cameraPanOffset.x, z: this.cameraPanOffset.z },
       screenX,
@@ -527,6 +567,13 @@ export class ArenaRenderer {
       -((clientY - bounds.top) / bounds.height) * 2 + 1,
     );
     this.aimRaycaster.setFromCamera(this.aimPointer, this.camera);
+    this.groundPlane.set(
+      new THREE.Vector3(0, 1, 0),
+      -this.footingMeters(
+        Math.round(this.cameraLocalTarget.x * 1_000),
+        Math.round(this.cameraLocalTarget.z * 1_000),
+      ),
+    );
     if (!this.aimRaycaster.ray.intersectPlane(this.groundPlane, this.aimHit)) {
       return null;
     }
@@ -542,7 +589,7 @@ export class ArenaRenderer {
     const targetZoom = view.zoom * this.cameraZoomScale;
     return {
       ...this.getCameraViewState(),
-      zoom: this.camera.zoom,
+      zoom: this.cameraFollowState.zoom,
       targetZoom,
       presetZoom: view.zoom,
       position: [this.camera.position.x, this.camera.position.y, this.camera.position.z],
@@ -578,6 +625,16 @@ export class ArenaRenderer {
     };
   }
 
+  /** Metres of world currently spanning the viewport's height. */
+  private visibleVerticalSpan(): number {
+    return this.viewportVerticalSize / Math.max(0.001, this.cameraFollowState.zoom);
+  }
+
+  private cameraDistanceFor(zoom: number): number {
+    const span = this.viewportVerticalSize / Math.max(0.001, zoom);
+    return span / (2 * Math.tan(THREE.MathUtils.degToRad(CAMERA_FOV_DEGREES) / 2));
+  }
+
   private resetCameraControlState(snap: boolean): void {
     const orbit = cameraOrbitFromOffset(CAMERA_VIEWS[this.cameraViewMode].offset);
     this.cameraOrbitYaw = orbit.yaw;
@@ -598,7 +655,15 @@ export class ArenaRenderer {
         this.mapEnvironment = buildMapEnvironment(this.renderer, this.graphicsTier);
         this.scene.add(this.mapEnvironment.group);
         this.mapEnvironment.setGraphicsTier(this.graphicsTier);
-        this.mapAtmosphere = createMapAtmosphere(this.scene);
+        if (!this.sun || !this.hemisphere || !this.fillLight) {
+          throw new Error('map atmosphere needs lighting');
+        }
+        this.mapAtmosphere = createMapAtmosphere(this.scene, {
+          sun: this.sun,
+          hemisphere: this.hemisphere,
+          fill: this.fillLight,
+          graphicsReduced: this.graphicsTier === 'reduced',
+        });
         this.environmentKind = 'map';
       } else {
         this.createArena();
@@ -646,6 +711,7 @@ export class ArenaRenderer {
     }
 
     const localPlayer = snapshot.players.find((player) => player.entityId === this.localEntityId);
+    this.updateStormVisual(snapshot, localPlayer?.position ?? null, elapsedSeconds);
     if (localPlayer?.taibaiTargetHeroId) {
       const targetDefinition = heroModelDefinition(localPlayer.taibaiTargetHeroId);
       if (targetDefinition) {
@@ -793,14 +859,21 @@ export class ArenaRenderer {
     const local = localPlayer;
     if (local) {
       this.updateCombatRangePreview(local);
-      this.cameraLocalTarget.set(worldMeters(local.position.x), 0, worldMeters(local.position.z));
+      this.cameraLocalTarget.set(
+        worldMeters(local.position.x),
+        this.footingMeters(local.position.x, local.position.z) + 1.15,
+        worldMeters(local.position.z),
+      );
       this.cameraDesiredTarget.copy(this.cameraLocalTarget).add(this.cameraPanOffset);
       const cameraView = CAMERA_VIEWS[this.cameraViewMode];
-      const cameraOrbit = cameraOrbitFromOffset(cameraView.offset);
+      const desiredZoom = cameraView.zoom * this.cameraZoomScale;
+      // Solve the pull-back that makes the requested span fill the frame, so
+      // every zoom, pan and viewport rule written for the orthographic rig
+      // keeps its meaning: zoom still means "how much world fits on screen".
       const targetOffset = cameraOffsetFromOrbit(
-        cameraOrbit.distance,
+        this.cameraDistanceFor(desiredZoom),
         this.cameraOrbitYaw,
-        this.cameraOrbitPitch,
+        Math.max(this.minCameraPitch, this.cameraOrbitPitch),
       );
       this.cameraDesiredOffset.set(...targetOffset);
       const cameraDeltaSeconds =
@@ -812,17 +885,27 @@ export class ArenaRenderer {
         this.cameraFollowState,
         this.cameraDesiredTarget,
         this.cameraDesiredOffset,
-        cameraView.zoom * this.cameraZoomScale,
+        desiredZoom,
         cameraDeltaSeconds,
         this.cameraSnapRequested,
       );
       this.cameraSnapRequested = false;
       this.camera.position.copy(this.cameraTarget).add(this.cameraOffset);
-      this.camera.zoom = this.cameraFollowState.zoom;
-      this.camera.updateProjectionMatrix();
       this.camera.lookAt(this.cameraTarget);
-      this.mapAtmosphere?.update(this.cameraTarget.x, this.cameraTarget.z);
-      this.occlusionFocus.set(this.cameraLocalTarget.x, 0.9, this.cameraLocalTarget.z);
+      this.mapAtmosphere?.update(
+        this.cameraTarget.x,
+        this.cameraTarget.z,
+        this.cameraLocalTarget,
+        this.previousAtmosphereSeconds === null
+          ? 0
+          : Math.max(0, Math.min(0.05, elapsedSeconds - this.previousAtmosphereSeconds)),
+      );
+      this.previousAtmosphereSeconds = elapsedSeconds;
+      this.occlusionFocus.set(
+        this.cameraLocalTarget.x,
+        this.cameraLocalTarget.y,
+        this.cameraLocalTarget.z,
+      );
       this.mapEnvironment?.updateOcclusion(this.camera.position, this.occlusionFocus);
       if (this.sun) {
         // Keep the shadow frustum centered on the local player on the big map.
@@ -1197,6 +1280,10 @@ export class ArenaRenderer {
     this.attackRangeRing.material.dispose();
     this.activeRangeRing.geometry.dispose();
     this.activeRangeRing.material.dispose();
+    this.stormRing.geometry.dispose();
+    this.stormRing.material.dispose();
+    this.stormWall.geometry.dispose();
+    this.stormWall.material.dispose();
     this.combatEffects.dispose();
     this.modelLibrary.dispose();
     this.renderer.dispose();
@@ -1206,11 +1293,9 @@ export class ArenaRenderer {
     const width = Math.max(1, this.canvas.clientWidth);
     const height = Math.max(1, this.canvas.clientHeight);
     const aspect = width / height;
-    const verticalSize = aspect < 0.8 ? 34 : aspect < 1.2 ? 29 : 24;
-    this.camera.left = (-verticalSize * aspect) / 2;
-    this.camera.right = (verticalSize * aspect) / 2;
-    this.camera.top = verticalSize / 2;
-    this.camera.bottom = -verticalSize / 2;
+    this.viewportVerticalSize = aspect < 0.8 ? 34 : aspect < 1.2 ? 29 : 24;
+    this.minCameraPitch = aspect < 0.8 ? THREE.MathUtils.degToRad(PORTRAIT_MIN_PITCH_DEGREES) : 0;
+    this.camera.aspect = aspect;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height, false);
   };
@@ -1218,15 +1303,19 @@ export class ArenaRenderer {
   private createLighting(): void {
     const hemisphere = new THREE.HemisphereLight(0xe7f2e9, 0x55605a, 2.35);
     this.scene.add(hemisphere);
+    this.hemisphere = hemisphere;
 
     const sun = new THREE.DirectionalLight(0xffe8bc, 3.35);
     sun.position.set(-22, 34, 18);
     sun.castShadow = this.graphicsTier === 'balanced';
     sun.shadow.mapSize.set(1_024, 1_024);
-    sun.shadow.camera.left = -38;
-    sun.shadow.camera.right = 38;
-    sun.shadow.camera.top = 38;
-    sun.shadow.camera.bottom = -38;
+    // Widened with the pitch drop: at 26-32 degrees the camera sees roughly
+    // half again as far down-range as it did at 39, and shadows that stopped
+    // at 38 m ended in a visible line across open ground.
+    sun.shadow.camera.left = -58;
+    sun.shadow.camera.right = 58;
+    sun.shadow.camera.top = 58;
+    sun.shadow.camera.bottom = -58;
     sun.shadow.normalBias = 0.08;
     sun.shadow.radius = 3;
     this.scene.add(sun);
@@ -1238,6 +1327,7 @@ export class ArenaRenderer {
     const fill = new THREE.DirectionalLight(0x9db8c4, 1.0);
     fill.position.set(24, 16, -20);
     this.scene.add(fill);
+    this.fillLight = fill;
   }
 
   private createNavigationWaypoint(): THREE.Group {
@@ -1328,6 +1418,81 @@ export class ArenaRenderer {
     return ring;
   }
 
+  private createStormVisuals(): {
+    readonly group: THREE.Group;
+    readonly ring: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>;
+    readonly wall: THREE.Mesh<THREE.CylinderGeometry, THREE.MeshBasicMaterial>;
+  } {
+    const group = new THREE.Group();
+    group.name = 'storm-zone';
+    group.visible = false;
+    group.frustumCulled = false;
+
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(0.986, 1.012, 192),
+      new THREE.MeshBasicMaterial({
+        color: 0xb48cff,
+        transparent: true,
+        opacity: 0.92,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+      }),
+    );
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.y = 0.12;
+    ring.renderOrder = 8;
+    ring.frustumCulled = false;
+    group.add(ring);
+
+    const wall = new THREE.Mesh(
+      new THREE.CylinderGeometry(1, 1, 1, 96, 1, true),
+      new THREE.MeshBasicMaterial({
+        color: 0x7a5cd8,
+        transparent: true,
+        opacity: 0.22,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+        blending: THREE.AdditiveBlending,
+      }),
+    );
+    wall.position.y = 9;
+    wall.scale.y = 18;
+    wall.renderOrder = 7;
+    wall.frustumCulled = false;
+    group.add(wall);
+
+    this.scene.add(group);
+    return { group, ring, wall };
+  }
+
+  private updateStormVisual(
+    snapshot: WorldSnapshot,
+    localPosition: PlayerSnapshot['position'] | null,
+    elapsedSeconds: number,
+  ): void {
+    const storm = snapshot.stormZone;
+    const apocalypse = storm.apocalypseStarted || storm.radiusMm <= 0;
+    this.stormGroup.visible = !apocalypse;
+    if (apocalypse) {
+      return;
+    }
+    const radiusMeters = Math.max(4, worldMeters(storm.radiusMm));
+    this.stormGroup.position.set(worldMeters(storm.center.x), 0, worldMeters(storm.center.z));
+    this.stormRing.scale.setScalar(radiusMeters);
+    this.stormWall.scale.set(radiusMeters, 18, radiusMeters);
+    let outside = false;
+    if (localPosition) {
+      const dx = localPosition.x - storm.center.x;
+      const dz = localPosition.z - storm.center.z;
+      outside = dx * dx + dz * dz > storm.radiusMm * storm.radiusMm;
+    }
+    const pulse = 0.82 + Math.sin(elapsedSeconds * 2.4) * 0.12;
+    this.stormRing.material.color.setHex(outside ? 0xff6b63 : 0xb48cff);
+    this.stormRing.material.opacity = outside ? 0.98 : pulse;
+    this.stormWall.material.color.setHex(outside ? 0xc45b6a : 0x7a5cd8);
+    this.stormWall.material.opacity = outside ? 0.38 : 0.2;
+  }
+
   private updateCombatRangePreview(player: PlayerSnapshot): void {
     const active = activePresentationRange(getActiveDefinition(player.activeAbilityId));
     this.attackRangeMm = player.attackRangeMm;
@@ -1342,14 +1507,15 @@ export class ArenaRenderer {
       (this.combatRangePreviewMode === 'active' || this.combatRangePreviewMode === 'both');
     this.attackRangeRing.visible = showAttack;
     this.activeRangeRing.visible = showActive;
+    const surface = this.footingMeters(player.position.x, player.position.z);
     this.attackRangeRing.position.set(
       worldMeters(player.position.x),
-      0.17,
+      surface + 0.17,
       worldMeters(player.position.z),
     );
     this.activeRangeRing.position.set(
       worldMeters(player.position.x),
-      0.19,
+      surface + 0.19,
       worldMeters(player.position.z),
     );
     if (showAttack) {
@@ -1496,15 +1662,12 @@ export class ArenaRenderer {
         opacity: 0.9,
         depthTest: true,
         depthWrite: false,
-        polygonOffset: true,
-        polygonOffsetFactor: -1,
-        polygonOffsetUnits: -1,
         side: THREE.DoubleSide,
       }),
     );
     selectionRing.rotation.x = -Math.PI / 2;
     selectionRing.position.y = WORLD_SCALE_PROFILE.character.playerSelectionRing.elevation;
-    selectionRing.renderOrder = 5;
+    selectionRing.renderOrder = 2;
     selectionRing.visible = player.entityId === this.localEntityId;
     group.add(selectionRing);
 
@@ -1616,9 +1779,10 @@ export class ArenaRenderer {
   ): void {
     const isSoul = player.lifeState === 'soul-flight';
     const isAlive = player.lifeState !== 'eliminated';
+    const surface = this.footingMeters(player.position.x, player.position.z);
     visual.group.position.set(
       worldMeters(player.position.x),
-      isSoul ? 2.4 + Math.sin(elapsedSeconds * 4) * 0.24 : 0,
+      isSoul ? surface + 2.4 + Math.sin(elapsedSeconds * 4) * 0.24 : surface,
       worldMeters(player.position.z),
     );
     visual.group.rotation.y = Math.atan2(player.facing.x, player.facing.z);
@@ -1834,7 +1998,11 @@ export class ArenaRenderer {
       return;
     }
     visual.group.visible = true;
-    visual.group.position.set(worldMeters(airdrop.position.x), 0, worldMeters(airdrop.position.z));
+    visual.group.position.set(
+      worldMeters(airdrop.position.x),
+      this.footingMeters(airdrop.position.x, airdrop.position.z),
+      worldMeters(airdrop.position.z),
+    );
     const pulse = 1 + Math.sin(elapsedSeconds * 4.5 + airdrop.sequence) * 0.08;
     visual.warningRing.scale.setScalar(pulse);
     visual.warningRing.rotation.z = elapsedSeconds * 0.45;
@@ -1980,8 +2148,10 @@ export class ArenaRenderer {
     visual.group.position.set(
       worldMeters(monster.position.x),
       monster.kind === 'flying'
-        ? 1.4 + Math.sin(elapsedSeconds * 3.6 + Number(monster.entityId)) * 0.24
-        : 0,
+        ? this.footingMeters(monster.position.x, monster.position.z) +
+            1.4 +
+            Math.sin(elapsedSeconds * 3.6 + Number(monster.entityId)) * 0.24
+        : this.footingMeters(monster.position.x, monster.position.z),
       worldMeters(monster.position.z),
     );
     visual.group.rotation.y = Math.atan2(monster.facing.x, monster.facing.z);
@@ -2163,7 +2333,9 @@ export class ArenaRenderer {
   private updateLootVisual(visual: LootVisual, drop: LootSnapshot, elapsedSeconds: number): void {
     visual.mesh.position.set(
       worldMeters(drop.position.x),
-      0.42 + Math.sin(elapsedSeconds * 4 + Number(drop.entityId)) * 0.08,
+      this.footingMeters(drop.position.x, drop.position.z) +
+        0.42 +
+        Math.sin(elapsedSeconds * 4 + Number(drop.entityId)) * 0.08,
       worldMeters(drop.position.z),
     );
     visual.mesh.rotation.y = elapsedSeconds * 1.8 + Number(drop.entityId) * 0.17;
@@ -2226,9 +2398,10 @@ export class ArenaRenderer {
   ): void {
     visual.group.position.set(
       worldMeters(summon.position.x),
-      summon.kind === 'fire-spirit'
-        ? Math.sin(elapsedSeconds * 6 + Number(summon.entityId)) * 0.12
-        : 0,
+      this.footingMeters(summon.position.x, summon.position.z) +
+        (summon.kind === 'fire-spirit'
+          ? Math.sin(elapsedSeconds * 6 + Number(summon.entityId)) * 0.12
+          : 0),
       worldMeters(summon.position.z),
     );
     visual.group.rotation.y =
@@ -2265,7 +2438,7 @@ export class ArenaRenderer {
   ): void {
     visual.mesh.position.set(
       worldMeters(afterimage.position.x),
-      0.055,
+      this.footingMeters(afterimage.position.x, afterimage.position.z) + 0.055,
       worldMeters(afterimage.position.z),
     );
     visual.mesh.rotation.z = elapsedSeconds * 1.8 + Number(afterimage.entityId) * 0.11;
@@ -2296,7 +2469,11 @@ export class ArenaRenderer {
     wall: WindWallSnapshot,
     elapsedSeconds: number,
   ): void {
-    visual.mesh.position.set(worldMeters(wall.center.x), 1.6, worldMeters(wall.center.z));
+    visual.mesh.position.set(
+      worldMeters(wall.center.x),
+      this.footingMeters(wall.center.x, wall.center.z) + 1.6,
+      worldMeters(wall.center.z),
+    );
     visual.mesh.rotation.y = Math.atan2(wall.direction.x, wall.direction.z);
     visual.mesh.scale.y = 0.94 + Math.sin(elapsedSeconds * 9 + Number(wall.entityId)) * 0.06;
     visual.material.opacity = Math.min(0.56, 0.2 + wall.remainingTicks / 180);
@@ -2329,7 +2506,7 @@ export class ArenaRenderer {
   ): void {
     visual.mesh.position.set(
       worldMeters(projectile.position.x),
-      1.15,
+      this.footingMeters(projectile.position.x, projectile.position.z) + 1.15,
       worldMeters(projectile.position.z),
     );
     const pulse = 0.92 + Math.sin(elapsedSeconds * 18 + Number(projectile.entityId)) * 0.08;

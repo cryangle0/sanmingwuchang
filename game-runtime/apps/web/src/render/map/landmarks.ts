@@ -476,6 +476,7 @@ function buildPigDens(bags: GeometryBags, nextRandom: () => number): void {
   for (const record of MAP_PIGS) {
     const site = siteTowardOrigin(record.position.x / MM, record.position.z / MM);
     addDisc(bags.pig, site, 0, 0.018, 0.55, 11.4, 8.6, 20);
+    addDisc(bags.pig, site, 0, 0.03, 0.2, 6.4, 5.2, 16);
     addHemisphere(bags.pig, site, 0, 0, -1.35, 5.7, 2.85, 4.45);
     addHemisphere(bags.pig, site, -2.15, 0, -1.65, 2.8, 2.0, 2.85);
     addHemisphere(bags.pig, site, 2.25, 0, -1.75, 2.65, 1.85, 2.7);
@@ -524,6 +525,7 @@ function buildDragonPalaces(bags: GeometryBags, roofOccluders: MapRoofOccluderSo
     addCylinder(bags.water, site, 0, 0.18, 0, 7.9, 8.05, 0.2, 24);
     addHorizontalRing(bags.stone, site.x, 0.31, site.z, 6.95, 7.55, 32);
     addHorizontalTorus(bags.gold, site.x, 0.34, site.z, 2.15, 0.09, 28);
+    addHorizontalRing(bags.stone, site.x, 0.06, site.z, 10.2, 11.4, 28);
 
     for (const [gateIndex, angle] of [0, (Math.PI * 2) / 3, (Math.PI * 4) / 3].entries()) {
       const localX = Math.sin(angle) * 10.4;
@@ -566,6 +568,7 @@ function buildEliteArenas(bags: GeometryBags): void {
     const site = siteTowardOrigin(record.position.x / MM, record.position.z / MM);
     addCylinder(bags.stone, site, 0, 0.08, 0, 8.3, 8.5, 0.16, 12);
     addCylinder(bags.elite, site, 0, 0.19, 0, 7.65, 7.8, 0.22, 12);
+    addHorizontalRing(bags.stone, site.x, 0.05, site.z, 8.6, 9.8, 20);
     addHorizontalTorus(bags.gold, site.x, 0.33, site.z, 2.6, 0.09, 28);
     for (const angle of [0, Math.PI / 3, (Math.PI * 2) / 3]) {
       addBox(bags.gold, site, 0, 0.315, 0, 0.08, 0.035, 9.2, angle);

@@ -9,7 +9,7 @@ import {
 import * as THREE from 'three';
 import { regionBlendAt } from './map-regions';
 import { convexContains, isOnRoad, ringContains } from './map-sampling';
-import { climateSplatAt } from './region-climate';
+import { climateSplatAt, localReliefMeters } from './region-climate';
 import { MAX_ROAD_SURFACE_Y } from './roads';
 
 /**
@@ -100,10 +100,15 @@ export function buildGroundGeometry(): THREE.BufferGeometry {
         terrainHeightMeters(x, z + 2.5) - terrainHeightMeters(x, z - 2.5),
       ) / 5;
     vertexColour.lerp(new THREE.Color(0x5a5346), Math.min(0.42, slope * 1.15));
-    if (height > 2.4) {
-      vertexColour.lerp(new THREE.Color(0x8a8678), Math.min(1, (height - 2.4) / 2.6));
-    } else if (height < TERRAIN_WATER_LEVEL_MM / MM + 0.45) {
-      vertexColour.lerp(new THREE.Color(0x3d5346), 0.28);
+    // Bare rock on ground that stands above its surroundings and dark silt in
+    // hollows, both judged against the local landform rather than against
+    // absolute height, which stopped meaning anything once districts began
+    // sitting tens of metres apart.
+    const relief = localReliefMeters(x, z, height);
+    if (relief > 2.6) {
+      vertexColour.lerp(new THREE.Color(0x8a8678), Math.min(1, (relief - 2.6) / 7));
+    } else if (relief < -1.4) {
+      vertexColour.lerp(new THREE.Color(0x3d5346), Math.min(0.34, (-relief - 1.4) / 9));
     }
     if (climate.wet > 0.02) {
       vertexColour.lerp(new THREE.Color(0x3a4a40), climate.wet * 0.34);
