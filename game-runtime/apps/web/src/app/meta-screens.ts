@@ -3,7 +3,7 @@ import {
   AUTHORITATIVE_HEROES,
   AUTHORITATIVE_PASSIVES,
 } from '@jwgb/content';
-import type { PlayerId } from '@jwgb/core';
+import { type PlayerId, TICKS_PER_SECOND } from '@jwgb/core';
 import { equipmentIconUrl, heroPortraitUrl, passiveIconUrl } from '../runtime/asset-url';
 import { CULTIVATION_REALMS, CULTIVATION_TRACK, rewardMark } from './cultivation-track';
 import { type MatchRecord, playerTag, summariseHistory } from './lobby-session';
@@ -210,8 +210,12 @@ function renderCodex(content: HTMLElement): void {
   const grid = content.querySelector<HTMLElement>('.codex-grid');
   const buttons = [...content.querySelectorAll<HTMLButtonElement>('[data-codex]')];
   const show = (category: CodexCategory): void => {
-    if (grid) {
-      grid.innerHTML = codexCards(category);
+    if (!grid) {
+      return;
+    }
+    grid.innerHTML = codexCards(category);
+    for (const entry of grid.querySelectorAll<HTMLButtonElement>('[data-detail]')) {
+      entry.addEventListener('click', () => openDetail(content, entry.dataset.detail ?? ''));
     }
   };
   for (const button of buttons) {
@@ -238,30 +242,171 @@ function codexCount(category: CodexCategory): number {
 function codexCards(category: CodexCategory): string {
   if (category === 'heroes') {
     return AUTHORITATIVE_HEROES.map((hero) =>
-      card(heroPortraitUrl(hero.id), `${hero.id} · ${hero.element}`, hero.name, hero.active.name),
+      card(
+        heroPortraitUrl(hero.id),
+        `${hero.id} · ${hero.element}`,
+        hero.name,
+        hero.active.name,
+        `hero:${hero.id}`,
+      ),
     ).join('');
   }
   if (category === 'passives') {
     return AUTHORITATIVE_PASSIVES.map((passive) =>
-      card(passiveIconUrl(passive.id), `${passive.id} · ${passive.category}`, passive.name, ''),
+      card(
+        passiveIconUrl(passive.id),
+        `${passive.id} · ${passive.category}`,
+        passive.name,
+        '',
+        `passive:${passive.id}`,
+      ),
     ).join('');
   }
   return AUTHORITATIVE_EQUIPMENT.map((item) =>
-    card(equipmentIconUrl(item.id), `${item.id} · ${item.rarity}`, item.name, item.summary),
+    card(
+      equipmentIconUrl(item.id),
+      `${item.id} · ${item.rarity}`,
+      item.name,
+      item.summary,
+      `equipment:${item.id}`,
+      item.rarity,
+    ),
   ).join('');
 }
 
-function card(icon: string, meta: string, name: string, extra: string): string {
+function card(
+  icon: string,
+  meta: string,
+  name: string,
+  extra: string,
+  detailKey: string,
+  rarity = '',
+): string {
   return `
-    <article class="lobby-catalog-item">
+    <button
+      class="lobby-catalog-item"
+      type="button"
+      data-detail="${escapeHtml(detailKey)}"
+      ${rarity ? `data-rarity="${escapeHtml(rarity)}"` : ''}
+    >
       <img src="${icon}" alt="" />
       <span>
         <small>${escapeHtml(meta)}</small>
         <b>${escapeHtml(name)}</b>
         ${extra ? `<em>${escapeHtml(extra)}</em>` : ''}
       </span>
-    </article>
+    </button>
   `;
+}
+
+/**
+ * Detail dialog for a codex entry.
+ *
+ * The cards can only show a truncated line, and the authoritative records
+ * carry more than that — a hero's element and active, a passive's category, an
+ * equipment summary and rarity. Rather than widen every card to fit its
+ * longest string, the full record opens in a panel styled like the rest of the
+ * game rather than a browser dialog.
+ */
+function openDetail(host: HTMLElement, key: string): void {
+  const [kind, id] = key.split(':');
+  const detail = detailFor(kind ?? '', id ?? '');
+  if (!detail) {
+    return;
+  }
+
+  host.querySelector('.codex-detail')?.remove();
+  const layer = document.createElement('div');
+  layer.className = 'codex-detail';
+  layer.innerHTML = `
+    <div class="codex-detail-backdrop"></div>
+    <section class="codex-detail-card flow-panel" role="dialog" aria-modal="true">
+      <header>
+        <img src="${detail.icon}" alt="" />
+        <div>
+          <p class="flow-eyebrow">${escapeHtml(detail.meta)}</p>
+          <h3>${escapeHtml(detail.name)}</h3>
+        </div>
+        <button class="codex-detail-close" type="button" aria-label="关闭">✕</button>
+      </header>
+      <dl>
+        ${detail.rows
+          .map((row) => `<div><dt>${escapeHtml(row[0])}</dt><dd>${escapeHtml(row[1])}</dd></div>`)
+          .join('')}
+      </dl>
+    </section>
+  `;
+  const close = (): void => layer.remove();
+  layer.querySelector('.codex-detail-backdrop')?.addEventListener('click', close);
+  layer.querySelector('.codex-detail-close')?.addEventListener('click', close);
+  layer.addEventListener('keydown', (event) => {
+    if ((event as KeyboardEvent).key === 'Escape') {
+      close();
+    }
+  });
+  host.append(layer);
+  layer.querySelector<HTMLButtonElement>('.codex-detail-close')?.focus({ preventScroll: true });
+}
+
+/** Records carry a runtime status; say what it means rather than showing the enum. */
+function statusLabel(status: string): string {
+  return status === 'implemented' ? '已实装' : '仅有定义，未实装';
+}
+
+interface CodexDetail {
+  readonly icon: string;
+  readonly meta: string;
+  readonly name: string;
+  readonly rows: readonly (readonly [string, string])[];
+}
+
+function detailFor(kind: string, id: string): CodexDetail | null {
+  if (kind === 'hero') {
+    const hero = AUTHORITATIVE_HEROES.find((entry) => entry.id === id);
+    if (!hero) {
+      return null;
+    }
+    return {
+      icon: heroPortraitUrl(hero.id),
+      meta: `${hero.id} · ${hero.element}`,
+      name: hero.name,
+      rows: [
+        ['元素', hero.element],
+        ['主动技能', hero.active.name],
+        ['技能冷却', `${(hero.active.cooldownTicks / TICKS_PER_SECOND).toFixed(1)} 秒`],
+        ['运行状态', statusLabel(hero.active.runtimeStatus)],
+      ],
+    };
+  }
+  if (kind === 'passive') {
+    const passive = AUTHORITATIVE_PASSIVES.find((entry) => entry.id === id);
+    if (!passive) {
+      return null;
+    }
+    return {
+      icon: passiveIconUrl(passive.id),
+      meta: `${passive.id} · ${passive.category}`,
+      name: passive.name,
+      rows: [
+        ['类别', passive.category],
+        ['运行状态', statusLabel(passive.runtimeStatus)],
+      ],
+    };
+  }
+  const item = AUTHORITATIVE_EQUIPMENT.find((entry) => entry.id === id);
+  if (!item) {
+    return null;
+  }
+  return {
+    icon: equipmentIconUrl(item.id),
+    meta: `${item.id} · ${item.rarity}`,
+    name: item.name,
+    rows: [
+      ['品质', item.rarity],
+      ['属性', item.summary],
+      ['运行状态', statusLabel(item.runtimeStatus)],
+    ],
+  };
 }
 
 function profileMarkup(context: MetaScreenContext): string {

@@ -5529,3 +5529,139 @@ kbd {
   font-weight: 850;
   letter-spacing: 0.08em;
 }
+
+/* --------------------------------------------------------------------------
+   图鉴 tidy-up and entry detail
+   --------------------------------------------------------------------------
+
+   The rail was stretching to the full height of the page for the sake of three
+   buttons, and the card grid held its full height whatever it contained, so
+   both columns carried large empty areas. The rail now hugs its content and
+   the grid stops at the shorter of its content or the page.
+   -------------------------------------------------------------------------- */
+
+.codex-layout {
+  align-items: start;
+}
+
+.codex-rail {
+  align-self: start;
+}
+
+.codex-grid {
+  max-height: 100%;
+}
+
+/* Cards are buttons now; a card can only show a truncated line, so the full
+   record opens in a panel. */
+.lobby-catalog-item {
+  border: 1px solid rgb(222 193 119 / 18%);
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.lobby-catalog-item:hover,
+.lobby-catalog-item:focus-visible {
+  border-color: rgb(233 203 128 / 62%);
+  background: rgb(31 92 80 / 62%);
+  outline: none;
+}
+
+.codex-detail {
+  position: fixed;
+  z-index: 20;
+  display: grid;
+  inset: 0;
+  place-items: center;
+  padding: 24px;
+}
+
+.codex-detail-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgb(1 14 15 / 62%);
+  backdrop-filter: blur(3px);
+}
+
+.codex-detail-card {
+  position: relative;
+  width: min(460px, 100%);
+  padding: 20px;
+  border-radius: 7px;
+}
+
+.codex-detail-card header {
+  display: grid;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgb(223 204 151 / 18%);
+  grid-template-columns: 64px minmax(0, 1fr) auto;
+}
+
+.codex-detail-card header img {
+  width: 64px;
+  height: 64px;
+  border: 1px solid rgb(230 202 131 / 40%);
+  border-radius: 4px;
+  background: #123d38;
+  object-fit: cover;
+}
+
+.codex-detail-card h3 {
+  margin: 2px 0 0;
+  color: #f5df9f;
+  font-family: "STKaiti", "KaiTi", "Microsoft YaHei", serif;
+  font-size: 24px;
+  line-height: 1.1;
+}
+
+.codex-detail-close {
+  width: 32px;
+  height: 32px;
+  align-self: start;
+  border: 1px solid rgb(226 197 118 / 34%);
+  border-radius: 4px;
+  color: #e8c975;
+  background: rgb(3 29 29 / 42%);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.codex-detail-close:hover,
+.codex-detail-close:focus-visible {
+  background: rgb(31 92 80 / 62%);
+}
+
+.codex-detail-card dl {
+  display: grid;
+  gap: 2px;
+  margin: 14px 0 0;
+}
+
+.codex-detail-card dl > div {
+  display: grid;
+  align-items: baseline;
+  gap: 12px;
+  padding: 9px 2px;
+  border-bottom: 1px solid rgb(223 204 151 / 12%);
+  grid-template-columns: 84px minmax(0, 1fr);
+}
+
+.codex-detail-card dl > div:last-child {
+  border-bottom: 0;
+}
+
+.codex-detail-card dt {
+  color: #9fb9ae;
+  font-size: 12px;
+}
+
+.codex-detail-card dd {
+  margin: 0;
+  color: #e8dcb4;
+  font-size: 13px;
+  line-height: 1.6;
+}
