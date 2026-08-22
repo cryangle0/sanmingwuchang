@@ -17,13 +17,13 @@ import { createRandomStream } from './map-sampling';
 const MM = 1_000;
 
 /** How far the apron extends past the boundary, metres. */
-const APRON_DEPTH = 320;
+const APRON_DEPTH = 760;
 /**
- * Floor level beyond the rim. The boundary is now an escarpment falling ~60 m,
- * so the apron and its ridges sit at the bottom of that drop; at the old
- * shallow level they hung in mid-air across the cliff face.
+ * Ground level beyond the rim. The boundary wall rises 34-49 m, so everything
+ * out here is hidden below the crest except the ridge tops; the apron only
+ * has to stop the void showing through a cleft.
  */
-const BEYOND_FLOOR = -58;
+const BEYOND_FLOOR = -6;
 
 export function buildBeyond(
   group: THREE.Group,
@@ -93,29 +93,42 @@ function buildRidges(
   const rings: readonly {
     readonly material: THREE.Material;
     readonly offset: number;
+    readonly spread: number;
     readonly spacing: number;
     readonly minHeight: number;
     readonly maxHeight: number;
+    readonly minRadius: number;
+    readonly maxRadius: number;
     readonly phase: number;
   }[] = [
-    // Two ridge lines standing in the gorge below the rim: a near band whose
-    // tops clear the crest, and a taller sparser band behind it, so a player
-    // looking outward sees mountains across a chasm rather than a backdrop.
+    // Both bands have to out-top a 34-49 m wall to be seen at all, so they
+    // stand well back and read as distant massifs above the crest.
+    //
+    // Radius is authored, not derived from height. Scaling it with height —
+    // which was safe while peaks were 4-16 m — turned 120 m peaks into cones
+    // 300 m across that swallowed the entire playfield and trapped the camera
+    // inside their walls.
     {
       material: materials.beyondRidgeNear,
-      offset: 34,
-      spacing: 1,
-      minHeight: 26,
-      maxHeight: 48,
+      offset: 300,
+      spread: 90,
+      spacing: 3,
+      minHeight: 70,
+      maxHeight: 120,
+      minRadius: 55,
+      maxRadius: 95,
       phase: 0,
     },
     {
       material: materials.beyondRidgeFar,
-      offset: 62,
-      spacing: 2,
-      minHeight: 44,
-      maxHeight: 78,
-      phase: 1,
+      offset: 520,
+      spread: 140,
+      spacing: 5,
+      minHeight: 110,
+      maxHeight: 185,
+      minRadius: 90,
+      maxRadius: 150,
+      phase: 2,
     },
   ];
 
@@ -136,17 +149,16 @@ function buildRidges(
     const instanced = new THREE.InstancedMesh(cone, ring.material, slots.length);
     const tint = new THREE.Color();
     slots.forEach((slot, index) => {
-      const jitter = ring.offset + nextRandom() * 14;
+      const jitter = ring.offset + nextRandom() * ring.spread;
       const outward = outwardOf(slot, centroid);
       const height = ring.minHeight + nextRandom() * (ring.maxHeight - ring.minHeight);
-      const radius = height * (0.9 + nextRandom() * 0.8);
+      const radius = ring.minRadius + nextRandom() * (ring.maxRadius - ring.minRadius);
       euler.set(0, nextRandom() * Math.PI * 2, 0);
       quaternion.setFromEuler(euler);
       scale.set(radius, height, radius * (0.7 + nextRandom() * 0.6));
       position.set(
         slot.x + outward.x * jitter,
-        // Rooted in the far valley floor, so the peaks rise past the rim and
-        // give the horizon something behind the drop.
+        // Rooted on the outer ground; only the upper parts clear the wall.
         BEYOND_FLOOR,
         slot.z + outward.z * jitter,
       );

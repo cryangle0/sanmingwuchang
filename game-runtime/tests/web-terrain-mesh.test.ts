@@ -1,4 +1,4 @@
-import { MAP_ROUTE_NODES, TERRAIN_WATER_LEVEL_MM, terrainHeightMeters } from '@jwgb/content';
+import { MAP_ROUTE_NODES, terrainHeightMeters } from '@jwgb/content';
 import { describe, expect, it } from 'vitest';
 import {
   buildGroundGeometry,
@@ -28,7 +28,7 @@ describe('web terrain mesh', () => {
     expect(maxY).toBeGreaterThan(2);
   });
 
-  it('puts water only where every corner of a cell is underwater', () => {
+  it('fills basins with flat water and leaves open ground dry', () => {
     const geometry = buildWaterGeometry();
     expect(geometry).not.toBeNull();
     const positions = geometry?.getAttribute('position');
@@ -36,11 +36,26 @@ describe('web terrain mesh', () => {
     if (!positions) {
       throw new Error('missing water positions');
     }
-    const waterY = TERRAIN_WATER_LEVEL_MM / 1000;
+    let covered = 0;
+    const levels = new Set<number>();
     for (let index = 0; index < positions.count; index += 1) {
-      expect(positions.getY(index)).toBeCloseTo(waterY, 4);
+      const level = positions.getY(index);
+      levels.add(Math.round(level * 100));
+      // Every water vertex must stand over ground that is actually under it.
+      // The tolerance covers quantisation, not slack: shoreline vertices are
+      // solved in doubles, stored as float32 and re-sampled through a height
+      // function that rounds its input to whole millimetres, which moves the
+      // answer by a fraction of a millimetre on a steep bank.
+      expect(terrainHeightMeters(positions.getX(index), positions.getZ(index))).toBeLessThanOrEqual(
+        level + 0.02,
+      );
+      covered += 1;
     }
-    geometry?.dispose();
+    // Basins each carry their own level, so a single global plane is a bug.
+    expect(levels.size).toBeGreaterThan(1);
+    // And water must stay a feature, not a flood: the old absolute-level rule
+    // drowned more than half the playfield.
+    expect(covered).toBeLessThan(120_000);
   });
 
   it('keeps footing on the rendered triangles instead of under them', () => {

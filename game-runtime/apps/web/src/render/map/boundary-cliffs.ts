@@ -3,59 +3,66 @@ import * as THREE from 'three';
 import type { MapMaterialLibrary } from './map-palette';
 
 /**
- * The boundary read as a cliff rather than a wall.
+ * The boundary as an escarpment that rises, not a chasm that drops.
  *
- * The compiled BOUND wall pieces are axis-extruded prisms: correct for
- * collision, but drawn they are flat-topped slabs sitting on the grass, which
- * is what made the map edge look like stacked stone blocks. Collision still
- * comes from those pieces; this module only replaces what the camera sees.
+ * The compiled BOUND pieces are 6 m axis-extruded prisms: right for
+ * collision, but drawn they were flat-topped slabs standing on the grass, so
+ * the map edge read as stacked blocks. The first replacement fell the other
+ * way — a 60 m gorge outside the rim — and that was worse on two counts. It
+ * looked like a dune rather than rock, because 26 m of batter spread over the
+ * drop left the upper face sitting at barely thirty degrees under smooth
+ * normals. And it lied about the rules: a visible drop that a player cannot
+ * fall into is a promise the collision does not keep.
  *
- * The face is a ribbon swept along the boundary polygon and folded through a
- * fixed set of strata. Each stratum steps outward and drops further, so the
- * profile batters back the way a real escarpment does instead of falling as
- * one vertical plate, and the seam between two strata reads as a bedding
- * plane. Two noise fields do the rest: one along the rim, which makes the
- * crest jagged and pushes buttresses out between clefts, and one per stratum,
- * which stops the bedding planes from running as perfect horizontal lines.
+ * A wall keeps that promise. It rises far above the play area, leans away as
+ * it climbs so its inner face is what the camera sees, and closes the horizon
+ * so nothing outside the arena has to be dressed at all.
  *
- * Vertex colour carries the depth gradient — bright and slightly warm at the
- * lit crest, sinking to near black at the base — so a single opaque material
- * covers the whole drop and the bottom dissolves into the fog without a
- * second pass or any transparency.
+ * Two things make it read as rock rather than as a ramp. Every vertex is
+ * unshared, so each triangle keeps its own hard normal and the face breaks
+ * into lit and shadowed facets instead of one smooth sheet. And a
+ * high-frequency offset along the rim pushes alternating columns in and out,
+ * cutting the vertical flutes and buttresses that give an escarpment its
+ * silhouette.
+ *
+ * Collision is untouched: this is the same boundary the BOUND pieces already
+ * enforce, drawn honestly.
  */
 
 const MM = 1_000;
-/** Spacing of rim samples. Fine enough for clefts, coarse enough to stay one draw call. */
-const RIM_STEP_METERS = 5;
-/** How far the rim noise can push a buttress out or cut a cleft in. */
-const RIM_SWAY_METERS = 5.5;
-/** Crest lift above the adjoining ground, before jitter. */
-const CREST_BASE_LIFT = 1.1;
-const CREST_JITTER = 2.6;
-/** Depth the last stratum reaches. Well past anything the camera can see. */
-const ABYSS_DEPTH = 62;
+/** Spacing of rim columns. One flute per column, so this sets the rib pitch. */
+const RIM_STEP_METERS = 4;
+/** Height of the wall above the ground it stands on, before per-column jitter. */
+const WALL_BASE_HEIGHT = 34;
+const WALL_HEIGHT_JITTER = 15;
+/** How far a column's flute can stand proud of, or recede from, the mean face. */
+const FLUTE_METERS = 2.8;
 
 /**
- * Outward push and drop of each stratum as a fraction of the total.
- *
- * Front-loaded on purpose: the top third of the drop carries most of the
- * batter and most of the vertices, because that is the band the player
- * actually looks at. Below it the face steepens and the strata stretch.
+ * Tiers up the inner face: fraction of the height, and how far the face has
+ * leaned outward by then. The lean is gentle low down and opens up near the
+ * top, which is the profile of a weathered scarp — undercut at the foot,
+ * broken back at the crest.
  */
-const STRATA: readonly { readonly out: number; readonly down: number; readonly shade: number }[] = [
-  { out: 0.0, down: 0.0, shade: 1.0 },
-  { out: 0.16, down: 0.03, shade: 0.86 },
-  { out: 0.34, down: 0.1, shade: 0.72 },
-  { out: 0.46, down: 0.22, shade: 0.58 },
-  { out: 0.62, down: 0.4, shade: 0.42 },
-  { out: 0.74, down: 0.64, shade: 0.26 },
-  { out: 0.86, down: 1.0, shade: 0.1 },
+const TIERS: readonly { readonly up: number; readonly out: number; readonly shade: number }[] = [
+  { up: 0.0, out: 0.0, shade: 0.34 },
+  { up: 0.14, out: 0.4, shade: 0.46 },
+  { up: 0.34, out: 1.9, shade: 0.63 },
+  { up: 0.58, out: 4.4, shade: 0.8 },
+  { up: 0.8, out: 7.6, shade: 0.93 },
+  { up: 1.0, out: 11.5, shade: 1.0 },
 ];
-/** Outward reach of the widest stratum, metres. */
-const BATTER_METERS = 26;
+/** Depth of the crest cap, so the top edge has thickness against the sky. */
+const CREST_CAP_METERS = 9;
+/** Scree fan at the foot, blending rock into ground. */
+const TALUS_METERS = 4.5;
 
-const CREST_COLOUR = new THREE.Color(0x9aa093);
-const BASE_COLOUR = new THREE.Color(0x14171a);
+/** World metres per texture tile on the face. */
+const TEXTURE_METERS = 12;
+
+const ROCK_LIT = new THREE.Color(0xa9a493);
+const ROCK_SHADOW = new THREE.Color(0x24262a);
+const TALUS_COLOUR = new THREE.Color(0x6d6656);
 
 export function buildBoundaryCliffs(
   group: THREE.Group,
@@ -67,116 +74,61 @@ export function buildBoundaryCliffs(
     return;
   }
 
-  const positions: number[] = [];
-  const colours: number[] = [];
-  const uvs: number[] = [];
-  const indices: number[] = [];
-  const colour = new THREE.Color();
-
-  rim.forEach((sample, column) => {
-    for (const [row, stratum] of STRATA.entries()) {
-      // Bedding planes wander so the strata never read as drawn-on stripes.
-      const wobble = stratum.down === 0 ? 0 : (noise(column * 0.31, row * 2.7) - 0.5) * 3.4;
-      const reach = BATTER_METERS * stratum.out + (stratum.out === 0 ? 0 : sample.buttress);
-      const y = sample.crestY - ABYSS_DEPTH * stratum.down + wobble;
-      positions.push(sample.x + sample.outX * reach, y, sample.z + sample.outZ * reach);
-      // U runs along the rim so the rock never stretches around corners;
-      // V is world height, which keeps bedding at a constant scale.
-      uvs.push(sample.distance / 18, y / 18);
-      colour.copy(BASE_COLOUR).lerp(CREST_COLOUR, stratum.shade * sample.light);
-      colours.push(colour.r, colour.g, colour.b);
-    }
-  });
-
-  const rows = STRATA.length;
+  const builder = new FacetBuilder();
   for (let column = 0; column < rim.length; column += 1) {
-    const next = (column + 1) % rim.length;
-    for (let row = 0; row < rows - 1; row += 1) {
-      const a = column * rows + row;
-      const b = column * rows + row + 1;
-      const c = next * rows + row + 1;
-      const d = next * rows + row;
-      // Wound so the face points away from the playfield.
-      indices.push(a, b, c, a, c, d);
+    const left = rim[column] as RimSample;
+    const right = rim[(column + 1) % rim.length] as RimSample;
+
+    for (let tier = 0; tier + 1 < TIERS.length; tier += 1) {
+      const lower = TIERS[tier] as (typeof TIERS)[number];
+      const upper = TIERS[tier + 1] as (typeof TIERS)[number];
+      builder.quad(
+        pointOn(left, lower),
+        pointOn(right, lower),
+        pointOn(right, upper),
+        pointOn(left, upper),
+        shadeAt(left, lower.shade),
+        shadeAt(right, lower.shade),
+        shadeAt(right, upper.shade),
+        shadeAt(left, upper.shade),
+      );
     }
+
+    // Crest cap: the top edge needs depth or the wall reads as cardboard where
+    // it meets the sky.
+    const crest = TIERS[TIERS.length - 1] as (typeof TIERS)[number];
+    const leftCrest = pointOn(left, crest);
+    const rightCrest = pointOn(right, crest);
+    builder.quad(
+      leftCrest,
+      rightCrest,
+      offsetOut(rightCrest, right, CREST_CAP_METERS, -1.4),
+      offsetOut(leftCrest, left, CREST_CAP_METERS, -1.4),
+      shadeAt(left, 1),
+      shadeAt(right, 1),
+      shadeAt(right, 0.88),
+      shadeAt(left, 0.88),
+    );
+
+    // Talus: a short skirt inward from the foot so rock meets grass on a slope
+    // instead of on a seam.
+    const foot = TIERS[0] as (typeof TIERS)[number];
+    const leftFoot = pointOn(left, foot);
+    const rightFoot = pointOn(right, foot);
+    builder.quad(
+      inwardSkirt(left),
+      inwardSkirt(right),
+      rightFoot,
+      leftFoot,
+      TALUS_COLOUR,
+      TALUS_COLOUR,
+      shadeAt(right, foot.shade),
+      shadeAt(left, foot.shade),
+    );
   }
 
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colours, 3));
-  geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
-  geometry.setIndex(indices);
-  geometry.computeVertexNormals();
-  geometry.computeBoundingSphere();
-
-  const mesh = new THREE.Mesh(track(geometry), materials.boundaryCliffFace);
+  const mesh = new THREE.Mesh(track(builder.build()), materials.boundaryCliffFace);
   mesh.name = 'boundary-cliff';
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
-  group.add(mesh);
-
-  buildCrestBrow(group, materials, track, rim);
-}
-
-/**
- * A thin lip folded back over the crest.
- *
- * Without it the grass ends on the exact vertex where the face begins and the
- * edge reads as a cut, not an overhang. The brow oversails the drop by half a
- * metre, so the rim casts a hard shadow line onto its own face.
- */
-function buildCrestBrow(
-  group: THREE.Group,
-  materials: MapMaterialLibrary,
-  track: <T extends THREE.BufferGeometry>(geometry: T) => T,
-  rim: readonly RimSample[],
-): void {
-  const positions: number[] = [];
-  const colours: number[] = [];
-  const uvs: number[] = [];
-  const indices: number[] = [];
-  const colour = new THREE.Color();
-
-  rim.forEach((sample, column) => {
-    const overhang = 0.45 + noise(column * 0.53, 9.1) * 0.7;
-    positions.push(
-      sample.x - sample.outX * 1.6,
-      sample.groundY - 0.05,
-      sample.z - sample.outZ * 1.6,
-    );
-    uvs.push(sample.distance / 18, 0);
-    colour.copy(CREST_COLOUR).multiplyScalar(0.86 * sample.light);
-    colours.push(colour.r, colour.g, colour.b);
-
-    positions.push(
-      sample.x + sample.outX * overhang,
-      sample.crestY,
-      sample.z + sample.outZ * overhang,
-    );
-    uvs.push(sample.distance / 18, 0.2);
-    colour.copy(CREST_COLOUR).multiplyScalar(sample.light);
-    colours.push(colour.r, colour.g, colour.b);
-  });
-
-  for (let column = 0; column < rim.length; column += 1) {
-    const next = (column + 1) % rim.length;
-    const a = column * 2;
-    const b = column * 2 + 1;
-    const c = next * 2 + 1;
-    const d = next * 2;
-    indices.push(a, b, c, a, c, d);
-  }
-
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colours, 3));
-  geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
-  geometry.setIndex(indices);
-  geometry.computeVertexNormals();
-  geometry.computeBoundingSphere();
-
-  const mesh = new THREE.Mesh(track(geometry), materials.boundaryCliffFace);
-  mesh.name = 'boundary-cliff-brow';
   mesh.castShadow = true;
   mesh.receiveShadow = true;
   group.add(mesh);
@@ -188,13 +140,107 @@ interface RimSample {
   readonly outX: number;
   readonly outZ: number;
   readonly groundY: number;
-  readonly crestY: number;
-  /** Extra outward reach of the strata here; the crest's clefts and spurs. */
-  readonly buttress: number;
-  /** Distance travelled along the rim, for continuous UVs. */
+  readonly height: number;
+  /** Outward offset of this column's flute; negative cuts a cleft. */
+  readonly flute: number;
   readonly distance: number;
-  /** Cheap sun-facing term so opposite walls of the bowl do not share a tone. */
+  /** How square-on the sun this stretch of wall faces. */
   readonly light: number;
+}
+
+interface FacePoint {
+  readonly x: number;
+  readonly y: number;
+  readonly z: number;
+  /** Arc length along the rim, which is what the rock texture runs on. */
+  readonly u: number;
+}
+
+function pointOn(sample: RimSample, tier: (typeof TIERS)[number]): FacePoint {
+  // The flute rides in with the lean, so ribs widen up the face rather than
+  // running as parallel grooves.
+  const reach = tier.out + sample.flute * (0.35 + tier.up * 0.65);
+  return {
+    x: sample.x + sample.outX * reach,
+    y: sample.groundY + sample.height * tier.up,
+    z: sample.z + sample.outZ * reach,
+    u: sample.distance,
+  };
+}
+
+function offsetOut(point: FacePoint, sample: RimSample, reach: number, drop: number): FacePoint {
+  return {
+    x: point.x + sample.outX * reach,
+    y: point.y + drop,
+    z: point.z + sample.outZ * reach,
+    u: point.u,
+  };
+}
+
+function inwardSkirt(sample: RimSample): FacePoint {
+  const x = sample.x - sample.outX * TALUS_METERS;
+  const z = sample.z - sample.outZ * TALUS_METERS;
+  return { x, y: terrainHeightMeters(x, z) - 0.1, z, u: sample.distance };
+}
+
+function shadeAt(sample: RimSample, tierShade: number): THREE.Color {
+  return new THREE.Color()
+    .copy(ROCK_SHADOW)
+    .lerp(ROCK_LIT, Math.max(0, Math.min(1, tierShade * sample.light)));
+}
+
+/** Accumulates unshared triangles, which is what keeps the shading faceted. */
+class FacetBuilder {
+  private readonly positions: number[] = [];
+  private readonly colours: number[] = [];
+  private readonly uvs: number[] = [];
+
+  quad(
+    a: FacePoint,
+    b: FacePoint,
+    c: FacePoint,
+    d: FacePoint,
+    ca: THREE.Color,
+    cb: THREE.Color,
+    cc: THREE.Color,
+    cd: THREE.Color,
+  ): void {
+    this.triangle(a, b, c, ca, cb, cc);
+    this.triangle(a, c, d, ca, cc, cd);
+  }
+
+  private triangle(
+    a: FacePoint,
+    b: FacePoint,
+    c: FacePoint,
+    ca: THREE.Color,
+    cb: THREE.Color,
+    cc: THREE.Color,
+  ): void {
+    for (const [point, colour] of [
+      [a, ca],
+      [b, cb],
+      [c, cc],
+    ] as const) {
+      this.positions.push(point.x, point.y, point.z);
+      this.colours.push(colour.r, colour.g, colour.b);
+      // U is arc length along the rim, V is world height. Projecting U from
+      // the distance to the world origin instead left it almost constant
+      // around a near-circular boundary, which smeared the rock into
+      // kilometre-long streaks.
+      this.uvs.push(point.u / TEXTURE_METERS, point.y / TEXTURE_METERS);
+    }
+  }
+
+  build(): THREE.BufferGeometry {
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(this.positions, 3));
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(this.colours, 3));
+    geometry.setAttribute('uv', new THREE.Float32BufferAttribute(this.uvs, 2));
+    geometry.computeVertexNormals();
+    geometry.computeBoundingSphere();
+    return geometry;
+  }
 }
 
 function sampleRim(): readonly RimSample[] {
@@ -215,23 +261,21 @@ function sampleRim(): readonly RimSample[] {
       const x = ax + (bx - ax) * t;
       const z = az + (bz - az) * t;
       const outward = outwardOf(x, z, centroid);
-      const sway = (noise(distance * 0.09, 3.3) - 0.5) * 2 * RIM_SWAY_METERS;
-      // Pull the rim inward on clefts and outward on spurs before lifting it,
-      // so the crest line itself wanders instead of tracing the 21-point
-      // polygon exactly.
-      const rimX = x + outward.x * sway;
-      const rimZ = z + outward.z * sway;
-      const groundY = terrainHeightMeters(rimX, rimZ);
       samples.push({
-        x: rimX,
-        z: rimZ,
+        x,
+        z,
         outX: outward.x,
         outZ: outward.z,
-        groundY,
-        crestY: groundY + CREST_BASE_LIFT + noise(distance * 0.17, 1.9) * CREST_JITTER,
-        buttress: noise(distance * 0.07, 6.1) * 7,
+        groundY: terrainHeightMeters(x, z) - 0.4,
+        // Two scales of height variation: broad massifs, and a fast one that
+        // notches individual columns down into clefts.
+        height:
+          WALL_BASE_HEIGHT +
+          noise(distance * 0.012, 0.5) * WALL_HEIGHT_JITTER +
+          (noise(distance * 0.21, 4.5) - 0.5) * 7,
+        flute: (noise(distance * 0.33, 7.7) - 0.5) * 2 * FLUTE_METERS,
         distance,
-        light: 0.72 + 0.28 * (0.5 + 0.5 * (outward.x * 0.6 + outward.z * 0.8)),
+        light: 0.55 + 0.45 * (0.5 + 0.5 * (outward.x * 0.55 + outward.z * 0.83)),
       });
       distance += edgeLength / steps;
     }
@@ -260,7 +304,7 @@ function boundaryCentroidMeters(): { x: number; z: number } {
   return { x: sumX / MAP_BOUNDARY.length / MM, z: sumZ / MAP_BOUNDARY.length / MM };
 }
 
-/** Deterministic value noise in [0, 1]; the cliff must rebuild identically. */
+/** Deterministic value noise in [0, 1]; the wall must rebuild identically. */
 function noise(x: number, y: number): number {
   const x0 = Math.floor(x);
   const y0 = Math.floor(y);

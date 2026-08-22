@@ -3,7 +3,6 @@ import {
   MAP_COURTS,
   MAP_SPAWN_POINTS,
   TERRAIN_LATTICE_MM,
-  TERRAIN_WATER_LEVEL_MM,
   terrainHeightMeters,
 } from '@jwgb/content';
 import * as THREE from 'three';
@@ -205,11 +204,10 @@ export function walkSurfaceMeters(xMeters: number, zMeters: number): number {
       break;
     }
   }
-  const surface = groundSurfaceMeters(xMeters, zMeters) + lift;
-  if (terrainHeightMeters(xMeters, zMeters) < TERRAIN_WATER_LEVEL_MM / MM) {
-    return Math.max(surface, TERRAIN_WATER_LEVEL_MM / MM + 0.02);
-  }
-  return surface;
+  // No global water clamp: standing water is per-basin now, and lifting every
+  // point under one absolute level would have floated characters across half
+  // the map once the terrain gained real relief.
+  return groundSurfaceMeters(xMeters, zMeters) + lift;
 }
 
 function smoothstep(edge0: number, edge1: number, value: number): number {
