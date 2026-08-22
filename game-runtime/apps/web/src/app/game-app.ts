@@ -40,6 +40,7 @@ import {
 import type { HostFrame, WorldConnectionState, WorldHost } from '../runtime/world-host';
 import { GameHud } from '../ui/game-hud';
 import { GameMenu } from '../ui/game-menu';
+import { resolveDebugSpawn } from './debug-spawn';
 
 const TARGET_RENDER_INTERVAL_MS = 1_000 / 60;
 const MAX_RENDER_SCHEDULE_DRIFT_MS = TARGET_RENDER_INTERVAL_MS * 4;
@@ -193,7 +194,8 @@ export class GameApp {
     } else {
       const scenario = localWorldScenarioFromActive(search.get('active'));
       // Debug spawn override, meters: ?spawn=22,109 places the local player
-      // at that map position instead of a random spawn point.
+      // at that map position instead of a random spawn point. The request is
+      // snapped to standable ground first; see resolveDebugSpawn.
       const spawnParam = search.get('spawn');
       const spawnMatch = spawnParam?.match(/^(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)$/);
       this.host = new LocalWorldHost({
@@ -201,9 +203,11 @@ export class GameApp {
         localHeroId: selectedHeroId,
         ...(spawnMatch
           ? {
-              localPosition: vec2Mm(
-                Math.round(Number(spawnMatch[1]) * 1_000),
-                Math.round(Number(spawnMatch[2]) * 1_000),
+              localPosition: resolveDebugSpawn(
+                vec2Mm(
+                  Math.round(Number(spawnMatch[1]) * 1_000),
+                  Math.round(Number(spawnMatch[2]) * 1_000),
+                ),
               ),
             }
           : {}),
