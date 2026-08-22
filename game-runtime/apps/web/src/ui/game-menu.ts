@@ -1,4 +1,4 @@
-import { BookOpen, createElement, Gauge, Keyboard, Settings, X } from 'lucide';
+import { createElement, Gauge, Settings, X } from 'lucide';
 import type { RenderPerformanceDiagnostics } from '../render/arena-renderer';
 import type { WebAudioCue } from '../runtime/web-audio';
 import type {
@@ -111,6 +111,7 @@ export class GameMenu {
             </button>
           </nav>
           <div class="game-menu-content">
+            <p class="game-menu-section-name"></p>
             <section class="game-menu-panel" data-menu-panel="settings">
               <div class="setting-row">
                 <div class="setting-copy">
@@ -297,15 +298,6 @@ export class GameMenu {
     );
     requiredElement(this.root, '.game-menu-close-icon').append(
       createElement(X, { width: 21, height: 21 }),
-    );
-    requiredElement(this.root, '.menu-tab-settings-icon').append(
-      createElement(Settings, { width: 17, height: 17 }),
-    );
-    requiredElement(this.root, '.menu-tab-controls-icon').append(
-      createElement(Keyboard, { width: 18, height: 18 }),
-    );
-    requiredElement(this.root, '.menu-tab-guide-icon').append(
-      createElement(BookOpen, { width: 17, height: 17 }),
     );
     requiredElement(this.root, '.performance-meter-icon').append(
       createElement(Gauge, { width: 15, height: 15 }),

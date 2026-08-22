@@ -5512,3 +5512,20 @@ kbd {
   background: rgb(5 39 39 / 62%);
   overflow-y: auto;
 }
+
+/* Section header for the settings panel. It also carries the element
+   setActiveTab writes the current category into, which is why removing it from
+   the dialog header broke every tab switch. */
+.settings-layout .game-menu-section-name {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin: 0;
+  padding: 14px 20px;
+  border-bottom: 1px solid rgb(223 204 151 / 18%);
+  background: rgb(6 42 40 / 92%);
+  color: #e8c975;
+  font-size: 13px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+}
