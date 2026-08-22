@@ -103,8 +103,20 @@ try {
         -Destination (Join-Path $tempRoot 'index.html') -Force
 
     $bundlePath = Join-Path $tempRoot 'deploy-bundle.tar.gz'
-    & tar.exe -czf $bundlePath -C $tempRoot `
-        server.mjs package.json jwgb-web.service fanavatar.org.conf index.html
+    # Archive from inside the staging directory using a relative output name.
+    # Whichever tar comes first on PATH has to work: GNU tar reads the drive
+    # letter of an absolute Windows path as a remote host and fails with
+    # "Cannot connect to C: resolve failed", and bsdtar has no --force-local to
+    # opt out of that reading. A relative name has no colon for either to
+    # misinterpret.
+    Push-Location -LiteralPath $tempRoot
+    try {
+        & tar.exe -czf 'deploy-bundle.tar.gz' `
+            server.mjs package.json jwgb-web.service fanavatar.org.conf index.html
+    }
+    finally {
+        Pop-Location
+    }
     if ($LASTEXITCODE -ne 0) {
         throw 'deployment bundle creation failed'
     }
@@ -166,6 +178,11 @@ printf 'deployed release %s\n' "$release_id"
 '@
     $remoteScript = $remoteScript.Replace('__RELEASE_ID__', $ReleaseId)
     $remoteScript = $remoteScript.Replace('__REMOTE_ARCHIVE__', $remoteArchive)
+    # The remote end is bash. This file is stored with CRLF endings, so the
+    # here-string carries them into the payload and every line reaches the
+    # server with a trailing carriage return; bash then reports a syntax error
+    # at the first brace and the deployment dies remotely rather than here.
+    $remoteScript = $remoteScript.Replace("`r`n", "`n")
     $remoteBytes = [Text.Encoding]::UTF8.GetBytes($remoteScript)
     $remoteBase64 = [Convert]::ToBase64String($remoteBytes)
     Invoke-NativeWithRetry -FailureMessage 'remote web deployment failed' -Command {
