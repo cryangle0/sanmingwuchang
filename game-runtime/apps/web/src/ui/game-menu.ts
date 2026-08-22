@@ -1,5 +1,7 @@
 import { createElement, Gauge, Settings, X } from 'lucide';
+import { readMatchHistory } from '../app/lobby-session';
 import type { RenderPerformanceDiagnostics } from '../render/arena-renderer';
+import { resolveOnlineServerUrl } from '../runtime/online-server-url';
 import type { WebAudioCue } from '../runtime/web-audio';
 import type {
   WebCameraViewMode,
@@ -7,7 +9,7 @@ import type {
   WebGraphicsPreference,
 } from '../runtime/web-settings';
 
-type GameMenuTab = 'settings' | 'controls' | 'guide';
+type GameMenuTab = 'settings' | 'access' | 'controls' | 'network' | 'privacy' | 'account' | 'guide';
 type AudioSettingKey = 'masterVolume' | 'musicVolume' | 'sfxVolume' | 'uiVolume';
 
 export interface GameMenuDiagnostics {
@@ -38,8 +40,12 @@ function requiredElement<T extends Element = HTMLElement>(root: ParentNode, sele
 }
 
 const TAB_LABELS: Readonly<Record<GameMenuTab, string>> = {
-  settings: '设置',
-  controls: '操作',
+  settings: '画面与音频',
+  access: '无障碍',
+  controls: '控制',
+  network: '网络与地区',
+  privacy: '隐私',
+  account: '账号与数据',
   guide: '玩法',
 };
 
@@ -101,9 +107,25 @@ export class GameMenu {
               <i aria-hidden="true">画</i>
               <span><b>画面与音频</b><small>画质、镜头与音量</small></span>
             </button>
+            <button type="button" data-menu-tab="access" aria-selected="false">
+              <i aria-hidden="true">辅</i>
+              <span><b>无障碍</b><small>色觉、闪烁与字号</small></span>
+            </button>
             <button type="button" data-menu-tab="controls" aria-selected="false">
               <i aria-hidden="true">控</i>
               <span><b>控制</b><small>触控与 PC 按键</small></span>
+            </button>
+            <button type="button" data-menu-tab="network" aria-selected="false">
+              <i aria-hidden="true">网</i>
+              <span><b>网络与地区</b><small>服务器、延迟与语言</small></span>
+            </button>
+            <button type="button" data-menu-tab="privacy" aria-selected="false">
+              <i aria-hidden="true">隐</i>
+              <span><b>隐私</b><small>公开资料范围</small></span>
+            </button>
+            <button type="button" data-menu-tab="account" aria-selected="false">
+              <i aria-hidden="true">账</i>
+              <span><b>账号与数据</b><small>设备、导出与删除</small></span>
             </button>
             <button type="button" data-menu-tab="guide" aria-selected="false">
               <i aria-hidden="true">玩</i>
@@ -208,6 +230,64 @@ export class GameMenu {
                 当前渲染状态将在游戏运行后显示。
               </div>
             </section>
+            <section class="game-menu-panel" data-menu-panel="access" hidden>
+              <p class="settings-panel-note">
+                无障碍选项需要渲染与 HUD 两侧同时支持，目前都还没有实现。
+                这里暂不放开关：一个不生效的开关比没有开关更容易误导。
+              </p>
+              <p class="settings-panel-note">
+                已经成立的一条是：全部战斗读数都同时用文字和图形表达，不依赖颜色区分敌我与阵营。
+              </p>
+            </section>
+            <section class="game-menu-panel" data-menu-panel="network" hidden>
+              <div class="setting-row">
+                <div class="setting-copy">
+                  <strong>权威服务器</strong>
+                  <span class="settings-network-endpoint">正在解析</span>
+                </div>
+              </div>
+              <div class="setting-row">
+                <div class="setting-copy">
+                  <strong>地区与语言</strong>
+                  <span>服务端目前只有单一区域与中文，未提供切换接口。</span>
+                </div>
+              </div>
+              <p class="settings-panel-note">
+                延迟与丢包读数需要服务端的统计接口，尚未提供，因此这里不显示估算值。
+              </p>
+            </section>
+            <section class="game-menu-panel" data-menu-panel="privacy" hidden>
+              <div class="setting-row">
+                <div class="setting-copy">
+                  <strong>无文字社交</strong>
+                  <span>对局内没有聊天、没有自定义昵称，因此不存在文字内容的收集与公开。</span>
+                </div>
+              </div>
+              <div class="setting-row">
+                <div class="setting-copy">
+                  <strong>玩家编号</strong>
+                  <span class="settings-privacy-tag">由匹配服务下发的标识在本机派生，不含账号信息。</span>
+                </div>
+              </div>
+              <p class="settings-panel-note">
+                公开资料范围的开关要等账号服务上线后才有意义，现在没有可公开的资料。
+              </p>
+            </section>
+            <section class="game-menu-panel" data-menu-panel="account" hidden>
+              <div class="setting-row">
+                <div class="setting-copy">
+                  <strong>本机对局记录</strong>
+                  <span class="settings-history-count">尚未统计</span>
+                </div>
+                <button class="flow-secondary-button settings-clear-history" type="button">
+                  清除本机记录
+                </button>
+              </div>
+              <p class="settings-panel-note">
+                账号、跨设备同步、导出与注销都需要账号服务，尚未接入。
+                目前这台设备上只保存对局结果，清除后无法恢复。
+              </p>
+            </section>
             <section class="game-menu-panel" data-menu-panel="controls" hidden>
               <div class="control-layout">
                 <section class="control-group">
@@ -302,6 +382,28 @@ export class GameMenu {
     requiredElement(this.root, '.performance-meter-icon').append(
       createElement(Gauge, { width: 15, height: 15 }),
     );
+
+    // Network and account panels report real state rather than placeholders.
+    const endpoint = this.root.querySelector<HTMLElement>('.settings-network-endpoint');
+    if (endpoint) {
+      endpoint.textContent = resolveOnlineServerUrl(window.location, null);
+    }
+    const historyCount = this.root.querySelector<HTMLElement>('.settings-history-count');
+    const refreshHistoryCount = (): void => {
+      if (historyCount) {
+        const count = readMatchHistory(window.localStorage).length;
+        historyCount.textContent =
+          count === 0 ? '这台设备上还没有已完成的对局。' : `这台设备上保存了 ${count} 场对局结果。`;
+      }
+    };
+    refreshHistoryCount();
+    this.root
+      .querySelector<HTMLButtonElement>('.settings-clear-history')
+      ?.addEventListener('click', () => {
+        window.localStorage.removeItem('jwgb-match-history');
+        refreshHistoryCount();
+        this.options.onSound?.('cancel');
+      });
 
     this.trigger.addEventListener('click', () => {
       this.options.onSound?.('confirm');
