@@ -143,33 +143,109 @@ function standard(
  * in world space so the same deterministic dry fields that tint the vertices
  * also reveal packed earth at a visibly larger scale.
  */
+/**
+ * Ground shading, with the fragment-only relief technique from
+ * world-of-claudecraft (MIT, Copyright (c) 2026 Levy Street), adapted to this
+ * map's height field. Its packed ground AO texture ships under CC0 from
+ * ambientCG via that project.
+ *
+ * The reason to borrow it rather than displace geometry is the same constraint
+ * both projects have: the sim reads an analytic height field, so foot
+ * placement, selection rings and shorelines all break the moment the drawn
+ * mesh leaves it. Here the mesh IS the authority — terrainHeightMm is defined
+ * as this grid's own triangle interpolation — which makes displacement even
+ * less available than it was there. So all of the relief lives in the
+ * fragment: parallax slides the ground UVs along the view ray, a cavity term
+ * darkens the hollows, and one step toward the sun casts clod-scale shadows.
+ *
+ * Two details from the original carry the whole effect and are kept exactly:
+ *
+ * The height signal is zero-mean by construction. Each AO channel has its
+ * measured mean subtracted, so mip averaging returns the signal to zero with
+ * distance and both parallax and cavity fade out for free instead of smearing
+ * the far field.
+ *
+ * The parallax height is sampled at a forced-coarse mip. At full resolution
+ * every pixel walks its UVs by a different amount, and that incoherent warp is
+ * what reads as melted, liquid ground; neighbouring offsets have to agree
+ * before the eye accepts a clod as standing up.
+ */
 function applyGroundLayerBlend(
   material: THREE.MeshStandardMaterial,
   soilTexture: THREE.Texture,
+  groundAoTexture: THREE.Texture,
 ): void {
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uJwgbGroundSoil = { value: soilTexture };
+    shader.uniforms.uJwgbGroundAO = { value: groundAoTexture };
     shader.vertexShader = shader.vertexShader
       .replace(
         '#include <common>',
         `#include <common>
 attribute vec3 climate;
+attribute vec4 splat;
 varying vec2 vJwgbGroundWorldXZ;
-varying vec3 vJwgbClimate;`,
+varying vec3 vJwgbClimate;
+varying vec4 vJwgbSplat;`,
       )
       .replace(
         '#include <begin_vertex>',
         `#include <begin_vertex>
 vJwgbGroundWorldXZ = transformed.xz;
-vJwgbClimate = climate;`,
+vJwgbClimate = climate;
+vJwgbSplat = splat;`,
       );
     shader.fragmentShader = shader.fragmentShader
       .replace(
         '#include <common>',
         `#include <common>
 uniform sampler2D uJwgbGroundSoil;
+uniform sampler2D uJwgbGroundAO;
 varying vec2 vJwgbGroundWorldXZ;
 varying vec3 vJwgbClimate;
+varying vec4 vJwgbSplat;
+
+// Packed ground AO: R grass, G dirt, B rock, A sand. Channel means measured by
+// the source project's packer; subtracting them keeps the height signal
+// zero-mean so distance mips fade the relief instead of biasing it.
+const vec4 JWGB_AO_MEAN = vec4(0.812, 0.897, 0.623, 0.883);
+// Per-layer parallax amplitude = target depth / channel standard deviation, so
+// one sd of a layer's height walks the projection by that layer's own depth.
+// A single global amplitude leaves the low-contrast layers reading flat.
+const vec4 JWGB_PARALLAX_AMP = vec4(0.129, 0.188, 0.229, 0.107);
+const float JWGB_PARALLAX_CLAMP = 0.04;
+// The original forces a coarse mip (LOD 2.5 of a 512px field) so neighbouring
+// fragments agree on their offset; at full resolution every pixel walks its
+// UVs differently and that incoherent warp is what reads as melted ground.
+// Reaching for a mip level needs textureLod, whose availability depends on the
+// GLSL version three compiles this material as, and a shader that fails to
+// compile takes the whole ground with it. Sampling a coarser tiling instead
+// produces the same smooth, agreeing offsets using only texture2D.
+const float JWGB_PARALLAX_COARSE = 0.28;
+// Sun azimuth in ground-UV space, matching the scene's directional light
+// offset of (-22, 34, +18): one clod-scale step toward it.
+const vec2 JWGB_SUN_UV_STEP = vec2(-0.01238, 0.01013);
+
+float jwgbGroundRelief(vec2 uv, vec4 weights) {
+  vec4 base = texture2D(uJwgbGroundAO, uv);
+  float dirt = texture2D(uJwgbGroundAO, uv * 0.55).g;
+  float rock = texture2D(uJwgbGroundAO, uv * 0.6).b;
+  return (base.r - JWGB_AO_MEAN.x) * weights.x
+       + (dirt - JWGB_AO_MEAN.y) * weights.y
+       + (rock - JWGB_AO_MEAN.z) * weights.z
+       + (base.a - JWGB_AO_MEAN.w) * weights.w;
+}
+
+float jwgbGroundReliefSmooth(vec2 uv, vec4 weights) {
+  vec2 coarse = uv * JWGB_PARALLAX_COARSE;
+  vec4 base = texture2D(uJwgbGroundAO, coarse);
+  float dirt = texture2D(uJwgbGroundAO, coarse * 0.55).g;
+  float rock = texture2D(uJwgbGroundAO, coarse * 0.6).b;
+  return (base.r - JWGB_AO_MEAN.x) * weights.x
+       + (dirt - JWGB_AO_MEAN.y) * weights.y
+       + (rock - JWGB_AO_MEAN.z) * weights.z
+       + (base.a - JWGB_AO_MEAN.w) * weights.w;
+}
 
 float jwgbGroundHash(vec2 point) {
   vec3 value = fract(vec3(point.xyx) * vec3(0.1031, 0.1030, 0.0973));
@@ -195,8 +271,38 @@ float jwgbGroundNoise(vec2 point) {
       .replace(
         '#include <map_fragment>',
         `#ifdef USE_MAP
-  vec4 grassTexel = texture2D(map, vMapUv);
-  vec3 soilTexel = texture2D(uJwgbGroundSoil, vJwgbGroundWorldXZ / 10.5).rgb;
+  vec4 splatWeights = vJwgbSplat;
+  vec2 reliefUv = vJwgbGroundWorldXZ * 0.22;
+
+  // Offset parallax: slide the ground UVs along the view ray by the smoothed
+  // height, so clods occlude what is behind them as the camera moves.
+  vec2 viewXZ = vJwgbGroundWorldXZ - cameraPosition.xz;
+  float viewLen = max(length(viewXZ), 0.001);
+  float parallaxAmp = dot(splatWeights, JWGB_PARALLAX_AMP);
+  float parallaxHeight = jwgbGroundReliefSmooth(reliefUv, splatWeights);
+  vec2 parallaxOffset = clamp(
+    (viewXZ / viewLen) * parallaxHeight * parallaxAmp,
+    vec2(-JWGB_PARALLAX_CLAMP),
+    vec2(JWGB_PARALLAX_CLAMP)
+  );
+  vec2 tuv = reliefUv + parallaxOffset;
+
+  // Cavity: the fine field at native tiling, plus a coarse clump octave that
+  // survives mip averaging and keeps shading the mid-field where the player
+  // actually looks.
+  float cavityFine = jwgbGroundRelief(tuv, splatWeights);
+  float cavityCoarse = (texture2D(uJwgbGroundAO, tuv * 0.16).g - JWGB_AO_MEAN.y);
+  float cavity = cavityFine * 1.65 + cavityCoarse * 0.9;
+
+  // Micro sun-shadow: one clod-scale step toward the sun. Where the ground
+  // ahead stands higher than here, this fragment sits in its shadow.
+  float sunHeight = jwgbGroundRelief(tuv + JWGB_SUN_UV_STEP, splatWeights);
+  float microShadow = clamp((sunHeight - cavityFine) * 2.4, 0.0, 0.6);
+
+  float groundShade = clamp(1.0 + cavity * 0.85 - microShadow * 0.55, 0.55, 1.35);
+
+  vec4 grassTexel = texture2D(map, vMapUv + parallaxOffset * 0.5);
+  vec3 soilTexel = texture2D(uJwgbGroundSoil, vJwgbGroundWorldXZ / 10.5 + parallaxOffset).rgb;
   float broadDry = jwgbGroundNoise(vJwgbGroundWorldXZ / 82.0 + 17.0);
   float fieldDry = jwgbGroundNoise(vJwgbGroundWorldXZ / 27.0 + 53.0);
   float fineDry = jwgbGroundNoise(vJwgbGroundWorldXZ / 9.0 + 131.0);
@@ -207,11 +313,12 @@ float jwgbGroundNoise(vec2 point) {
   vec3 terrainTexel = mix(grassTexel.rgb, soilTexel, soilMask);
   terrainTexel *= mix(vec3(1.0), vec3(0.58, 0.68, 0.64), vJwgbClimate.y);
   terrainTexel = mix(terrainTexel, vec3(0.84, 0.88, 0.9), vJwgbClimate.z * 0.58);
+  terrainTexel *= groundShade;
   diffuseColor *= vec4(terrainTexel, grassTexel.a);
 #endif`,
       );
   };
-  material.customProgramCacheKey = () => 'jwgb-ground-layer-blend-v2';
+  material.customProgramCacheKey = () => 'jwgb-ground-relief-v1';
 }
 
 function createMapAssetTextures(): {
@@ -275,6 +382,10 @@ export function createMapMaterials(seed: number): MapMaterialLibrary {
   const contactShadowTexture = createContactShadowTexture();
   const groundGrassTexture = assetTextures.texture('Grass001_Stylized.jpg', 1);
   const groundSoilTexture = assetTextures.texture('Ground023_Stylized.jpg', 1);
+  // Height/AO data, not colour: it must stay linear or the relief signal is
+  // gamma-bent and the measured channel means no longer centre it.
+  const groundAoTexture = assetTextures.texture('GroundAO_Packed.png', 1);
+  groundAoTexture.colorSpace = THREE.NoColorSpace;
 
   // The ground UV is authored in world metres by the ground builder, so the
   // texture repeat stays at 1 and tiling density is chosen there.
@@ -286,7 +397,7 @@ export function createMapMaterials(seed: number): MapMaterialLibrary {
     metalness: 0.02,
     normalScale: new THREE.Vector2(0.28, 0.28),
   });
-  applyGroundLayerBlend(ground, groundSoilTexture);
+  applyGroundLayerBlend(ground, groundSoilTexture, groundAoTexture);
 
   const boundaryCliff = standard(tiled(surfaces.cliff, 13), {
     map: assetTextures.texture('Rock026_Color.jpg', 1 / 13),

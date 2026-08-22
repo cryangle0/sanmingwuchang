@@ -20,7 +20,6 @@ if (!executablePath) {
 
 const MOVEMENT_KEYS = ['w', 'a', 's', 'd'];
 const PLAYER_MODEL_VISUAL_SCALE = 1;
-const HERO_SWAP_TARGET_ID = 'H018';
 const PIG_HOME_POSITION = { x: 320_900, z: -37_300 };
 const FIRST_LAND_GOD_OPEN_TICK = 600;
 const HERO_SWAP_CHANNEL_TICKS = 60;
@@ -365,10 +364,10 @@ const shopBefore = await readSummary(shopPage);
 const shopUi = await shopPage.evaluate(() => ({
   hidden: document.querySelector('.shop-panel')?.hidden ?? true,
   buyGemButtons: [
-    ...document.querySelectorAll('.shop-content .mini-action[aria-label="Buy Gem"]'),
+    ...document.querySelectorAll('.shop-content .mini-action[aria-label="购买 宝石"]'),
   ].filter((button) => !button.disabled).length,
 }));
-const buyGemButton = shopPage.locator('.shop-content .mini-action[aria-label="Buy Gem"]').first();
+const buyGemButton = shopPage.locator('.shop-content .mini-action[aria-label="购买 宝石"]').first();
 await buyGemButton.waitFor({ state: 'visible', timeout: 10_000 });
 await buyGemButton.click();
 await shopPage.evaluate(() => window.__JWGB_DEBUG__?.stepTicks?.(1));
@@ -512,18 +511,22 @@ await swapPage.waitForFunction(
   { timeout: 10_000 },
 );
 const beforeSwap = await readSummary(swapPage);
-const targetHeroRow = swapPage.locator('.shop-row', { hasText: HERO_SWAP_TARGET_ID });
+const targetHeroRow = swapPage.locator('.shop-row[data-hero-id]').first();
+const targetHeroId = await targetHeroRow.getAttribute('data-hero-id');
+if (!targetHeroId) {
+  throw new Error('taibai shop did not expose a hero swap candidate');
+}
 const swapButton = targetHeroRow.locator('.mini-action').first();
 await swapButton.waitFor({ state: 'visible', timeout: 10_000 });
 if (await swapButton.isDisabled()) {
-  throw new Error('H018 hero swap action was unexpectedly disabled');
+  throw new Error(`${targetHeroId} hero swap action was unexpectedly disabled`);
 }
 await swapButton.click();
 await stepTicks(swapPage, 1);
 const channelStarted = await readSummary(swapPage);
 await stepTicks(swapPage, HERO_SWAP_CHANNEL_TICKS);
 await swapPage.waitForFunction(
-  ({ entityId, previousUuid }) => {
+  ({ entityId, previousUuid, heroId }) => {
     const debug = window.__JWGB_DEBUG__;
     const snapshot = debug?.getSnapshot?.();
     const player = snapshot?.players.find((candidate) => candidate.entityId === entityId);
@@ -531,8 +534,8 @@ await swapPage.waitForFunction(
       ?.getModelDiagnostics?.()
       .playerModels.find((candidate) => candidate.entityId === entityId);
     return Boolean(
-      player?.heroId === 'H018' &&
-        model?.modelId === 'H018' &&
+      player?.heroId === heroId &&
+        model?.modelId === heroId &&
         model.loaded &&
         model.fallbackRenderableMeshes === 0 &&
         model.instanceUuid !== null &&
@@ -542,6 +545,7 @@ await swapPage.waitForFunction(
   {
     entityId: swapInitial.local.entityId,
     previousUuid: swapInitial.localModel.instanceUuid,
+    heroId: targetHeroId,
   },
   { timeout: 180_000 },
 );
@@ -635,6 +639,7 @@ const heroSwap = {
   targetEntityId: afterSwap.local?.entityId ?? null,
   sourceHeroId: swapInitial.local?.heroId ?? null,
   targetHeroId: afterSwap.local?.heroId ?? null,
+  offeredHeroId: targetHeroId,
   sourceModelId: swapInitial.localModel?.modelId ?? null,
   targetModelId: afterSwap.localModel?.modelId ?? null,
   sourceInstanceUuid: swapInitial.localModel?.instanceUuid ?? null,
@@ -667,7 +672,7 @@ const heroSwap = {
   goldBeforeSwap: beforeSwap.local?.gold ?? null,
   goldAfterSwap: afterSwap.local?.gold ?? null,
   channelStarted:
-    channelStarted.local?.taibaiTargetHeroId === HERO_SWAP_TARGET_ID &&
+    channelStarted.local?.taibaiTargetHeroId === targetHeroId &&
     (channelStarted.local?.taibaiChannelTicks ?? 0) > 0,
   completedTick: afterSwap.tick,
 };
@@ -699,9 +704,11 @@ const failure =
   !heroSwap.pigRewardCollected ||
   heroSwap.sourceEntityId !== heroSwap.targetEntityId ||
   heroSwap.sourceHeroId !== 'H009' ||
-  heroSwap.targetHeroId !== HERO_SWAP_TARGET_ID ||
+  !heroSwap.offeredHeroId ||
+  heroSwap.offeredHeroId === 'H009' ||
+  heroSwap.targetHeroId !== heroSwap.offeredHeroId ||
   heroSwap.sourceModelId !== 'H009' ||
-  heroSwap.targetModelId !== HERO_SWAP_TARGET_ID ||
+  heroSwap.targetModelId !== heroSwap.offeredHeroId ||
   !heroSwap.modelRebuilt ||
   !heroSwap.sourceModelLoaded ||
   !heroSwap.targetModelLoaded ||

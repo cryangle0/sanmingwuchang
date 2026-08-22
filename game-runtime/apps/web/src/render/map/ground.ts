@@ -45,6 +45,7 @@ export function buildGroundGeometry(): THREE.BufferGeometry {
   const positions: number[] = [];
   const colours: number[] = [];
   const climates: number[] = [];
+  const splats: number[] = [];
   const uvs: number[] = [];
 
   const vertexColour = new THREE.Color();
@@ -121,6 +122,18 @@ export function buildGroundGeometry(): THREE.BufferGeometry {
     }
     colours.push(vertexColour.r, vertexColour.g, vertexColour.b);
     climates.push(climate.soil, climate.wet, climate.frost);
+
+    // Splat weights for the ground relief pass: which surface this vertex is
+    // made of, as grass / dirt / rock / sand. The relief shader needs to know
+    // that before it can pick the right height channel, and the answer is
+    // already implied by what the colour pass computed — slope exposes rock,
+    // the dry field exposes earth, shorelines run to sand.
+    const rock = smoothstep(0.34, 0.92, slope) * 0.9 + smoothstep(3.2, 9, relief) * 0.35;
+    const sand = climate.wet * smoothstep(-0.4, -2.6, relief) * 0.8;
+    const dirt = soilMix * 1.35;
+    const grass = Math.max(0, 1 - rock - sand - dirt);
+    const total = rock + sand + dirt + grass || 1;
+    splats.push(grass / total, dirt / total, rock / total, sand / total);
   };
 
   // Indexed grid: shared vertices give smooth colour gradients across cells.
@@ -158,6 +171,7 @@ export function buildGroundGeometry(): THREE.BufferGeometry {
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geometry.setAttribute('color', new THREE.Float32BufferAttribute(colours, 3));
   geometry.setAttribute('climate', new THREE.Float32BufferAttribute(climates, 3));
+  geometry.setAttribute('splat', new THREE.Float32BufferAttribute(splats, 4));
   geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
   geometry.setIndex(indices);
   geometry.computeVertexNormals();
