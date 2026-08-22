@@ -5494,13 +5494,6 @@ kbd {
   margin: 0 0 3px;
 }
 
-.game-menu-close {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0 12px;
-}
-
 .settings-layout {
   padding: 16px 20px 20px;
 }
@@ -5670,16 +5663,12 @@ kbd {
    Settings dialog corrections
    -------------------------------------------------------------------------- */
 
-/* The close control was a fixed 36x36 circle. Adding a "返回" label to it left
-   the text overflowing the circle and printing across the title beside it, so
-   the control sizes to its content once it carries a word. */
-.game-menu-dialog:has(.settings-layout) .game-menu-close {
-  width: auto;
-  height: 38px;
-  border-radius: 4px;
-  padding: 0 14px;
-  gap: 7px;
-  justify-content: center;
+/* The header is one title on the left and the close control on the right. An
+   earlier version put a labelled "返回" button first and stacked an eyebrow
+   above the title; the label overflowed its 36px circle and printed across the
+   title, and the eyebrow only repeated what the title already said. */
+.game-menu-header .game-menu-note {
+  margin-left: auto;
 }
 
 /* Fixed height. The panels differ in length, and letting the dialog size to

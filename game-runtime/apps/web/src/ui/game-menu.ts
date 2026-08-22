@@ -91,15 +91,13 @@ export class GameMenu {
           aria-labelledby="game-menu-title"
         >
           <header class="game-menu-header">
-            <button class="game-menu-close" type="button" aria-label="关闭游戏菜单" title="返回">
-              <span class="game-menu-close-icon"></span>
-              <span>返回</span>
-            </button>
             <div>
-              <p class="flow-eyebrow">设置</p>
               <h2 id="game-menu-title">游戏设置</h2>
             </div>
             <span class="game-menu-note">逐项自动保存</span>
+            <button class="game-menu-close" type="button" aria-label="关闭游戏菜单" title="关闭">
+              <span class="game-menu-close-icon"></span>
+            </button>
           </header>
           <div class="settings-layout">
           <nav class="settings-rail" aria-label="设置分类">
