@@ -321,13 +321,17 @@ export class GameShell {
     // "金丹 · 36级" here; the server issues no realm, level or account number,
     // so the line reports the match service instead of inventing progression.
     const identityLine = this.matchmakingPlayerId ? '百眼迷城 · 已连接匹配' : '百眼迷城 · 离线练习';
+    // Only show a tag once there is a real one. Offline it used to read
+    // "无常客 未连接", which parses as part of the name and repeats what the
+    // line underneath already says.
+    const identityTag = this.matchmakingPlayerId ? ` ${playerTag(this.matchmakingPlayerId)}` : '';
     this.flowLayer.hidden = false;
     this.flowLayer.innerHTML = `
       <section class="flow-screen lobby-flow-screen" data-screen="${this.state.screen}">
         <header class="lobby-toolbar flow-panel">
           <button class="lobby-identity" type="button" aria-label="查看个人档案" title="个人档案">
             <img src="${heroPortraitUrl('H009')}" alt="" />
-            <span><b>无常客 ${escapeHtml(playerTag(this.matchmakingPlayerId))}</b><small>${escapeHtml(identityLine)}</small></span>
+            <span><b>无常客${escapeHtml(identityTag)}</b><small>${escapeHtml(identityLine)}</small></span>
           </button>
           <div class="lobby-tools">
             <button class="flow-icon-button lobby-help" type="button" aria-label="玩法帮助" title="玩法帮助">

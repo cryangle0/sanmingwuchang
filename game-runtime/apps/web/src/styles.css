@@ -5705,3 +5705,17 @@ kbd {
 .settings-network-endpoint {
   word-break: break-all;
 }
+
+/* Lobby help and settings sit on the toolbar panel, which already frames them.
+   Their own ring and fill drew a second frame inside the first; only the glyph
+   is needed until the control is pointed at. */
+.lobby-tools .flow-icon-button {
+  border-color: transparent;
+  background: transparent;
+}
+
+.lobby-tools .flow-icon-button:hover,
+.lobby-tools .flow-icon-button:focus-visible {
+  border-color: #e8c66f;
+  background: rgb(16 72 65 / 94%);
+}
