@@ -1068,6 +1068,7 @@ export function createHeroSkillVisual(
     glowMaterial(profile.secondary, stage === 'status' ? 0.4 : 0.68),
     glowMaterial(profile.core, stage === 'status' ? 0.58 : 0.9),
   ] as const;
+  group.userData.heroSkillMaterials = materials;
   populateMotif(group, profile, stage, reduced, materials);
   addShockRings(group, profile, stage, reduced);
   addSparkBurst(group, profile, stage, reduced);
@@ -1096,39 +1097,201 @@ function cacheAnimatedMeshes(group: THREE.Group): readonly THREE.Mesh[] {
   return meshes;
 }
 
+interface SkillEnvelope {
+  /** Multiplier on the profile's base scale. */
+  readonly scale: number;
+  /** Height offset in metres. */
+  readonly lift: number;
+  /** Offset along the cast direction in metres; negative recoils. */
+  readonly push: number;
+  /** Multiplier on the family's spin rate. */
+  readonly spin: number;
+  /** Multiplier on every material's base opacity. */
+  readonly opacity: number;
+}
+
+/**
+ * The rhythm of a cast, per motion family.
+ *
+ * Every motif used to share one ease, so a detonation, a thrust and an implosion
+ * all grew at the same rate and only differed in the shapes involved. What
+ * separates them is timing: an anticipation that loads the action, a release
+ * that overshoots, and a settle that lets it land.
+ *
+ * The families are the axis with real data behind them — the roster spreads
+ * across all six, nine heroes forward, eight rise, seven each spiral and
+ * collapse. Duration is not: 35 of the 38 profiles take the default 0.72 s, so
+ * an envelope derived from it would be the same curve for almost everyone.
+ *
+ * Anticipation belongs to the cast alone. An impact has already happened by the
+ * time it is drawn, so winding up there would show the recoil after the hit.
+ */
+function skillEnvelope(
+  motion: HeroSkillMotion,
+  stage: HeroSkillStage,
+  progress: number,
+): SkillEnvelope {
+  const clamped = Math.max(0, Math.min(1, progress));
+
+  if (stage === 'status') {
+    // A state, not an event: no anticipation, no overshoot, just presence.
+    return { scale: 1, lift: 0, push: 0, spin: 1, opacity: 1 };
+  }
+
+  if (stage === 'impact') {
+    // Pop and decay. The hit already landed; this is the flash it leaves.
+    const pop = clamped < 0.14 ? clamped / 0.14 : 1;
+    const decay = clamped < 0.14 ? 0 : (clamped - 0.14) / 0.86;
+    return {
+      scale: 0.55 + pop * 0.75 + decay * 0.35,
+      lift: decay * 0.12,
+      push: 0,
+      spin: 1.6 - decay * 0.7,
+      opacity: 1 - decay ** 1.6,
+    };
+  }
+
+  const windup =
+    motion === 'aura' ? 0 : motion === 'collapse' ? 0.34 : motion === 'burst' ? 0.08 : 0.2;
+  if (clamped < windup) {
+    const load = clamped / windup;
+    switch (motion) {
+      case 'collapse':
+        // Gathers wide and bright before it crushes inward.
+        return {
+          scale: 1.1 + load * 0.4,
+          lift: 0.1,
+          push: 0,
+          spin: 0.4 + load,
+          opacity: 0.5 + load * 0.5,
+        };
+      case 'forward':
+        // Recoils before the thrust. The pull-back is what sells the lunge.
+        return {
+          scale: 0.6 - load * 0.14,
+          lift: 0,
+          push: -0.22 * load,
+          spin: 0.5,
+          opacity: 0.35 + load * 0.5,
+        };
+      case 'rise':
+        // Crouches before the eruption.
+        return {
+          scale: 0.62 - load * 0.16,
+          lift: -0.14 * load,
+          push: 0,
+          spin: 0.6,
+          opacity: 0.35 + load * 0.5,
+        };
+      case 'spiral':
+        // Stays small and winds the spin up; the coil is stored in rotation.
+        return {
+          scale: 0.5 + load * 0.1,
+          lift: 0,
+          push: 0,
+          spin: 0.6 + load * 2.6,
+          opacity: 0.4 + load * 0.45,
+        };
+      default:
+        return {
+          scale: 0.55 + load * 0.2,
+          lift: 0,
+          push: 0,
+          spin: 0.8,
+          opacity: 0.45 + load * 0.45,
+        };
+    }
+  }
+
+  const after = (clamped - windup) / Math.max(0.05, 1 - windup);
+  // Overshoot then settle: a damped curve that crosses 1 and comes back, which
+  // is the shape an eye reads as "released" rather than "faded in".
+  const released = 1 - (1 - after) ** 3;
+  const overshoot = Math.sin(after * Math.PI) * (1 - after * 0.45);
+
+  switch (motion) {
+    case 'burst':
+      return {
+        scale: 0.75 + released * 0.95 + overshoot * 0.28,
+        lift: released * 0.08,
+        push: 0,
+        spin: 1 + overshoot * 0.8,
+        opacity: 1 - Math.max(0, after - 0.62) / 0.38,
+      };
+    case 'forward':
+      return {
+        scale: 0.46 + released * 0.92 + overshoot * 0.14,
+        lift: released * 0.05,
+        push: -0.22 + released * 1.05 + overshoot * 0.18,
+        spin: 0.9 + overshoot * 0.5,
+        opacity: 1 - Math.max(0, after - 0.68) / 0.32,
+      };
+    case 'rise':
+      return {
+        scale: 0.46 + released * 0.9 + overshoot * 0.16,
+        lift: -0.14 + released * 0.72 + overshoot * 0.12,
+        push: 0,
+        spin: 1 + overshoot * 0.4,
+        opacity: 1 - Math.max(0, after - 0.7) / 0.3,
+      };
+    case 'spiral':
+      return {
+        scale: 0.6 + released * 0.85,
+        lift: released * 0.16,
+        push: 0,
+        // Unwinds: the stored coil spends itself, so the spin falls off from a
+        // peak instead of running at one rate for the whole cast.
+        spin: 3.2 - released * 1.9,
+        opacity: 1 - Math.max(0, after - 0.66) / 0.34,
+      };
+    case 'collapse':
+      return {
+        // Crosses below its target and rebounds, so the crush has a floor.
+        scale: 1.5 - released * 1.05 + overshoot * -0.12,
+        lift: 0.1 - released * 0.1,
+        push: 0,
+        spin: 1.4 + released * 1.4,
+        opacity: 1 - Math.max(0, after - 0.74) / 0.26,
+      };
+    default:
+      return {
+        scale: 0.7 + released * 0.5,
+        lift: 0,
+        push: 0,
+        spin: 1,
+        opacity: Math.min(1, after / 0.25),
+      };
+  }
+}
+
 export function updateHeroSkillVisual(
   group: THREE.Group,
   progress: number,
   elapsedSeconds: number,
 ): void {
-  const motion = group.userData.heroSkillMotion as HeroSkillMotion | undefined;
-  const stage = group.userData.heroSkillStage as HeroSkillStage | undefined;
+  const motion = (group.userData.heroSkillMotion as HeroSkillMotion | undefined) ?? 'burst';
+  const stage = (group.userData.heroSkillStage as HeroSkillStage | undefined) ?? 'cast';
   const baseScale = Number(group.userData.baseScale ?? 1);
-  const eased = 1 - (1 - progress) ** 3;
-  const scale =
-    stage === 'status'
-      ? baseScale * (0.96 + Math.sin(elapsedSeconds * 7) * 0.04)
-      : motion === 'collapse'
-        ? baseScale * (1.35 - eased * 0.35)
-        : motion === 'forward'
-          ? baseScale * (0.72 + eased * 0.62)
-          : baseScale * (0.62 + eased * 0.78);
-  group.scale.setScalar(scale);
+  const envelope = skillEnvelope(motion, stage, progress);
+
+  const breathing = stage === 'status' ? 0.96 + Math.sin(elapsedSeconds * 7) * 0.04 : 1;
+  group.scale.setScalar(baseScale * envelope.scale * breathing);
+
+  const spinRate = motion === 'spiral' ? 3.8 : motion === 'aura' ? 1.8 : 0.45;
   group.rotation.y =
-    Number(group.userData.baseRotationY ?? 0) +
-    (motion === 'spiral'
-      ? elapsedSeconds * 3.8
-      : motion === 'aura'
-        ? elapsedSeconds * 1.8
-        : elapsedSeconds * 0.45);
-  group.position.y =
-    motion === 'rise'
-      ? eased * 0.5
-      : motion === 'collapse'
-        ? (1 - eased) * 0.38
-        : stage === 'impact'
-          ? eased * 0.12
-          : 0;
+    Number(group.userData.baseRotationY ?? 0) + elapsedSeconds * spinRate * envelope.spin;
+
+  group.position.y = envelope.lift;
+  // The cast direction is the group's own forward; pushing along it keeps a
+  // lunge pointed wherever the caster aimed.
+  group.position.z = envelope.push;
+
+  for (const material of (group.userData.heroSkillMaterials as
+    | readonly THREE.Material[]
+    | undefined) ?? []) {
+    const base = Number(material.userData.baseOpacity ?? 1);
+    material.opacity = base * Math.max(0, Math.min(1, envelope.opacity));
+  }
 
   updateSparkBurst(group, progress, elapsedSeconds);
   updateShockRings(group, progress);
