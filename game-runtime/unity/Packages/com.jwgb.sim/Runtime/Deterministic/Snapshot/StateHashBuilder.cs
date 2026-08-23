@@ -28,6 +28,15 @@ namespace Jwgb.Sim.Deterministic
             root["arenaRadiusMm"] = state.ArenaRadiusMm;
             root["stormZone"] = BuildStormZone(state);
             root["mapGeometryHash"] = state.MapGeometryHash;
+
+            // The height field is a function layered over the compiled
+            // geometry, not part of it, so the geometry hash cannot detect a
+            // terrain revision. Both travel in the hash: a cross-language
+            // mismatch is then attributable to one or the other instead of
+            // being an unexplained divergence.
+            root["terrainProfileVersion"] = state.MapGeometryHash == null
+                ? (object)null
+                : TerrainHeight.ProfileVersion;
             root["match"] = BuildMatch(state);
             root["eliminationOrder"] = new List<int>(state.EliminationOrder);
             root["staticSolids"] = BuildStaticSolids(state);

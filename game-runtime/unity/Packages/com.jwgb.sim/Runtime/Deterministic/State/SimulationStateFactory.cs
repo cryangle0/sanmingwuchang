@@ -230,6 +230,54 @@ namespace Jwgb.Sim.Deterministic
                 : MapGeometryCatalog.SpawnPoints.Length;
         }
 
+        /// <summary>
+        /// A spawn this close to the boundary starts the match with its back
+        /// against the rim. The compiled map places most starts there: the
+        /// median authored micro-position sits 8 m from the edge and the two
+        /// closest sit 0.5 m, which is the ring start the engineering source
+        /// calls for, but it means a small match can seat every one of its
+        /// players against a wall while the middle of the map stands empty.
+        /// </summary>
+        private const int SpawnRimDistanceMm = 25_000;
+
+        private static bool[] mapSpawnRimFlags;
+
+        /// <summary>
+        /// Which authored spawns count as rim starts. Integer millimetre
+        /// distance from the boundary polygon, computed once from the compiled
+        /// map, so the answer is a pure function of the geometry and matches
+        /// the TypeScript oracle exactly.
+        /// </summary>
+        private static bool[] MapSpawnRim()
+        {
+            if (mapSpawnRimFlags != null)
+            {
+                return mapSpawnRimFlags;
+            }
+
+            var threshold = (long)SpawnRimDistanceMm * SpawnRimDistanceMm;
+            var flags = new bool[MapGeometryCatalog.SpawnPoints.Length];
+            for (var index = 0; index < MapGeometryCatalog.SpawnPoints.Length; index += 1)
+            {
+                var point = MapGeometryCatalog.SpawnPoints[index].Position;
+                var nearest = long.MaxValue;
+                for (var edge = 0; edge < MapGeometryCatalog.Boundary.Length; edge += 1)
+                {
+                    var a = MapGeometryCatalog.Boundary[edge];
+                    var b = MapGeometryCatalog.Boundary[
+                        (edge + 1) % MapGeometryCatalog.Boundary.Length];
+                    nearest = System.Math.Min(
+                        nearest,
+                        IntegerGeometry.DistanceSquaredToSegment(point, a, b));
+                }
+
+                flags[index] = nearest < threshold;
+            }
+
+            mapSpawnRimFlags = flags;
+            return mapSpawnRimFlags;
+        }
+
         private static SpawnSelection TakeInitialSpawn(
             SimulationState state)
         {
@@ -240,6 +288,28 @@ namespace Jwgb.Sim.Deterministic
                 if (!state.InitialSpawnIndices.Contains(index))
                 {
                     available.Add(index);
+                }
+            }
+
+            // Fill the interior starts before the rim ones. Capacity is
+            // unchanged, so a full 30-player room still uses every authored
+            // position and the ring start survives; it is the half-empty room
+            // that stops seating people in a corner.
+            if (state.MapField != null)
+            {
+                var rim = MapSpawnRim();
+                var interior = new List<int>(available.Count);
+                for (var item = 0; item < available.Count; item += 1)
+                {
+                    if (!rim[available[item]])
+                    {
+                        interior.Add(available[item]);
+                    }
+                }
+
+                if (interior.Count > 0)
+                {
+                    available = interior;
                 }
             }
 

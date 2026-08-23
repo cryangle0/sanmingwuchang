@@ -1,3 +1,4 @@
+import { TERRAIN_PROFILE_VERSION } from '@jwgb/content';
 import { distanceSquaredMm, type EntityId, stableHash32, vec2Mm } from '@jwgb/core';
 import { sortedPlayers } from './state';
 import { canSeeActiveTarget, hasDirectLineOfSight } from './systems/active-targeting';
@@ -583,6 +584,11 @@ function buildSnapshotParts(state: MutableSimulationState): SnapshotParts {
     arenaRadiusMm: state.arenaRadiusMm,
     stormZone,
     mapGeometryHash: state.mapGeometryHash,
+    // The height field is a function layered over the compiled geometry, not
+    // part of it, so the geometry hash cannot detect a terrain revision. Both
+    // travel in the hash: a cross-language mismatch is then attributable to
+    // one or the other instead of being an unexplained divergence.
+    terrainProfileVersion: state.mapGeometryHash === null ? null : TERRAIN_PROFILE_VERSION,
     match,
     eliminationOrder: [...state.eliminationOrder],
     staticSolids,
