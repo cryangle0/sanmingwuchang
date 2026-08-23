@@ -316,6 +316,128 @@ function glowMaterial(color: number, opacity: number): THREE.MeshBasicMaterial {
   return material;
 }
 
+/**
+ * Radial spark burst.
+ *
+ * The design prototype throws sixteen `fx-particle` spans out from the cast
+ * point on fixed 22.5 degree spokes; this is that idea in three dimensions and
+ * is what the motifs were missing. A motif alone reads as a shape appearing —
+ * geometry that grows and spins. What makes a cast feel struck rather than
+ * switched on is debris leaving the point of impact, and there was none.
+ *
+ * One Points object per visual, so the whole burst is a single draw call. The
+ * per-spark velocity lives in the geometry's own arrays rather than in objects
+ * the updater would have to walk, and nothing allocates per frame.
+ */
+function addSparkBurst(
+  group: THREE.Group,
+  profile: HeroSkillVfxProfile,
+  stage: HeroSkillStage,
+  reduced: boolean,
+): void {
+  // A persistent aura is not an event; sparks there would fire every frame the
+  // buff is up and never read as an impact.
+  if (stage === 'status') {
+    return;
+  }
+
+  const count = reduced ? 12 : stage === 'impact' ? 28 : 20;
+  const positions = new Float32Array(count * 3);
+  const velocities = new Float32Array(count * 3);
+  const origins = new Float32Array(count * 3);
+  // Spokes rather than a random scatter: the prototype's even fan is what
+  // makes a small number of particles read as a deliberate burst instead of
+  // as noise, and it survives the low count the reduced tier needs.
+  for (let index = 0; index < count; index += 1) {
+    const spoke = (index / count) * Math.PI * 2;
+    const wobble = ((index * 2654435761) % 1000) / 1000;
+    const angle = spoke + (wobble - 0.5) * 0.22;
+    const lift = stage === 'impact' ? 0.55 + wobble * 0.9 : 0.35 + wobble * 0.6;
+    const speed = (stage === 'impact' ? 2.6 : 1.7) * (0.72 + wobble * 0.56);
+    const start = stage === 'impact' ? 0.12 : 0.3;
+    const originX = Math.sin(angle) * start;
+    const originY = 0.24 + wobble * 0.3;
+    const originZ = Math.cos(angle) * start;
+    origins[index * 3] = originX;
+    origins[index * 3 + 1] = originY;
+    origins[index * 3 + 2] = originZ;
+    positions[index * 3] = originX;
+    positions[index * 3 + 1] = originY;
+    positions[index * 3 + 2] = originZ;
+    velocities[index * 3] = Math.sin(angle) * speed;
+    velocities[index * 3 + 1] = lift;
+    velocities[index * 3 + 2] = Math.cos(angle) * speed;
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  const material = new THREE.PointsMaterial({
+    color: profile.core,
+    size: reduced ? 0.16 : 0.2,
+    sizeAttenuation: true,
+    transparent: true,
+    opacity: 0.95,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+  });
+  material.userData.baseOpacity = 0.95;
+  const points = new THREE.Points(geometry, material);
+  points.frustumCulled = false;
+  points.userData.sparkVelocities = velocities;
+  points.userData.sparkOrigins = origins;
+  group.add(points);
+  group.userData.sparks = points;
+}
+
+/**
+ * Expanding shock rings on the ground.
+ *
+ * The prototype fires two rings, `r1` and `r2`, on a short stagger. Two rather
+ * than one is the whole trick: a single ring reads as a circle being drawn,
+ * while a pair chasing each other reads as a wave leaving a point. They lie
+ * flat on the ground because that is the plane a player judges range on.
+ */
+function addShockRings(
+  group: THREE.Group,
+  profile: HeroSkillVfxProfile,
+  stage: HeroSkillStage,
+  reduced: boolean,
+): void {
+  if (stage === 'status') {
+    return;
+  }
+
+  const rings: THREE.Mesh[] = [];
+  const segments = reduced ? 24 : 44;
+  const count = stage === 'impact' ? 2 : 1;
+  for (let index = 0; index < count; index += 1) {
+    const geometry = new THREE.RingGeometry(0.82, 1, segments);
+    geometry.rotateX(-Math.PI / 2);
+    const material = new THREE.MeshBasicMaterial({
+      color: index === 0 ? profile.primary : profile.secondary,
+      transparent: true,
+      opacity: 0.75,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+    });
+    material.userData.baseOpacity = 0.75;
+    const ring = new THREE.Mesh(geometry, material);
+    ring.position.y = 0.06;
+    // The second ring starts later AND stops shorter. Starting later alone is
+    // not enough: give the follower a longer reach and it overtakes the leader
+    // mid-flight, which reads as two rings crossing rather than as one wave
+    // with a trailing edge.
+    ring.userData.ringDelay = index * 0.22;
+    ring.userData.ringReach = (stage === 'impact' ? 2.5 : 1.7) - index * 0.45;
+    ring.userData.shockRing = true;
+    rings.push(ring);
+    group.add(ring);
+  }
+
+  group.userData.shockRings = rings;
+}
+
 function addMesh(
   group: THREE.Group,
   geometry: THREE.BufferGeometry,
@@ -947,6 +1069,9 @@ export function createHeroSkillVisual(
     glowMaterial(profile.core, stage === 'status' ? 0.58 : 0.9),
   ] as const;
   populateMotif(group, profile, stage, reduced, materials);
+  addShockRings(group, profile, stage, reduced);
+  addSparkBurst(group, profile, stage, reduced);
+  cacheAnimatedMeshes(group);
   const durationSeconds =
     stage === 'cast'
       ? profile.castDurationSeconds
@@ -954,6 +1079,21 @@ export function createHeroSkillVisual(
         ? profile.impactDurationSeconds
         : profile.statusDurationSeconds;
   return { group, materials, durationSeconds };
+}
+
+function cacheAnimatedMeshes(group: THREE.Group): readonly THREE.Mesh[] {
+  const cached = group.userData.animatedMeshes;
+  if (Array.isArray(cached)) {
+    return cached as readonly THREE.Mesh[];
+  }
+  const meshes: THREE.Mesh[] = [];
+  group.traverse((child) => {
+    if (child instanceof THREE.Mesh) {
+      meshes.push(child);
+    }
+  });
+  group.userData.animatedMeshes = meshes;
+  return meshes;
 }
 
 export function updateHeroSkillVisual(
@@ -990,10 +1130,10 @@ export function updateHeroSkillVisual(
           ? eased * 0.12
           : 0;
 
-  group.traverse((child) => {
-    if (!(child instanceof THREE.Mesh)) {
-      return;
-    }
+  updateSparkBurst(group, progress, elapsedSeconds);
+  updateShockRings(group, progress);
+
+  for (const child of cacheAnimatedMeshes(group)) {
     const basePosition = child.userData.basePosition as THREE.Vector3 | undefined;
     const baseChildScale = child.userData.baseScale as THREE.Vector3 | undefined;
     const baseRotation = child.userData.baseRotation as THREE.Euler | undefined;
@@ -1023,7 +1163,78 @@ export function updateHeroSkillVisual(
       const amount = 1 + Math.sin(elapsedSeconds * 9 + orbitPhase) * pulse;
       child.scale.copy(baseChildScale).multiplyScalar(amount);
     }
-  });
+  }
+}
+
+/**
+ * Advance the burst.
+ *
+ * Ballistic rather than linear: sparks decelerate through drag and fall, which
+ * is what separates thrown debris from a shape being scaled outward. Opacity
+ * holds for the first third and then drops, so the burst is bright while it is
+ * still tight and gone before it can litter the ground.
+ */
+function updateSparkBurst(group: THREE.Group, progress: number, elapsedSeconds: number): void {
+  const points = group.userData.sparks as THREE.Points | undefined;
+  if (!points) {
+    return;
+  }
+
+  const velocities = points.userData.sparkVelocities as Float32Array | undefined;
+  const origins = points.userData.sparkOrigins as Float32Array | undefined;
+  const attribute = points.geometry.getAttribute('position') as THREE.BufferAttribute | undefined;
+  if (!velocities || !origins || !attribute) {
+    return;
+  }
+
+  const time = Math.max(0, elapsedSeconds);
+  // Exponential drag in closed form, so a spark's position depends only on the
+  // elapsed time and never on how many frames have been drawn.
+  const travel = (1 - Math.exp(-time * 3.2)) / 3.2;
+  const fall = time * time * 1.55;
+  const array = attribute.array as Float32Array;
+  for (let index = 0; index < array.length; index += 3) {
+    const originX = origins[index] ?? 0;
+    const originY = origins[index + 1] ?? 0;
+    const originZ = origins[index + 2] ?? 0;
+    const velocityX = velocities[index] ?? 0;
+    const velocityY = velocities[index + 1] ?? 0;
+    const velocityZ = velocities[index + 2] ?? 0;
+    array[index] = originX + velocityX * travel;
+    array[index + 1] = Math.max(0.02, originY + velocityY * travel - fall);
+    array[index + 2] = originZ + velocityZ * travel;
+  }
+  attribute.needsUpdate = true;
+
+  const material = points.material as THREE.PointsMaterial;
+  const base = Number(material.userData.baseOpacity ?? 0.95);
+  const fade = progress < 0.34 ? 1 : 1 - (progress - 0.34) / 0.66;
+  material.opacity = base * Math.max(0, fade);
+}
+
+/** Push each ring out along its own delayed curve and thin it as it goes. */
+function updateShockRings(group: THREE.Group, progress: number): void {
+  const rings = group.userData.shockRings as readonly THREE.Mesh[] | undefined;
+  if (!rings) {
+    return;
+  }
+
+  for (const ring of rings) {
+    const delay = Number(ring.userData.ringDelay ?? 0);
+    const reach = Number(ring.userData.ringReach ?? 2);
+    const local = (progress - delay) / Math.max(0.05, 1 - delay);
+    if (local <= 0) {
+      ring.visible = false;
+      continue;
+    }
+
+    ring.visible = true;
+    const eased = 1 - (1 - Math.min(1, local)) ** 2;
+    ring.scale.setScalar(0.35 + eased * reach);
+    const material = ring.material as THREE.MeshBasicMaterial;
+    const base = Number(material.userData.baseOpacity ?? 0.75);
+    material.opacity = base * Math.max(0, 1 - eased) ** 1.4;
+  }
 }
 
 export function createHeroSkillZoneSigil(

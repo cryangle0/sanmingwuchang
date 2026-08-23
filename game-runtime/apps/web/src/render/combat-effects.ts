@@ -73,6 +73,12 @@ interface TransientCombatEffect {
   readonly durationSeconds: number;
 }
 
+interface EffectPosition {
+  readonly x: number;
+  readonly y: number;
+  readonly z: number;
+}
+
 export interface CombatEffectDiagnostics {
   readonly activeProjectiles: number;
   readonly activeZones: number;
@@ -105,6 +111,10 @@ const ELEMENT_EFFECT_COLORS: Readonly<Record<FiveElement, number>> = {
   fire: 0xff754f,
   earth: 0xd7a75d,
 };
+const BALANCED_EFFECT_CULL_DISTANCE_METERS = 60;
+const REDUCED_EFFECT_CULL_DISTANCE_METERS = 45;
+const BALANCED_TRANSIENT_EFFECT_LIMIT = 56;
+const REDUCED_TRANSIENT_EFFECT_LIMIT = 28;
 
 const ACTIVE_PROJECTILE_COLORS: Readonly<
   Record<ActiveProjectileSnapshot['kind'], readonly [number, number]>
@@ -263,11 +273,16 @@ function disposeGroup(group: THREE.Group): void {
   const geometries = new Set<THREE.BufferGeometry>();
   const materials = new Set<THREE.Material>();
   group.traverse((child) => {
-    if (!(child instanceof THREE.Mesh)) {
+    // Points and Lines own a geometry and a material exactly as a Mesh does.
+    // Testing only for Mesh leaked both for every particle system in a visual.
+    const drawable = child as Partial<THREE.Mesh>;
+    if (!drawable.geometry || !drawable.material) {
       return;
     }
-    geometries.add(child.geometry);
-    const childMaterials = Array.isArray(child.material) ? child.material : [child.material];
+    geometries.add(drawable.geometry);
+    const childMaterials = Array.isArray(drawable.material)
+      ? drawable.material
+      : [drawable.material];
     for (const material of childMaterials) {
       materials.add(material);
     }
@@ -280,36 +295,37 @@ function disposeGroup(group: THREE.Group): void {
   }
 }
 
-function entityPosition(
-  snapshot: WorldSnapshot,
-  entityId: EntityId,
-): { readonly x: number; readonly y: number; readonly z: number } | null {
-  const player = snapshot.players.find((candidate) => candidate.entityId === entityId);
-  if (player) {
-    return {
+function entityPositions(snapshot: WorldSnapshot): ReadonlyMap<EntityId, EffectPosition> {
+  const positions = new Map<EntityId, EffectPosition>();
+  for (const player of snapshot.players) {
+    positions.set(player.entityId, {
       x: worldMeters(player.position.x),
       y: player.lifeState === 'soul-flight' ? 3.2 : 1.05,
       z: worldMeters(player.position.z),
-    };
+    });
   }
-  const monster = snapshot.monsters.find((candidate) => candidate.entityId === entityId);
-  if (monster) {
-    return {
+  for (const monster of snapshot.monsters) {
+    positions.set(monster.entityId, {
       x: worldMeters(monster.position.x),
       y: Math.max(0.7, worldMeters(monster.collisionRadiusMm) * 1.25),
       z: worldMeters(monster.position.z),
-    };
+    });
   }
-  const summon = snapshot.summons.find((candidate) => candidate.entityId === entityId);
-  if (summon) {
-    return {
+  for (const summon of snapshot.summons) {
+    positions.set(summon.entityId, {
       x: worldMeters(summon.position.x),
       y: summon.kind === 'stone-statue' ? 1.2 : 0.8,
       z: worldMeters(summon.position.z),
-    };
+    });
   }
-  const zone = snapshot.activeZones.find((candidate) => candidate.entityId === entityId);
-  return zone ? { x: worldMeters(zone.center.x), y: 0.3, z: worldMeters(zone.center.z) } : null;
+  for (const zone of snapshot.activeZones) {
+    positions.set(zone.entityId, {
+      x: worldMeters(zone.center.x),
+      y: 0.3,
+      z: worldMeters(zone.center.z),
+    });
+  }
+  return positions;
 }
 
 function zoneShape(kind: ActiveZoneKind): ActiveZoneVisual['shape'] {
@@ -334,6 +350,8 @@ export class CombatEffectsLayer {
   private impactEffectsSpawned = 0;
   private lastAttackHeroId: string | null = null;
   private lastSkillHeroId: string | null = null;
+  private readonly focusPosition = new THREE.Vector2();
+  private hasFocusPosition = false;
 
   constructor(
     private readonly scene: THREE.Scene,
@@ -349,12 +367,22 @@ export class CombatEffectsLayer {
     this.trimTransientEffects();
   }
 
-  update(snapshot: WorldSnapshot, events: readonly SimEvent[], elapsedSeconds: number): void {
+  update(
+    snapshot: WorldSnapshot,
+    events: readonly SimEvent[],
+    elapsedSeconds: number,
+    focusPositionMm: PlayerSnapshot['position'] | null = null,
+  ): void {
+    this.hasFocusPosition = focusPositionMm !== null;
+    if (focusPositionMm) {
+      this.focusPosition.set(worldMeters(focusPositionMm.x), worldMeters(focusPositionMm.z));
+    }
+    const positions = entityPositions(snapshot);
     this.syncActiveProjectiles(snapshot.activeProjectiles, elapsedSeconds);
     this.syncActiveZones(snapshot.activeZones, snapshot.tick, elapsedSeconds);
-    this.syncActiveTargetEffects(snapshot, elapsedSeconds);
+    this.syncActiveTargetEffects(snapshot, positions, elapsedSeconds);
     this.syncHeroAuras(snapshot.players, elapsedSeconds);
-    this.processEvents(snapshot, events, elapsedSeconds);
+    this.processEvents(snapshot, positions, events, elapsedSeconds);
     this.updateTransientEffects(elapsedSeconds);
   }
 
@@ -406,21 +434,52 @@ export class CombatEffectsLayer {
   }
 
   private get transientLimit(): number {
-    return this.graphicsTier === 'reduced' ? 40 : 80;
+    return this.graphicsTier === 'reduced'
+      ? REDUCED_TRANSIENT_EFFECT_LIMIT
+      : BALANCED_TRANSIENT_EFFECT_LIMIT;
+  }
+
+  private isWithinEffectRange(
+    position: { readonly x: number; readonly z: number },
+    padding = 0,
+  ): boolean {
+    if (!this.hasFocusPosition) {
+      return true;
+    }
+    const distance =
+      (this.graphicsTier === 'reduced'
+        ? REDUCED_EFFECT_CULL_DISTANCE_METERS
+        : BALANCED_EFFECT_CULL_DISTANCE_METERS) + padding;
+    const dx = position.x - this.focusPosition.x;
+    const dz = position.z - this.focusPosition.y;
+    return dx * dx + dz * dz <= distance * distance;
+  }
+
+  private isWithinEffectRangeMm(
+    position: { readonly x: number; readonly z: number },
+    paddingMm = 0,
+  ): boolean {
+    return this.isWithinEffectRange(
+      { x: worldMeters(position.x), z: worldMeters(position.z) },
+      worldMeters(paddingMm),
+    );
   }
 
   private syncActiveProjectiles(
     projectiles: readonly ActiveProjectileSnapshot[],
     elapsedSeconds: number,
   ): void {
-    const currentIds = new Set(projectiles.map((projectile) => projectile.entityId));
+    const visibleProjectiles = projectiles.filter((projectile) =>
+      this.isWithinEffectRangeMm(projectile.position),
+    );
+    const currentIds = new Set(visibleProjectiles.map((projectile) => projectile.entityId));
     for (const [entityId, visual] of this.activeProjectileVisuals) {
       if (!currentIds.has(entityId)) {
         disposeGroup(visual.group);
         this.activeProjectileVisuals.delete(entityId);
       }
     }
-    for (const projectile of projectiles) {
+    for (const projectile of visibleProjectiles) {
       let visual = this.activeProjectileVisuals.get(projectile.entityId);
       if (
         visual &&
@@ -530,14 +589,17 @@ export class CombatEffectsLayer {
     currentTick: number,
     elapsedSeconds: number,
   ): void {
-    const currentIds = new Set(zones.map((zone) => zone.entityId));
+    const visibleZones = zones.filter((zone) =>
+      this.isWithinEffectRangeMm(zone.center, Math.max(zone.radiusMm, zone.lengthMm / 2)),
+    );
+    const currentIds = new Set(visibleZones.map((zone) => zone.entityId));
     for (const [entityId, visual] of this.activeZoneVisuals) {
       if (!currentIds.has(entityId)) {
         disposeGroup(visual.group);
         this.activeZoneVisuals.delete(entityId);
       }
     }
-    for (const zone of zones) {
+    for (const zone of visibleZones) {
       let visual = this.activeZoneVisuals.get(zone.entityId);
       if (visual && (visual.kind !== zone.kind || visual.activeId !== String(zone.activeId))) {
         disposeGroup(visual.group);
@@ -697,12 +759,19 @@ export class CombatEffectsLayer {
     }
   }
 
-  private syncActiveTargetEffects(snapshot: WorldSnapshot, elapsedSeconds: number): void {
-    const visibleEffects = (snapshot.activeTargetEffects ?? []).filter(
-      (effect) =>
+  private syncActiveTargetEffects(
+    snapshot: WorldSnapshot,
+    positions: ReadonlyMap<EntityId, EffectPosition>,
+    elapsedSeconds: number,
+  ): void {
+    const visibleEffects = (snapshot.activeTargetEffects ?? []).filter((effect) => {
+      const position = positions.get(effect.targetEntityId);
+      return (
         heroSkillVfxProfile(String(effect.activeId)) !== null &&
-        entityPosition(snapshot, effect.targetEntityId) !== null,
-    );
+        position !== undefined &&
+        this.isWithinEffectRange(position)
+      );
+    });
     const currentKeys = new Set(visibleEffects.map((effect) => effect.key));
     for (const [key, visual] of this.activeTargetEffectVisuals) {
       if (!currentKeys.has(key)) {
@@ -714,7 +783,7 @@ export class CombatEffectsLayer {
     for (const effect of visibleEffects) {
       const activeId = String(effect.activeId);
       const profile = heroSkillVfxProfile(activeId);
-      const position = entityPosition(snapshot, effect.targetEntityId);
+      const position = positions.get(effect.targetEntityId);
       if (!profile || !position) {
         continue;
       }
@@ -757,7 +826,9 @@ export class CombatEffectsLayer {
   }
 
   private syncHeroAuras(players: readonly PlayerSnapshot[], elapsedSeconds: number): void {
-    const activePlayers = players.filter((player) => this.hasPersistentHeroAura(player));
+    const activePlayers = players.filter(
+      (player) => this.hasPersistentHeroAura(player) && this.isWithinEffectRangeMm(player.position),
+    );
     const currentIds = new Set(activePlayers.map((player) => player.entityId));
     for (const [entityId, visual] of this.heroAuraVisuals) {
       if (!currentIds.has(entityId)) {
@@ -825,6 +896,7 @@ export class CombatEffectsLayer {
 
   private processEvents(
     snapshot: WorldSnapshot,
+    positions: ReadonlyMap<EntityId, EffectPosition>,
     events: readonly SimEvent[],
     elapsedSeconds: number,
   ): void {
@@ -838,32 +910,31 @@ export class CombatEffectsLayer {
     );
     const damagedTargets = new Set<string>();
     const skillDamagedTargets = new Set<string>();
+    const playersById = new Map(snapshot.players.map((player) => [player.entityId, player]));
 
     for (const event of events) {
       if (event.type === 'basic-attack') {
-        const source = snapshot.players.find(
-          (candidate) => candidate.entityId === event.sourceEntityId,
-        );
-        if (source) {
+        const source = playersById.get(event.sourceEntityId);
+        if (source && this.isWithinEffectRangeMm(source.position)) {
           this.spawnBasicAttackEffect(source, elapsedSeconds);
         }
       } else if (event.type === 'active-cast') {
-        const source = snapshot.players.find((candidate) => candidate.entityId === event.entityId);
+        const source = playersById.get(event.entityId);
         const activeId = String(event.activeAbilityId);
         const profile = heroSkillVfxProfile(activeId);
-        if (source && profile) {
+        if (source && profile && this.isWithinEffectRangeMm(source.position)) {
           this.spawnHeroSkillCastEffect(source, profile, elapsedSeconds);
         } else {
-          const position = entityPosition(snapshot, event.entityId);
-          if (!position) {
+          const position = positions.get(event.entityId);
+          if (!position || !this.isWithinEffectRange(position)) {
             continue;
           }
           const color = combatEffectProfileForHero(event.heroId).color;
           this.spawnCastEffect(position, color, elapsedSeconds);
         }
       } else if (event.type === 'damage' && event.hpDamage + event.shieldDamage > 0) {
-        const position = entityPosition(snapshot, event.targetEntityId);
-        if (position) {
+        const position = positions.get(event.targetEntityId);
+        if (position && this.isWithinEffectRange(position)) {
           const critical =
             event.isCritical || criticalTargets.has(`${event.tick}:${event.targetEntityId}`);
           const sourceProfile =
@@ -886,8 +957,8 @@ export class CombatEffectsLayer {
         }
       } else if (event.type === 'monster-damaged') {
         const key = `${event.tick}:${event.targetEntityId}`;
-        const position = entityPosition(snapshot, event.targetEntityId);
-        if (position && !damagedTargets.has(key)) {
+        const position = positions.get(event.targetEntityId);
+        if (position && this.isWithinEffectRange(position) && !damagedTargets.has(key)) {
           const sourceProfile =
             event.activeAbilityId !== undefined
               ? heroSkillVfxProfile(String(event.activeAbilityId))
@@ -901,8 +972,8 @@ export class CombatEffectsLayer {
         }
       } else if (event.type === 'active-world-damaged') {
         const key = `${event.tick}:${event.targetEntityId}`;
-        const position = entityPosition(snapshot, event.targetEntityId);
-        if (position && !damagedTargets.has(key)) {
+        const position = positions.get(event.targetEntityId);
+        if (position && this.isWithinEffectRange(position) && !damagedTargets.has(key)) {
           const profile = heroSkillVfxProfile(String(event.activeAbilityId));
           if (profile) {
             this.spawnHeroSkillImpactEffect(profile, position, elapsedSeconds);
@@ -912,8 +983,8 @@ export class CombatEffectsLayer {
           damagedTargets.add(key);
         }
       } else if (event.type === 'active-heal') {
-        const position = entityPosition(snapshot, event.targetEntityId);
-        if (position) {
+        const position = positions.get(event.targetEntityId);
+        if (position && this.isWithinEffectRange(position)) {
           const profile = heroSkillVfxProfile(String(event.activeAbilityId));
           if (profile) {
             this.spawnHeroSkillImpactEffect(profile, position, elapsedSeconds);
@@ -922,10 +993,15 @@ export class CombatEffectsLayer {
           }
         }
       } else if (event.type === 'active-status-applied') {
-        const position = entityPosition(snapshot, event.targetEntityId);
+        const position = positions.get(event.targetEntityId);
         const profile = heroSkillVfxProfile(String(event.activeAbilityId));
         const key = `${event.activeAbilityId}:${event.tick}:${event.targetEntityId}`;
-        if (position && profile && !skillDamagedTargets.has(key)) {
+        if (
+          position &&
+          this.isWithinEffectRange(position) &&
+          profile &&
+          !skillDamagedTargets.has(key)
+        ) {
           this.spawnHeroSkillImpactEffect(profile, position, elapsedSeconds, 0.82);
           skillDamagedTargets.add(key);
         }
@@ -934,17 +1010,22 @@ export class CombatEffectsLayer {
         event.activeAbilityId !== undefined &&
         event.targetEntityId !== null
       ) {
-        const position = entityPosition(snapshot, event.targetEntityId);
+        const position = positions.get(event.targetEntityId);
         const profile = heroSkillVfxProfile(String(event.activeAbilityId));
         const key = `${event.activeAbilityId}:${event.tick}:${event.targetEntityId}`;
-        if (position && profile && !skillDamagedTargets.has(key)) {
+        if (
+          position &&
+          this.isWithinEffectRange(position) &&
+          profile &&
+          !skillDamagedTargets.has(key)
+        ) {
           this.spawnHeroSkillImpactEffect(profile, position, elapsedSeconds);
           skillDamagedTargets.add(key);
         }
       } else if (event.type === 'summon-spawned' && event.activeAbilityId !== undefined) {
-        const position = entityPosition(snapshot, event.entityId);
+        const position = positions.get(event.entityId);
         const profile = heroSkillVfxProfile(String(event.activeAbilityId));
-        if (position && profile) {
+        if (position && this.isWithinEffectRange(position) && profile) {
           this.spawnHeroSkillImpactEffect(profile, position, elapsedSeconds, 0.9);
         }
       }
@@ -1144,6 +1225,10 @@ export class CombatEffectsLayer {
       if (progress >= 1) {
         disposeGroup(effect.group);
         this.transientEffects.splice(index, 1);
+        continue;
+      }
+      effect.group.visible = this.isWithinEffectRange(effect.group.position);
+      if (!effect.group.visible) {
         continue;
       }
       if (effect.kind === 'hero-skill') {
