@@ -34,10 +34,14 @@ describe('web road rendering', () => {
 
     for (const mesh of meshes) {
       const material = mesh.material as THREE.Material;
+      // Overlap is resolved by keeping the overlays out of the depth buffer and
+      // letting the fixed renderOrder above decide, so the result is camera
+      // independent. Polygon offset was the older mechanism for this and is
+      // deliberately off: leaving both on would nudge the ribbons toward the
+      // camera for no benefit.
       expect(material.depthWrite).toBe(false);
-      expect(material.polygonOffset).toBe(true);
-      expect(material.polygonOffsetFactor).toBe(-1);
-      expect(material.polygonOffsetUnits).toBe(-1);
+      expect(material.depthTest).toBe(true);
+      expect(material.polygonOffset).toBe(false);
     }
   });
 });

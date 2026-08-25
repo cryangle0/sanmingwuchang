@@ -202,6 +202,48 @@ describe('web combat effects', () => {
     expect(scene.getObjectByName('combat-effects')).toBeUndefined();
   });
 
+  it('culls combat effects outside the active graphics-tier radius', () => {
+    const scene = new THREE.Scene();
+    const layer = new CombatEffectsLayer(scene, 'reduced');
+    const nearProjectile = {
+      ...activeProjectile('line-damage', 1),
+      position: vec2Mm(44_000, 0),
+    };
+    const farProjectile = {
+      ...activeProjectile('root', 2),
+      position: vec2Mm(46_000, 0),
+    };
+    const nearZone = {
+      ...activeZone('fire-wall', 1),
+      center: vec2Mm(50_000, 0),
+    };
+    const farZone = {
+      ...activeZone('damage-slow', 2),
+      center: vec2Mm(52_000, 0),
+    };
+    const snapshot = combatSnapshot({
+      activeProjectiles: [nearProjectile, farProjectile],
+      activeZones: [nearZone, farZone],
+    });
+
+    layer.update(snapshot, [], 1, vec2Mm(0, 0));
+    expect(layer.getDiagnostics()).toMatchObject({
+      activeProjectiles: 1,
+      activeZones: 1,
+      transientLimit: 28,
+    });
+
+    layer.setGraphicsTier('balanced');
+    layer.update(snapshot, [], 2, vec2Mm(0, 0));
+    expect(layer.getDiagnostics()).toMatchObject({
+      activeProjectiles: 2,
+      activeZones: 2,
+      transientLimit: 56,
+    });
+
+    layer.dispose();
+  });
+
   it('spawns bounded attack, cast, damage and heal effects from authoritative events', () => {
     const scene = new THREE.Scene();
     const layer = new CombatEffectsLayer(scene, 'balanced');

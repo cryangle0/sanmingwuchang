@@ -554,7 +554,7 @@ try {
           camera.controlsCustomized === false &&
           Math.abs(camera.zoom - camera.targetZoom) < 0.025 &&
           camera.offset.every(
-            (value, index) => Math.abs(value - camera.presetOffset[index]) < 0.025,
+            (value, index) => Math.abs(value - camera.targetOffset[index]) < 0.025,
           ),
       );
     },
@@ -566,7 +566,7 @@ try {
   );
   const cameraControls = {
     initialViewLowerAndCloser:
-      cameraViews[0]?.presetOffset?.join(',') === '14,16,14' &&
+      cameraViews[0]?.presetOffset?.join(',') === '12,10.6,12' &&
       Math.abs((cameraViews[0]?.presetZoom ?? 0) - 1.12) < 0.001,
     wheelZoomed:
       beforeCameraWheel !== null &&

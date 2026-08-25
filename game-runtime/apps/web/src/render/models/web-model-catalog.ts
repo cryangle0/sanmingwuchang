@@ -66,7 +66,11 @@ export const WEB_HERO_MODELS: readonly WebModelDefinition[] = [
   hero('H005', '多目怪'),
   hero('H006', '九头虫', 2.4),
   hero('H007', '黄风怪', 2.4),
-  hero('H008', '太上老君'),
+  hero('H008', '太上老君', 2.2, {
+    assetBase: 'web',
+    format: 'glb',
+    assetPath: 'models/characters/H008/model.glb',
+  }),
   hero('H009', '孙悟空', 2.2, {
     assetBase: 'web',
     format: 'glb',
@@ -121,9 +125,17 @@ export const WEB_HERO_MODELS: readonly WebModelDefinition[] = [
   hero('H028', '镇元大仙'),
   hero('H029', '如来'),
   hero('H030', '观音菩萨'),
-  hero('H031', '托塔李天王'),
+  hero('H031', '托塔李天王', 2.2, {
+    assetBase: 'web',
+    format: 'glb',
+    assetPath: 'models/characters/H031/model.glb',
+  }),
   hero('H032', '唐僧'),
-  hero('H033', '沙和尚'),
+  hero('H033', '沙和尚', 2.2, {
+    assetBase: 'web',
+    format: 'glb',
+    assetPath: 'models/characters/H033/model.glb',
+  }),
   hero('H034', '黑熊精', 2.2, {
     assetBase: 'web',
     format: 'glb',

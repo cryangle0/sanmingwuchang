@@ -9,6 +9,11 @@ import {
 import { WORLD_SCALE_PROFILE } from '../apps/web/src/render/world-scale-profile';
 
 const repositoryRoot = resolve(import.meta.dirname, '..');
+const lushTreeDelivery = {
+  id: 'mission-lush-tree',
+  fileName: 'mission-lush-tree.glb',
+  targetHeight: WORLD_SCALE_PROFILE.flora.treeTargetHeights.lush,
+} as const;
 const polyNatureDelivery = [
   {
     id: 'poly-nature-beech',
@@ -43,20 +48,12 @@ const polyNatureDelivery = [
 ] as const;
 
 describe('web flora model layer', () => {
-  it('includes the purchased lowpoly and Blender variants in both quality tiers', () => {
+  it('uses the lush live tree and keeps optimized dead trees in both quality tiers', () => {
     const balanced = floraModelAssetPaths('balanced');
     const reduced = floraModelAssetPaths('reduced');
-    const polyNatureTrees = [
-      'beech-poly.glb',
-      'cypress-poly.glb',
-      'dead-beech-poly.glb',
-      'dead-cypress-poly.glb',
-      'willow-poly.glb',
-    ];
+    const deadTrees = ['dead-beech-poly.glb', 'dead-cypress-poly.glb'];
 
-    expect(balanced.core).toEqual(
-      expect.arrayContaining(['asia-tree.glb', 'red-maple.glb', ...polyNatureTrees]),
-    );
+    expect(balanced.core).toEqual(expect.arrayContaining(['mission-lush-tree.glb', ...deadTrees]));
     expect(balanced.dressing).toEqual(
       expect.arrayContaining([
         'asia-bush.glb',
@@ -66,9 +63,7 @@ describe('web flora model layer', () => {
         'small-plant-2.glb',
       ]),
     );
-    expect(reduced.core).toEqual(
-      expect.arrayContaining(['asia-tree.glb', 'red-maple.glb', ...polyNatureTrees]),
-    );
+    expect(reduced.core).toEqual(expect.arrayContaining(['mission-lush-tree.glb', ...deadTrees]));
     expect(reduced.dressing).toEqual(['burdock-poly.glb']);
   });
 
@@ -93,6 +88,37 @@ describe('web flora model layer', () => {
     });
     layer.dispose();
     expect(layer.diagnostics().status).toBe('disposed');
+  });
+
+  it('keeps the lush forest tree extracted, compressed, and represented in the manifest', () => {
+    const manifest = JSON.parse(
+      readFileSync(
+        resolve(repositoryRoot, 'apps/web/public/models/map-assets/manifest.json'),
+        'utf8',
+      ),
+    ) as {
+      readonly floraAssets: readonly {
+        readonly id: string;
+        readonly path: string;
+        readonly targetHeight: number;
+        readonly bytes: number;
+        readonly optimized: { readonly triangles: number; readonly materials: number };
+      }[];
+    };
+    const entry = manifest.floraAssets.find((asset) => asset.id === lushTreeDelivery.id);
+    const file = resolve(
+      repositoryRoot,
+      'apps/web/public/models/foliage',
+      lushTreeDelivery.fileName,
+    );
+
+    expect(entry).toBeDefined();
+    expect(entry?.path).toBe(`models/foliage/${lushTreeDelivery.fileName}`);
+    expect(entry?.targetHeight).toBe(lushTreeDelivery.targetHeight);
+    expect(entry?.optimized.triangles).toBeLessThanOrEqual(3_000);
+    expect(entry?.optimized.materials).toBe(2);
+    expect(statSync(file).size).toBe(entry?.bytes);
+    expect(statSync(file).size).toBeLessThan(180_000);
   });
 
   it('keeps the Blender delivery small, normalized, and represented in the manifest', () => {

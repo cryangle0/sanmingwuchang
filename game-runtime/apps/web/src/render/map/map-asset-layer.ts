@@ -87,6 +87,34 @@ export const MAP_ASSET_CATALOG: readonly MapAssetCatalogEntry[] = [
     source: '0072 Lowpoly Style Ultra Pack 1.2 / RockFormation2.fbx',
   },
   {
+    id: 'free-pagoda-niko313',
+    fileName: 'free-pagoda-niko313.glb',
+    kind: 'landmark',
+    targetHeight: 16,
+    source: 'free-assets-3d/_converted/sketchfab-pagoda-niko313.glb',
+  },
+  {
+    id: 'free-stone-cart',
+    fileName: 'free-stone-cart.glb',
+    kind: 'landmark',
+    targetHeight: 2.866,
+    source: 'free-assets-3d/_converted/stone-cart-daydev.glb',
+  },
+  {
+    id: 'free-stone-lion',
+    fileName: 'free-stone-lion.glb',
+    kind: 'landmark',
+    targetHeight: 1.8,
+    source: 'free-assets-3d/_converted/stone-lion-fpan.glb',
+  },
+  {
+    id: 'free-pagoda-ruin',
+    fileName: 'free-pagoda-ruin.glb',
+    kind: 'landmark',
+    targetHeight: 14,
+    source: 'free-assets-3d/_converted/stone-pagoda-ruin-daydev.glb',
+  },
+  {
     id: 'desert-rock-01',
     fileName: 'desert-rock-01.glb',
     kind: 'rock',
@@ -260,7 +288,12 @@ const CATALOG_BY_ID = new Map(MAP_ASSET_CATALOG.map((entry) => [entry.id, entry]
 const ROCK_ASSET_IDS = MAP_ASSET_CATALOG.filter((entry) => entry.kind === 'rock').map(
   (entry) => entry.id,
 );
-const REDUCED_LANDMARK_ASSET_IDS = ['lowpoly-asian-village', 'wuxia-gate-court'] as const;
+const REDUCED_LANDMARK_ASSET_IDS = [
+  'lowpoly-asian-village',
+  'wuxia-gate-court',
+  'free-pagoda-niko313',
+  'free-pagoda-ruin',
+] as const;
 const REDUCED_ROCK_ASSET_IDS = [
   'desert-rock-01',
   'desert-rock-05',
@@ -416,6 +449,7 @@ function landmarkPlacement(
  */
 export function createMapAssetPlacementPlan(seed = 1): readonly MapAssetPlacement[] {
   const highlandEast = averagePoint(MAP_HIGHLANDS[0]?.vertices ?? []);
+  const highlandCentral = averagePoint(MAP_HIGHLANDS[1]?.vertices ?? []);
   const highlandNorth = averagePoint(MAP_HIGHLANDS[2]?.vertices ?? []);
   // Keep the large compounds on authored plateaus, but bring one gate into
   // the western approach so the first viewport has an architectural anchor.
@@ -425,6 +459,10 @@ export function createMapAssetPlacementPlan(seed = 1): readonly MapAssetPlacemen
   const westVillageSite = { x: -342, z: -68 };
   const westGateSite = { x: -365, z: 36 };
   const westHouseSite = { x: westVillageSite.x - 18, z: westVillageSite.z - 25 };
+  const freePagodaSite = { x: highlandCentral.x - 7, z: highlandCentral.z + 3 };
+  const freeRuinPagodaSite = { x: highlandNorth.x + 15, z: highlandNorth.z + 12 };
+  const freeStoneLionSite = { x: westGateSite.x + 9, z: westGateSite.z + 12 };
+  const freeStoneCartSite = { x: westVillageSite.x + 22, z: westVillageSite.z + 13 };
 
   const landmarks: MapAssetPlacement[] = [
     landmarkPlacement(
@@ -488,6 +526,35 @@ export function createMapAssetPlacementPlan(seed = 1): readonly MapAssetPlacemen
         highlandNorth.x,
         highlandNorth.z,
       ),
+    ),
+    landmarkPlacement(
+      'free-landmark-pagoda',
+      'free-pagoda-niko313',
+      freePagodaSite,
+      WORLD_SCALE_PROFILE.map.landmarkWorldHeights['free-pagoda-niko313'],
+      yawToward(freePagodaSite.x, freePagodaSite.z, highlandCentral.x, highlandCentral.z) + 0.16,
+    ),
+    landmarkPlacement(
+      'free-landmark-ruin-pagoda',
+      'free-pagoda-ruin',
+      freeRuinPagodaSite,
+      WORLD_SCALE_PROFILE.map.landmarkWorldHeights['free-pagoda-ruin'],
+      yawToward(freeRuinPagodaSite.x, freeRuinPagodaSite.z, highlandNorth.x, highlandNorth.z) - 0.1,
+    ),
+    landmarkPlacement(
+      'free-landmark-stone-lion',
+      'free-stone-lion',
+      freeStoneLionSite,
+      WORLD_SCALE_PROFILE.map.landmarkWorldHeights['free-stone-lion'],
+      yawToward(freeStoneLionSite.x, freeStoneLionSite.z, westGateSite.x, westGateSite.z),
+    ),
+    landmarkPlacement(
+      'free-landmark-stone-cart',
+      'free-stone-cart',
+      freeStoneCartSite,
+      WORLD_SCALE_PROFILE.map.landmarkWorldHeights['free-stone-cart'],
+      yawToward(freeStoneCartSite.x, freeStoneCartSite.z, westVillageSite.x, westVillageSite.z) +
+        0.3,
     ),
   ];
 
@@ -856,7 +923,7 @@ export function buildMapAssetLayer(
         mesh.name = `map-imported-rock-${assetId}-${partIndex}`;
         mesh.castShadow = false;
         mesh.receiveShadow = true;
-        mesh.frustumCulled = false;
+        mesh.frustumCulled = true;
         const matrices = list.map((placement) => makeRockMatrix(placement));
         const colours = list.map((placement) => colorForRock(placement));
         for (const [index, matrix] of matrices.entries()) {
@@ -1059,6 +1126,7 @@ export function buildMapAssetLayer(
         if (batch.mesh.instanceColor) {
           batch.mesh.instanceColor.needsUpdate = true;
         }
+        batch.mesh.computeBoundingSphere();
       }
     }
     visibleRockInstances = visibleRockPlacementIds.size;

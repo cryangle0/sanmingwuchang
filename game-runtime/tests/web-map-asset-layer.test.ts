@@ -1,3 +1,5 @@
+import { readFileSync, statSync } from 'node:fs';
+import { resolve } from 'node:path';
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import {
@@ -6,13 +8,15 @@ import {
   MAP_ASSET_CATALOG,
 } from '../apps/web/src/render/map/map-asset-layer';
 
+const repositoryRoot = resolve(import.meta.dirname, '..');
+
 describe('web imported map asset layer', () => {
   it('keeps the delivery catalog relative, optimized, and source-free', () => {
-    expect(MAP_ASSET_CATALOG.length).toBe(32);
+    expect(MAP_ASSET_CATALOG.length).toBe(36);
     expect(MAP_ASSET_CATALOG.every((entry) => entry.fileName.endsWith('.glb'))).toBe(true);
     expect(MAP_ASSET_CATALOG.every((entry) => !entry.fileName.includes('\\'))).toBe(true);
     expect(MAP_ASSET_CATALOG.every((entry) => !entry.fileName.includes(':'))).toBe(true);
-    expect(MAP_ASSET_CATALOG.filter((entry) => entry.kind === 'landmark')).toHaveLength(8);
+    expect(MAP_ASSET_CATALOG.filter((entry) => entry.kind === 'landmark')).toHaveLength(12);
     expect(MAP_ASSET_CATALOG.filter((entry) => entry.kind === 'rock')).toHaveLength(24);
     expect(MAP_ASSET_CATALOG.filter((entry) => entry.id.startsWith('stylized-rock-'))).toHaveLength(
       9,
@@ -24,11 +28,42 @@ describe('web imported map asset layer', () => {
     ).toHaveLength(3);
   });
 
+  it('ships the four free converted landmarks with matching manifest metadata', () => {
+    const manifest = JSON.parse(
+      readFileSync(
+        resolve(repositoryRoot, 'apps/web/public/models/map-assets/manifest.json'),
+        'utf8',
+      ),
+    ) as {
+      readonly assets: readonly {
+        readonly id: string;
+        readonly path: string;
+        readonly bytes: number;
+        readonly optimized: { readonly triangles: number };
+      }[];
+    };
+    const expected = [
+      ['free-pagoda-niko313', 'free-pagoda-niko313.glb', 11_201],
+      ['free-stone-cart', 'free-stone-cart.glb', 1_920],
+      ['free-stone-lion', 'free-stone-lion.glb', 31_438],
+      ['free-pagoda-ruin', 'free-pagoda-ruin.glb', 1_527],
+    ] as const;
+
+    for (const [id, fileName, triangles] of expected) {
+      const entry = manifest.assets.find((asset) => asset.id === id);
+      const file = resolve(repositoryRoot, 'apps/web/public/models/map-assets', fileName);
+      expect(entry).toBeDefined();
+      expect(entry?.path).toBe(`models/map-assets/${fileName}`);
+      expect(entry?.optimized.triangles).toBe(triangles);
+      expect(statSync(file).size).toBe(entry?.bytes);
+    }
+  });
+
   it('builds a deterministic plan with authored landmark and rock budgets', () => {
     const first = createMapAssetPlacementPlan(0x08b3d5a4);
     const second = createMapAssetPlacementPlan(0x08b3d5a4);
     expect(first).toEqual(second);
-    expect(first.filter((placement) => placement.kind === 'landmark')).toHaveLength(8);
+    expect(first.filter((placement) => placement.kind === 'landmark')).toHaveLength(12);
     expect(first.filter((placement) => placement.kind === 'rock')).toHaveLength(24);
     expect(
       first.every(

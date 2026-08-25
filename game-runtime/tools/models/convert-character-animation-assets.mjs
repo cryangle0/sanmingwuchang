@@ -87,6 +87,35 @@ function optimizedMeshRecords(document) {
     .sort((left, right) => right.triangles - left.triangles);
 }
 
+function meshGroupTriangles(meshes) {
+  return meshes.reduce((sum, mesh) => sum + meshTriangles(mesh), 0);
+}
+
+function tightenMeshGroupToBudget(meshes, budget, error) {
+  let currentTriangles = meshGroupTriangles(meshes);
+  for (let pass = 0; pass < 4 && currentTriangles > budget; pass += 1) {
+    const ratio = Math.max(
+      0.01,
+      Math.min(0.9, (budget / Math.max(currentTriangles, 1)) * 0.78),
+    );
+    for (const mesh of meshes) {
+      for (const primitive of mesh.listPrimitives()) {
+        simplifyPrimitive(primitive, {
+          simplifier: MeshoptSimplifier,
+          ratio,
+          error: error * (1 + pass * 0.2),
+        });
+      }
+    }
+    const nextTriangles = meshGroupTriangles(meshes);
+    if (nextTriangles >= currentTriangles) {
+      break;
+    }
+    currentTriangles = nextTriangles;
+  }
+  return currentTriangles;
+}
+
 async function optimizeGlb(inputPath, outputPath, config) {
   await MeshoptDecoder.ready;
   await MeshoptEncoder.ready;
@@ -127,6 +156,16 @@ async function optimizeGlb(inputPath, outputPath, config) {
       });
     }
   }
+  tightenMeshGroupToBudget(
+    meshes.filter(meshIsSkinned),
+    config.bodyTriangleBudget,
+    0.045,
+  );
+  tightenMeshGroupToBudget(
+    meshes.filter((mesh) => !meshIsSkinned(mesh)),
+    config.weaponTriangleBudget,
+    0.035,
+  );
 
   await document.transform(
     prune(),
@@ -183,7 +222,7 @@ function validateConversion(config, exported, optimized, outputBytes) {
     .filter((mesh) => !mesh.skinned)
     .reduce((sum, mesh) => sum + mesh.triangles, 0);
   const errors = [];
-  if (!sourceBoneSetsMatch) {
+  if (!sourceBoneSetsMatch && !config.allowAnimationBoneSetDifferences) {
     errors.push('source skeletons differ');
   }
   if (exported.sourceMetrics[0]?.bones.length !== config.expectedBones) {
@@ -244,6 +283,7 @@ async function convertOne(config, page) {
   await page.evaluate((input) => window.resetCharacterAnimationConversion(input), {
     modelId: config.modelId,
     displayName: config.displayName,
+    allowAnimationBoneSetDifferences: config.allowAnimationBoneSetDifferences,
   });
   for (const [name, path] of sources) {
     const metrics = await page.evaluate((input) => window.addCharacterAnimationSource(input), {
@@ -279,6 +319,7 @@ async function convertOne(config, page) {
       conversion: {
         clipPatterns: config.clipPatterns,
         requiresSeparateWeapon: config.requiresSeparateWeapon,
+        allowAnimationBoneSetDifferences: config.allowAnimationBoneSetDifferences,
         sourceMetrics: exported.sourceMetrics,
         retainedMesh: exported.outputMetrics,
         exportedClips: exported.clips,

@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 
@@ -491,6 +493,15 @@ async function parseObj(input) {
   return root;
 }
 
+async function parseGlb(input) {
+  const loader = new GLTFLoader();
+  loader.setMeshoptDecoder(MeshoptDecoder);
+  const gltf = await new Promise((resolve, reject) => {
+    loader.parse(b64ToArrayBuffer(input.b64), '', resolve, reject);
+  });
+  return gltf.scene;
+}
+
 function sceneMetrics(root, includeDetails = false) {
   root.updateMatrixWorld(true);
   const bounds = new THREE.Box3().setFromObject(root);
@@ -529,7 +540,12 @@ function sceneMetrics(root, includeDetails = false) {
 }
 
 window.convertMapAsset = async (input) => {
-  const root = input.type === 'obj' ? await parseObj(input) : await parseFbx(input);
+  const root =
+    input.type === 'obj'
+      ? await parseObj(input)
+      : input.type === 'glb'
+        ? await parseGlb(input)
+        : await parseFbx(input);
   const textureImages = await waitForTextureImages(root);
   const includeDetails = Boolean(input.debugNodes);
   const before = sceneMetrics(root, includeDetails);

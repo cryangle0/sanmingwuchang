@@ -12,7 +12,7 @@ export interface CameraPan {
 export const CAMERA_DRAG_THRESHOLD_PX = 5;
 export const CAMERA_MIN_ZOOM_SCALE = 0.58;
 export const CAMERA_MAX_ZOOM_SCALE = 1.8;
-export const CAMERA_MIN_PITCH_RADIANS = (22 * Math.PI) / 180;
+export const CAMERA_MIN_PITCH_RADIANS = 0;
 export const CAMERA_MAX_PITCH_RADIANS = (68 * Math.PI) / 180;
 export const CAMERA_MAX_PAN_METERS = 34;
 

@@ -112,12 +112,12 @@ namespace Jwgb.Sim.Deterministic
             if (localX <= localZ)
             {
                 return a
-                    + (int)(((long)(b - a) * (localZ - localX)) / LatticeMm)
+                    + (int)(((long)(b - a) * localZ) / LatticeMm)
                     + (int)(((long)(c - b) * localX) / LatticeMm);
             }
 
             return a
-                + (int)(((long)(d - a) * (localX - localZ)) / LatticeMm)
+                + (int)(((long)(d - a) * localX) / LatticeMm)
                 + (int)(((long)(c - d) * localZ) / LatticeMm);
         }
 

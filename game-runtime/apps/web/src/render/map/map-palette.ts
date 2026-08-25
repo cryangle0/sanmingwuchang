@@ -1,14 +1,20 @@
 /**
- * Material library for the 百眼迷城 environment, 暗黑西游·水墨写意 direction.
+ * Material library for the 百眼迷城 environment.
  *
  * One material per semantic surface keeps the whole map at a few dozen draw
  * calls, and every material is owned and disposed here. Textures come from the
  * procedural surface set, so nothing is downloaded and the look is identical
  * on every machine.
  *
- * Colour discipline: the base world is desaturated blue-grey ink so the 30
- * saturated hero silhouettes always read against it. Saturation is spent only
- * on district accents, the courts, and gameplay-critical markers.
+ * Colour discipline follows JourneyWestGreatBrawl_AI游戏场景提示词 section 6:
+ * a multi-hue world on a 青玉绿 / 暖灰石 base under a bright warm key, with
+ * 朱砂红, 金色 and 五行 accents spent on the courts, shops, chests and
+ * gameplay-critical markers. District hues live in `map-regions.ts` and reach
+ * these materials as vertex colours or per-instance tints.
+ *
+ * The one thing the prompt's palette does not relax: surfaces still sit a step
+ * below the 30 saturated hero silhouettes in saturation, so characters read
+ * against the world. Section 6 asks for 饱和度适中, not for maximum colour.
  */
 
 import * as THREE from 'three';
@@ -82,8 +88,11 @@ export interface MapMaterialLibrary {
   /** Storm wall: additive, double sided, no depth write. */
   readonly stormWall: THREE.MeshBasicMaterial;
   readonly stormFloor: THREE.MeshBasicMaterial;
+  setGraphicsTier(tier: MapGraphicsTier): void;
   dispose(): void;
 }
+
+type MapGraphicsTier = 'balanced' | 'reduced';
 
 /** Repeat counts are expressed in metres of world space per texture tile. */
 function makeTiler(): {
@@ -174,10 +183,13 @@ function applyGroundLayerBlend(
   material: THREE.MeshStandardMaterial,
   soilTexture: THREE.Texture,
   groundAoTexture: THREE.Texture,
-): void {
+  initialGraphicsTier: MapGraphicsTier,
+): (tier: MapGraphicsTier) => void {
+  const reliefEnabled = { value: initialGraphicsTier === 'balanced' ? 1 : 0 };
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uJwgbGroundSoil = { value: soilTexture };
     shader.uniforms.uJwgbGroundAO = { value: groundAoTexture };
+    shader.uniforms.uJwgbGroundReliefEnabled = reliefEnabled;
     shader.vertexShader = shader.vertexShader
       .replace(
         '#include <common>',
@@ -201,6 +213,7 @@ vJwgbSplat = splat;`,
         `#include <common>
 uniform sampler2D uJwgbGroundSoil;
 uniform sampler2D uJwgbGroundAO;
+uniform float uJwgbGroundReliefEnabled;
 varying vec2 vJwgbGroundWorldXZ;
 varying vec3 vJwgbClimate;
 varying vec4 vJwgbSplat;
@@ -274,32 +287,39 @@ float jwgbGroundNoise(vec2 point) {
   vec4 splatWeights = vJwgbSplat;
   vec2 reliefUv = vJwgbGroundWorldXZ * 0.22;
 
-  // Offset parallax: slide the ground UVs along the view ray by the smoothed
-  // height, so clods occlude what is behind them as the camera moves.
-  vec2 viewXZ = vJwgbGroundWorldXZ - cameraPosition.xz;
-  float viewLen = max(length(viewXZ), 0.001);
-  float parallaxAmp = dot(splatWeights, JWGB_PARALLAX_AMP);
-  float parallaxHeight = jwgbGroundReliefSmooth(reliefUv, splatWeights);
-  vec2 parallaxOffset = clamp(
-    (viewXZ / viewLen) * parallaxHeight * parallaxAmp,
-    vec2(-JWGB_PARALLAX_CLAMP),
-    vec2(JWGB_PARALLAX_CLAMP)
-  );
-  vec2 tuv = reliefUv + parallaxOffset;
+  vec2 parallaxOffset = vec2(0.0);
+  float groundShade = 1.0;
 
-  // Cavity: the fine field at native tiling, plus a coarse clump octave that
-  // survives mip averaging and keeps shading the mid-field where the player
-  // actually looks.
-  float cavityFine = jwgbGroundRelief(tuv, splatWeights);
-  float cavityCoarse = (texture2D(uJwgbGroundAO, tuv * 0.16).g - JWGB_AO_MEAN.y);
-  float cavity = cavityFine * 1.65 + cavityCoarse * 0.9;
+  // Reduced graphics skips every AO lookup in the relief path. The uniform
+  // branch changes immediately when adaptive quality drops without forcing a
+  // shader recompile during combat.
+  if (uJwgbGroundReliefEnabled > 0.5) {
+    // Offset parallax: slide the ground UVs along the view ray by the smoothed
+    // height, so clods occlude what is behind them as the camera moves.
+    vec2 viewXZ = vJwgbGroundWorldXZ - cameraPosition.xz;
+    float viewLen = max(length(viewXZ), 0.001);
+    float parallaxAmp = dot(splatWeights, JWGB_PARALLAX_AMP);
+    float parallaxHeight = jwgbGroundReliefSmooth(reliefUv, splatWeights);
+    parallaxOffset = clamp(
+      (viewXZ / viewLen) * parallaxHeight * parallaxAmp,
+      vec2(-JWGB_PARALLAX_CLAMP),
+      vec2(JWGB_PARALLAX_CLAMP)
+    );
+    vec2 tuv = reliefUv + parallaxOffset;
 
-  // Micro sun-shadow: one clod-scale step toward the sun. Where the ground
-  // ahead stands higher than here, this fragment sits in its shadow.
-  float sunHeight = jwgbGroundRelief(tuv + JWGB_SUN_UV_STEP, splatWeights);
-  float microShadow = clamp((sunHeight - cavityFine) * 2.4, 0.0, 0.6);
+    // Cavity: the fine field at native tiling, plus a coarse clump octave that
+    // survives mip averaging and keeps shading the mid-field where the player
+    // actually looks.
+    float cavityFine = jwgbGroundRelief(tuv, splatWeights);
+    float cavityCoarse = (texture2D(uJwgbGroundAO, tuv * 0.16).g - JWGB_AO_MEAN.y);
+    float cavity = cavityFine * 1.65 + cavityCoarse * 0.9;
 
-  float groundShade = clamp(1.0 + cavity * 0.85 - microShadow * 0.55, 0.55, 1.35);
+    // Micro sun-shadow: one clod-scale step toward the sun. Where the ground
+    // ahead stands higher than here, this fragment sits in its shadow.
+    float sunHeight = jwgbGroundRelief(tuv + JWGB_SUN_UV_STEP, splatWeights);
+    float microShadow = clamp((sunHeight - cavityFine) * 2.4, 0.0, 0.6);
+    groundShade = clamp(1.0 + cavity * 0.85 - microShadow * 0.55, 0.55, 1.35);
+  }
 
   vec4 grassTexel = texture2D(map, vMapUv + parallaxOffset * 0.5);
   vec3 soilTexel = texture2D(uJwgbGroundSoil, vJwgbGroundWorldXZ / 10.5 + parallaxOffset).rgb;
@@ -318,7 +338,10 @@ float jwgbGroundNoise(vec2 point) {
 #endif`,
       );
   };
-  material.customProgramCacheKey = () => 'jwgb-ground-relief-v1';
+  material.customProgramCacheKey = () => 'jwgb-ground-relief-v2';
+  return (tier): void => {
+    reliefEnabled.value = tier === 'balanced' ? 1 : 0;
+  };
 }
 
 function createMapAssetTextures(): {
@@ -375,7 +398,10 @@ function createContactShadowTexture(): THREE.CanvasTexture {
   return texture;
 }
 
-export function createMapMaterials(seed: number): MapMaterialLibrary {
+export function createMapMaterials(
+  seed: number,
+  graphicsTier: MapGraphicsTier = 'balanced',
+): MapMaterialLibrary {
   const surfaces: MapSurfaceSet = createMapSurfaces(seed);
   const { tiled, disposeClones } = makeTiler();
   const assetTextures = createMapAssetTextures();
@@ -397,7 +423,12 @@ export function createMapMaterials(seed: number): MapMaterialLibrary {
     metalness: 0.02,
     normalScale: new THREE.Vector2(0.28, 0.28),
   });
-  applyGroundLayerBlend(ground, groundSoilTexture, groundAoTexture);
+  const setGroundGraphicsTier = applyGroundLayerBlend(
+    ground,
+    groundSoilTexture,
+    groundAoTexture,
+    graphicsTier,
+  );
 
   const boundaryCliff = standard(tiled(surfaces.cliff, 13), {
     map: assetTextures.texture('Rock026_Color.jpg', 1 / 13),
@@ -567,15 +598,17 @@ export function createMapMaterials(seed: number): MapMaterialLibrary {
   const valleyWater = new THREE.MeshPhysicalMaterial({
     color: 0xffffff,
     vertexColors: true,
-    roughness: 0.16,
+    roughness: 0.28,
     metalness: 0.0,
-    emissive: 0x0d3540,
-    emissiveIntensity: 0.35,
+    emissive: 0x062b35,
+    emissiveIntensity: 0.18,
     transparent: true,
-    opacity: 0.9,
-    clearcoat: 0.9,
-    clearcoatRoughness: 0.12,
-    reflectivity: 0.6,
+    opacity: 0.84,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+    clearcoat: 0.42,
+    clearcoatRoughness: 0.24,
+    reflectivity: 0.42,
   });
   const eliteArena = new THREE.MeshStandardMaterial({
     color: 0x8f4938,
@@ -893,6 +926,9 @@ export function createMapMaterials(seed: number): MapMaterialLibrary {
     iron,
     stormWall,
     stormFloor,
+    setGraphicsTier(tier): void {
+      setGroundGraphicsTier(tier);
+    },
     dispose(): void {
       surfaces.dispose();
       disposeClones();

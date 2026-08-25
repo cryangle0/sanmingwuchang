@@ -506,6 +506,9 @@ export class GameApp {
         )
       ) {
         gesture.dragged = true;
+        if (gesture.button === WEB_CONTROL_BINDINGS.attackMouseButton) {
+          this.input.cancelAttack();
+        }
         this.canvas.classList.add(
           gesture.mode === 'orbit' ? 'is-camera-orbiting' : 'is-camera-panning',
         );
@@ -536,11 +539,15 @@ export class GameApp {
     }
     this.updatePointerAim(event.clientX, event.clientY);
     if (
+      event.button === WEB_CONTROL_BINDINGS.attackMouseButton ||
       event.button === WEB_CONTROL_BINDINGS.activeMouseButton ||
       (event.button === WEB_CONTROL_BINDINGS.cameraAlternateOrbitMouseButton && event.altKey)
     ) {
       event.preventDefault();
       this.beginCameraPointerGesture(event, 'orbit');
+      if (event.button === WEB_CONTROL_BINDINGS.attackMouseButton) {
+        this.input.setAttackPressed(true);
+      }
       return;
     }
     if (event.button === WEB_CONTROL_BINDINGS.cameraPanMouseButton) {
@@ -558,12 +565,22 @@ export class GameApp {
     if (event.pointerType !== 'mouse') {
       return;
     }
-    if (event.button === WEB_CONTROL_BINDINGS.attackMouseButton) {
+    if (
+      event.button === WEB_CONTROL_BINDINGS.attackMouseButton &&
+      this.cameraPointerGesture?.button !== WEB_CONTROL_BINDINGS.attackMouseButton
+    ) {
       this.input.setAttackPressed(false);
     }
     const gesture = this.cameraPointerGesture;
     if (gesture?.pointerId !== event.pointerId) {
       return;
+    }
+    if (gesture.button === WEB_CONTROL_BINDINGS.attackMouseButton) {
+      if (gesture.dragged) {
+        this.input.cancelAttack();
+      } else {
+        this.input.setAttackPressed(false);
+      }
     }
     if (!gesture.dragged) {
       if (gesture.button === WEB_CONTROL_BINDINGS.activeMouseButton) {
@@ -579,7 +596,7 @@ export class GameApp {
     if (event.pointerType !== 'mouse') {
       return;
     }
-    this.input.setAttackPressed(false);
+    this.input.cancelAttack();
     if (this.cameraPointerGesture?.pointerId === event.pointerId) {
       this.cancelCameraPointerGesture();
     }

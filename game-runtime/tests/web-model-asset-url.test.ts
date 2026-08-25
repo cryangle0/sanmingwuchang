@@ -19,6 +19,7 @@ describe('web character model asset URLs', () => {
     vi.stubEnv('VITE_ASSET_VERSION', '20260811120000');
     for (const id of [
       'H004',
+      'H008',
       'H009',
       'H010',
       'H011',
@@ -27,6 +28,8 @@ describe('web character model asset URLs', () => {
       'H018',
       'H019',
       'H023',
+      'H031',
+      'H033',
       'H034',
       'H038',
     ]) {

@@ -103,6 +103,12 @@ const PRECOMPOSED_MAP_ASSETS = [
 
 const PRECOMPOSED_FLORA_ASSETS = [
   {
+    id: 'mission-lush-tree',
+    output: 'mission-lush-tree.glb',
+    source: 'Tree And Grass Object / MissionGoGoPlants.glb tree and leaves',
+    targetHeight: 7.8,
+  },
+  {
     id: 'poly-nature-beech',
     output: 'beech-poly.glb',
     source: 'Poly Nature Pack 1.0.0 / tree-beech-european-generic-mature-a',

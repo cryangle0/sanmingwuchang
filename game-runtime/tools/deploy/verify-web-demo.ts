@@ -261,6 +261,7 @@ async function main(): Promise<void> {
 
   const animatedHeroes = [
     ['蝎子精', 'H004'],
+    ['太上老君', 'H008'],
     ['孙悟空', 'H009'],
     ['二郎神', 'H010'],
     ['哪吒', 'H011'],
@@ -269,6 +270,8 @@ async function main(): Promise<void> {
     ['牛魔王', 'H018'],
     ['独角兕大王', 'H019'],
     ['黄袍怪', 'H023'],
+    ['托塔李天王', 'H031'],
+    ['沙和尚', 'H033'],
     ['黑熊精', 'H034'],
     ['赛太岁', 'H038'],
   ] as const;
@@ -286,6 +289,10 @@ async function main(): Promise<void> {
     ['lowpoly village', 'models/map-assets/lowpoly-asian-village.glb'],
     ['poly nature foliage', 'models/foliage/burdock-poly.glb'],
     ['C1524 rock', 'models/map-assets/desert-rock-01.glb'],
+    ['free pagoda', 'models/map-assets/free-pagoda-niko313.glb'],
+    ['free ruin pagoda', 'models/map-assets/free-pagoda-ruin.glb'],
+    ['free stone cart', 'models/map-assets/free-stone-cart.glb'],
+    ['free stone lion', 'models/map-assets/free-stone-lion.glb'],
   ] as const;
   for (const [name, path] of packagedMapAssets) {
     await assertHttp(name, new URL(path, cdnBase).toString(), 'HEAD');

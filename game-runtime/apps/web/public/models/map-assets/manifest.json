@@ -1,6 +1,6 @@
 {
   "schema": "jwgb.map-asset-manifest.v1",
-  "generatedAt": "2026-08-10T03:09:56.217Z",
+  "generatedAt": "2026-08-24T10:03:09.178Z",
   "assets": [
     {
       "id": "desert-rock-01",
@@ -1064,9 +1064,144 @@
         "drawCalls": 1
       },
       "delivery": "map"
+    },
+    {
+      "id": "free-pagoda-niko313",
+      "path": "models/map-assets/free-pagoda-niko313.glb",
+      "source": "free-assets-3d/_converted/sketchfab-pagoda-niko313.glb",
+      "targetHeight": 16,
+      "bytes": 138672,
+      "metrics": {
+        "after": {
+          "meshes": 5,
+          "triangles": 11201,
+          "nativeBounds": [-12.32719, 0, -11.25123, 12.32719, 16, 11.25123]
+        },
+        "normalized": {
+          "targetHeight": 16,
+          "bounds": [-12.32719, 0, -11.25123, 12.32719, 16, 11.25123]
+        }
+      },
+      "optimized": {
+        "vertices": 22503,
+        "triangles": 11201,
+        "meshes": 5,
+        "materials": 5,
+        "drawCalls": 1
+      },
+      "delivery": "free-glb-normalized"
+    },
+    {
+      "id": "free-stone-cart",
+      "path": "models/map-assets/free-stone-cart.glb",
+      "source": "free-assets-3d/_converted/stone-cart-daydev.glb",
+      "targetHeight": 2.866,
+      "bytes": 31604,
+      "metrics": {
+        "after": {
+          "meshes": 3,
+          "triangles": 1920,
+          "nativeBounds": [-1.27661, 0.23309, -1.65533, 1.39539, 2.38714, 1.87129]
+        },
+        "normalized": {
+          "targetHeight": 2.866,
+          "bounds": [-1.27661, 0.23309, -1.65533, 1.39539, 2.38714, 1.87129]
+        }
+      },
+      "optimized": {
+        "vertices": 3792,
+        "triangles": 1920,
+        "meshes": 3,
+        "materials": 3,
+        "drawCalls": 1
+      },
+      "delivery": "free-glb-normalized"
+    },
+    {
+      "id": "free-stone-lion",
+      "path": "models/map-assets/free-stone-lion.glb",
+      "source": "free-assets-3d/_converted/stone-lion-fpan.glb",
+      "targetHeight": 1.8,
+      "bytes": 249580,
+      "metrics": {
+        "after": {
+          "meshes": 1,
+          "triangles": 31438,
+          "nativeBounds": [-0.53969, 0.0296, -0.66592, 0.47047, 1.73643, 0.68951]
+        },
+        "normalized": {
+          "targetHeight": 1.8,
+          "bounds": [-0.53969, 0.0296, -0.66592, 0.47047, 1.73643, 0.68951]
+        }
+      },
+      "optimized": {
+        "vertices": 15719,
+        "triangles": 31438,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      },
+      "delivery": "free-glb-normalized"
+    },
+    {
+      "id": "free-pagoda-ruin",
+      "path": "models/map-assets/free-pagoda-ruin.glb",
+      "source": "free-assets-3d/_converted/stone-pagoda-ruin-daydev.glb",
+      "targetHeight": 14,
+      "bytes": 28104,
+      "metrics": {
+        "after": {
+          "meshes": 5,
+          "triangles": 1527,
+          "nativeBounds": [-6.30682, 0, -7.66481, 7.57431, 14, 6.66631]
+        },
+        "normalized": {
+          "targetHeight": 14,
+          "bounds": [-6.30682, 0, -7.66481, 7.57431, 14, 6.66631]
+        }
+      },
+      "optimized": {
+        "vertices": 2953,
+        "triangles": 1527,
+        "meshes": 5,
+        "materials": 5,
+        "drawCalls": 1
+      },
+      "delivery": "free-glb-normalized"
     }
   ],
   "floraAssets": [
+    {
+      "id": "mission-lush-tree",
+      "path": "models/foliage/mission-lush-tree.glb",
+      "source": "Tree And Grass Object / MissionGoGoPlants.glb tree and leaves",
+      "targetHeight": 7.8,
+      "bytes": 139552,
+      "metrics": {
+        "after": {
+          "vertices": 2133,
+          "triangles": 2787,
+          "meshes": 2,
+          "materials": 2,
+          "drawCalls": 2
+        },
+        "normalized": {
+          "targetHeight": 7.8,
+          "bounds": [
+            -3.007878374208014, 0, -2.8351977431665363, 2.759820079796468, 6.750138759613037,
+            3.0109135399911042
+          ]
+        }
+      },
+      "optimized": {
+        "vertices": 2133,
+        "triangles": 2787,
+        "meshes": 2,
+        "materials": 2,
+        "drawCalls": 2
+      },
+      "delivery": "prebuilt-blender-glb"
+    },
     {
       "id": "lowpoly-asia-tree",
       "path": "models/foliage/asia-tree.glb",

@@ -45,4 +45,47 @@ describe('web model presentation root', () => {
     geometry.dispose();
     material.dispose();
   });
+
+  it('anchors the body over the floor origin when a weapon extends to one side', () => {
+    const sourceRoot = new THREE.Group();
+    sourceRoot.name = 'weapon-offset-source-root';
+
+    const bodyGeometry = new THREE.BoxGeometry(1, 2, 1);
+    const vertexCount = bodyGeometry.getAttribute('position').count;
+    const skinIndices = new Uint16Array(vertexCount * 4);
+    const skinWeights = new Float32Array(vertexCount * 4);
+    for (let index = 0; index < vertexCount; index += 1) {
+      skinWeights[index * 4] = 1;
+    }
+    bodyGeometry.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(skinIndices, 4));
+    bodyGeometry.setAttribute('skinWeight', new THREE.Float32BufferAttribute(skinWeights, 4));
+    const bodyMaterial = new THREE.MeshBasicMaterial();
+    const body = new THREE.SkinnedMesh(bodyGeometry, bodyMaterial);
+    const bone = new THREE.Bone();
+    const skeleton = new THREE.Skeleton([bone]);
+    body.add(bone);
+    body.bind(skeleton);
+    sourceRoot.add(body);
+
+    const weapon = new THREE.Mesh(
+      new THREE.BoxGeometry(3, 0.2, 0.2),
+      new THREE.MeshBasicMaterial(),
+    );
+    weapon.position.set(2.2, 1.5, 0);
+    sourceRoot.add(weapon);
+
+    const presentationRoot = createCharacterPresentationRoot(sourceRoot, 2.2);
+    presentationRoot.updateMatrixWorld(true);
+    const bodyCenter = new THREE.Box3().setFromObject(body).getCenter(new THREE.Vector3());
+
+    expect(bodyCenter.x).toBeCloseTo(0, 6);
+    expect(bodyCenter.z).toBeCloseTo(0, 6);
+    expect(presentationRoot.position.x).toBeCloseTo(0, 6);
+    expect(presentationRoot.position.z).toBeCloseTo(0, 6);
+
+    bodyGeometry.dispose();
+    bodyMaterial.dispose();
+    weapon.geometry.dispose();
+    (weapon.material as THREE.Material).dispose();
+  });
 });

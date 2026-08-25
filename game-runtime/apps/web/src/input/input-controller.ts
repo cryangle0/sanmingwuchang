@@ -58,6 +58,11 @@ export class InputController {
     this.attackQueued = true;
   }
 
+  cancelAttack(): void {
+    this.attackPressed = false;
+    this.attackQueued = false;
+  }
+
   queueActive(): void {
     if (!this.enabled) {
       return;

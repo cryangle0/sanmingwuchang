@@ -40,24 +40,18 @@ const failedRequests = [];
 const badResponses = [];
 const PLAYER_MODEL_VISUAL_SCALE = 1;
 const MONSTER_MODEL_VISUAL_SCALE = 1;
-const REQUIRED_POLY_NATURE_ASSETS = [
-  'models/foliage/beech-poly.glb',
+const REQUIRED_FLORA_ASSETS = [
+  'models/foliage/mission-lush-tree.glb',
   'models/foliage/burdock-poly.glb',
-  'models/foliage/cypress-poly.glb',
   'models/foliage/dead-beech-poly.glb',
   'models/foliage/dead-cypress-poly.glb',
-  'models/foliage/willow-poly.glb',
 ];
 const REDUCED_FLORA_ASSETS = [
-  'models/foliage/asia-tree.glb',
-  'models/foliage/beech-poly.glb',
+  'models/foliage/mission-lush-tree.glb',
   'models/foliage/burdock-poly.glb',
-  'models/foliage/cypress-poly.glb',
   'models/foliage/dead-beech-poly.glb',
   'models/foliage/dead-cypress-poly.glb',
-  'models/foliage/red-maple.glb',
   'models/foliage/rock_1.glb',
-  'models/foliage/willow-poly.glb',
 ];
 const MODELS_BY_KIND = {
   'ground-melee': ['M001', 'M004', 'M008', 'M010', 'M017', 'M023', 'M024', 'M026', 'M033'],
@@ -341,14 +335,14 @@ await page.waitForFunction(
     if (!local || !camera || camera.mode !== 'standard') {
       return false;
     }
-    const desiredX = local.position.x / 1_000 + 14;
-    const desiredZ = local.position.z / 1_000 + 14;
     return (
-      Math.abs(camera.position[0] - desiredX) < 0.025 &&
-      Math.abs(camera.position[1] - 16) < 0.025 &&
-      Math.abs(camera.position[2] - desiredZ) < 0.025 &&
+      Math.abs(camera.target[0] - local.position.x / 1_000) < 0.025 &&
+      Math.abs(camera.target[2] - local.position.z / 1_000) < 0.025 &&
+      camera.offset.every(
+        (value, index) => Math.abs(value - camera.targetOffset[index]) < 0.025,
+      ) &&
       Math.abs(camera.zoom - 1.12) < 0.025 &&
-      camera.presetOffset.every((value, index) => Math.abs(value - [14, 16, 14][index]) < 0.001) &&
+      camera.presetOffset.every((value, index) => Math.abs(value - [12, 10.6, 12][index]) < 0.001) &&
       camera.controlsCustomized === false
     );
   },
@@ -554,7 +548,7 @@ await page.waitForFunction(
 
 const cameraControls = {
   initialViewLowerAndCloser:
-    cameraViews[0]?.presetOffset?.join(',') === '14,16,14' &&
+    cameraViews[0]?.presetOffset?.join(',') === '12,10.6,12' &&
     Math.abs((cameraViews[0]?.presetZoom ?? 0) - 1.12) < 0.001,
   wheelZoomed:
     beforeWheelCamera !== null &&
@@ -1279,7 +1273,7 @@ const floraModelReady = Boolean(
     final.flora.instancedBatches > 0 &&
     final.flora.visible === true,
 );
-const polyNatureAssetsLoaded = REQUIRED_POLY_NATURE_ASSETS.every((asset) =>
+const requiredFloraAssetsLoaded = REQUIRED_FLORA_ASSETS.every((asset) =>
   final.flora?.loadedAssets.includes(asset),
 );
 const mapAssetLayerReady = Boolean(
@@ -1328,7 +1322,7 @@ const result = {
     desktopHudLayout: desktopHudLayoutPassed,
     modelIdentity: modelIdentity.passed,
     floraModelReady,
-    polyNatureAssetsLoaded,
+    requiredFloraAssetsLoaded,
     mapAssetLayerReady,
     requestedHero:
       expectedHeroId === null ||
@@ -1446,7 +1440,7 @@ const failure =
   !result.checks.desktopHudLayout ||
   !result.checks.modelIdentity ||
   !result.checks.floraModelReady ||
-  !result.checks.polyNatureAssetsLoaded ||
+  !result.checks.requiredFloraAssetsLoaded ||
   !result.checks.mapAssetLayerReady ||
   !result.checks.requestedHero ||
   !result.checks.localizedTreeOcclusion ||

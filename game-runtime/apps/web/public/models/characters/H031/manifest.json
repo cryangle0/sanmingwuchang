@@ -1,0 +1,4425 @@
+{
+  "schema": "jwgb.animated-character-model.v1",
+  "generatedAt": "2026-08-24T12:48:02.452Z",
+  "modelId": "H031",
+  "displayName": "托塔李天王",
+  "deliveryPath": "models/characters/H031/model.glb",
+  "targetHeight": 2.2,
+  "sources": [
+    {
+      "name": "Idle",
+      "selectedClip": "Armature|LiTianWang_Idle",
+      "fileName": "01_待机_idle.fbx",
+      "bytes": 36137452,
+      "sha256": "CFE1B0E4805F5016051070E3757E8A9CAE9ADD592C363A53369565E4DAE7CB99"
+    },
+    {
+      "name": "Move",
+      "selectedClip": "Armature|Armature|preset:biped:run",
+      "fileName": "02_跑步_run.fbx",
+      "bytes": 35926812,
+      "sha256": "2042F07EB9CE749BA92DA67047A7B45547B44DD8BFF4437BE61E4DA262763467"
+    },
+    {
+      "name": "Attack",
+      "selectedClip": "Armature|LiTianWang_Attack",
+      "fileName": "03_攻击_attack.fbx",
+      "bytes": 35921852,
+      "sha256": "6D9895417D7BFA2C426D9223CB82FA3D707C7B7BF88018910F4BE5E7D1BA192F"
+    },
+    {
+      "name": "Spell",
+      "selectedClip": "Armature|LiTianWang_Cast",
+      "fileName": "04_施法_cast.fbx",
+      "bytes": 36134156,
+      "sha256": "6411E9CCB1F6C1A38524DB87B623692AA5481638086FD7E618CE0A6BAB9C48B1"
+    }
+  ],
+  "conversion": {
+    "clipPatterns": {
+      "Idle": "LiTianWang_Idle",
+      "Move": "preset:biped:run",
+      "Attack": "LiTianWang_Attack",
+      "Spell": "LiTianWang_Cast"
+    },
+    "requiresSeparateWeapon": true,
+    "allowAnimationBoneSetDifferences": false,
+    "sourceMetrics": [
+      {
+        "name": "Idle",
+        "selectedClip": "Armature|LiTianWang_Idle",
+        "availableClips": [
+          "Armature|Armature|preset:biped:run",
+          "Armature|LiTianWang_Idle"
+        ],
+        "meshes": 91,
+        "skinnedMeshes": 89,
+        "staticMeshes": 2,
+        "vertices": 2034489,
+        "triangles": 678163,
+        "bones": [
+          "Head",
+          "Hip",
+          "L_Calf",
+          "L_CalfTwist01",
+          "L_CalfTwist02",
+          "L_Clavicle",
+          "L_Foot",
+          "L_Forearm",
+          "L_ForearmTwist01",
+          "L_ForearmTwist02",
+          "L_Hand",
+          "L_Thigh",
+          "L_ThighTwist01",
+          "L_ThighTwist02",
+          "L_ToeBase",
+          "L_Upperarm",
+          "L_UpperarmTwist01",
+          "L_UpperarmTwist02",
+          "NeckTwist01",
+          "NeckTwist02",
+          "Pelvis",
+          "R_Calf",
+          "R_CalfTwist01",
+          "R_CalfTwist02",
+          "R_Clavicle",
+          "R_Foot",
+          "R_Forearm",
+          "R_ForearmTwist01",
+          "R_ForearmTwist02",
+          "R_Hand",
+          "R_Thigh",
+          "R_ThighTwist01",
+          "R_ThighTwist02",
+          "R_ToeBase",
+          "R_Upperarm",
+          "R_UpperarmTwist01",
+          "R_UpperarmTwist02",
+          "Root",
+          "Spine01",
+          "Spine02",
+          "Waist"
+        ],
+        "meshRecords": [
+          {
+            "name": "Pagoda",
+            "parentName": "L_Hand",
+            "skinned": false,
+            "vertices": 150048,
+            "triangles": 50016
+          },
+          {
+            "name": "Sword",
+            "parentName": "R_Hand",
+            "skinned": false,
+            "vertices": 150006,
+            "triangles": 50002
+          },
+          {
+            "name": "tripo_part_14",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35646,
+            "triangles": 11882
+          },
+          {
+            "name": "tripo_part_0",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35631,
+            "triangles": 11877
+          },
+          {
+            "name": "tripo_part_13",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35631,
+            "triangles": 11877
+          },
+          {
+            "name": "tripo_part_5",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35397,
+            "triangles": 11799
+          },
+          {
+            "name": "tripo_part_16",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35388,
+            "triangles": 11796
+          },
+          {
+            "name": "tripo_part_11",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35334,
+            "triangles": 11778
+          },
+          {
+            "name": "tripo_part_19",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35331,
+            "triangles": 11777
+          },
+          {
+            "name": "tripo_part_8",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35301,
+            "triangles": 11767
+          },
+          {
+            "name": "tripo_part_9",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35295,
+            "triangles": 11765
+          },
+          {
+            "name": "tripo_part_39",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35292,
+            "triangles": 11764
+          },
+          {
+            "name": "tripo_part_3",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35250,
+            "triangles": 11750
+          },
+          {
+            "name": "tripo_part_38",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35244,
+            "triangles": 11748
+          },
+          {
+            "name": "tripo_part_6",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35232,
+            "triangles": 11744
+          },
+          {
+            "name": "tripo_part_10",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35223,
+            "triangles": 11741
+          },
+          {
+            "name": "tripo_part_12",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35211,
+            "triangles": 11737
+          },
+          {
+            "name": "tripo_part_7",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35157,
+            "triangles": 11719
+          },
+          {
+            "name": "tripo_part_4",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35133,
+            "triangles": 11711
+          },
+          {
+            "name": "tripo_part_1",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35109,
+            "triangles": 11703
+          },
+          {
+            "name": "tripo_part_2",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35091,
+            "triangles": 11697
+          },
+          {
+            "name": "tripo_part_15",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35088,
+            "triangles": 11696
+          },
+          {
+            "name": "tripo_part_23",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 34875,
+            "triangles": 11625
+          },
+          {
+            "name": "tripo_part_40",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 34812,
+            "triangles": 11604
+          },
+          {
+            "name": "tripo_part_27",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 34773,
+            "triangles": 11591
+          },
+          {
+            "name": "tripo_part_18",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 34425,
+            "triangles": 11475
+          },
+          {
+            "name": "tripo_part_17",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 33768,
+            "triangles": 11256
+          },
+          {
+            "name": "tripo_part_31",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 33177,
+            "triangles": 11059
+          },
+          {
+            "name": "tripo_part_41",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 31545,
+            "triangles": 10515
+          },
+          {
+            "name": "tripo_part_20",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 30675,
+            "triangles": 10225
+          },
+          {
+            "name": "tripo_part_32",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 30513,
+            "triangles": 10171
+          },
+          {
+            "name": "tripo_part_25",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 28356,
+            "triangles": 9452
+          },
+          {
+            "name": "tripo_part_34",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 28149,
+            "triangles": 9383
+          },
+          {
+            "name": "tripo_part_24",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 27945,
+            "triangles": 9315
+          },
+          {
+            "name": "tripo_part_28",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 26919,
+            "triangles": 8973
+          },
+          {
+            "name": "tripo_part_42",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 25317,
+            "triangles": 8439
+          },
+          {
+            "name": "tripo_part_22",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 24855,
+            "triangles": 8285
+          },
+          {
+            "name": "tripo_part_26",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 24786,
+            "triangles": 8262
+          },
+          {
+            "name": "tripo_part_29",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 24495,
+            "triangles": 8165
+          },
+          {
+            "name": "tripo_part_43",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 23274,
+            "triangles": 7758
+          },
+          {
+            "name": "tripo_part_44",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 23082,
+            "triangles": 7694
+          },
+          {
+            "name": "tripo_part_45",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 19830,
+            "triangles": 6610
+          },
+          {
+            "name": "tripo_part_46",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 19647,
+            "triangles": 6549
+          },
+          {
+            "name": "tripo_part_21",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 18516,
+            "triangles": 6172
+          },
+          {
+            "name": "tripo_part_47",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 18051,
+            "triangles": 6017
+          },
+          {
+            "name": "tripo_part_48",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 17823,
+            "triangles": 5941
+          },
+          {
+            "name": "tripo_part_33",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 17136,
+            "triangles": 5712
+          },
+          {
+            "name": "tripo_part_37",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 16488,
+            "triangles": 5496
+          },
+          {
+            "name": "tripo_part_30",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 16392,
+            "triangles": 5464
+          },
+          {
+            "name": "tripo_part_35",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 15687,
+            "triangles": 5229
+          },
+          {
+            "name": "tripo_part_36",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 15468,
+            "triangles": 5156
+          },
+          {
+            "name": "tripo_part_49",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 14817,
+            "triangles": 4939
+          },
+          {
+            "name": "tripo_part_50",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 14643,
+            "triangles": 4881
+          },
+          {
+            "name": "tripo_part_51",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 14067,
+            "triangles": 4689
+          },
+          {
+            "name": "tripo_part_52",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 13449,
+            "triangles": 4483
+          },
+          {
+            "name": "tripo_part_53",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 12825,
+            "triangles": 4275
+          },
+          {
+            "name": "tripo_part_54",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 11316,
+            "triangles": 3772
+          },
+          {
+            "name": "tripo_part_55",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 11244,
+            "triangles": 3748
+          },
+          {
+            "name": "tripo_part_56",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 10842,
+            "triangles": 3614
+          },
+          {
+            "name": "tripo_part_58",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 10320,
+            "triangles": 3440
+          },
+          {
+            "name": "tripo_part_57",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 10299,
+            "triangles": 3433
+          },
+          {
+            "name": "tripo_part_59",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 10158,
+            "triangles": 3386
+          },
+          {
+            "name": "tripo_part_60",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 9897,
+            "triangles": 3299
+          },
+          {
+            "name": "tripo_part_61",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 9846,
+            "triangles": 3282
+          },
+          {
+            "name": "tripo_part_63",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 9666,
+            "triangles": 3222
+          },
+          {
+            "name": "tripo_part_62",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 9663,
+            "triangles": 3221
+          },
+          {
+            "name": "tripo_part_64",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 8844,
+            "triangles": 2948
+          },
+          {
+            "name": "tripo_part_66",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 8232,
+            "triangles": 2744
+          },
+          {
+            "name": "tripo_part_65",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 8169,
+            "triangles": 2723
+          },
+          {
+            "name": "tripo_part_67",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 7815,
+            "triangles": 2605
+          },
+          {
+            "name": "tripo_part_68",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 6576,
+            "triangles": 2192
+          },
+          {
+            "name": "tripo_part_69",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 6300,
+            "triangles": 2100
+          },
+          {
+            "name": "tripo_part_70",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 5520,
+            "triangles": 1840
+          },
+          {
+            "name": "tripo_part_72",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4944,
+            "triangles": 1648
+          },
+          {
+            "name": "tripo_part_71",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4887,
+            "triangles": 1629
+          },
+          {
+            "name": "tripo_part_73",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4797,
+            "triangles": 1599
+          },
+          {
+            "name": "tripo_part_74",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4689,
+            "triangles": 1563
+          },
+          {
+            "name": "tripo_part_75",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4680,
+            "triangles": 1560
+          },
+          {
+            "name": "tripo_part_77",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4284,
+            "triangles": 1428
+          },
+          {
+            "name": "tripo_part_76",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4266,
+            "triangles": 1422
+          },
+          {
+            "name": "tripo_part_79",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4164,
+            "triangles": 1388
+          },
+          {
+            "name": "tripo_part_78",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4095,
+            "triangles": 1365
+          },
+          {
+            "name": "tripo_part_80",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4053,
+            "triangles": 1351
+          },
+          {
+            "name": "tripo_part_81",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3990,
+            "triangles": 1330
+          },
+          {
+            "name": "tripo_part_82",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3918,
+            "triangles": 1306
+          },
+          {
+            "name": "tripo_part_83",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3888,
+            "triangles": 1296
+          },
+          {
+            "name": "tripo_part_84",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3702,
+            "triangles": 1234
+          },
+          {
+            "name": "tripo_part_85",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3642,
+            "triangles": 1214
+          },
+          {
+            "name": "tripo_part_86",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3408,
+            "triangles": 1136
+          },
+          {
+            "name": "tripo_part_88",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 2895,
+            "triangles": 965
+          },
+          {
+            "name": "tripo_part_87",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 2862,
+            "triangles": 954
+          }
+        ],
+        "duration": 1.9583333730697632,
+        "tracks": 84,
+        "keyframes": 357,
+        "retargetedPositionTracks": 42,
+        "maximumRestPositionCorrection": 0,
+        "droppedTracks": 0,
+        "droppedTrackNames": []
+      },
+      {
+        "name": "Move",
+        "selectedClip": "Armature|Armature|preset:biped:run",
+        "availableClips": [
+          "Armature|Armature|preset:biped:run"
+        ],
+        "meshes": 91,
+        "skinnedMeshes": 89,
+        "staticMeshes": 2,
+        "vertices": 2034489,
+        "triangles": 678163,
+        "bones": [
+          "Head",
+          "Hip",
+          "L_Calf",
+          "L_CalfTwist01",
+          "L_CalfTwist02",
+          "L_Clavicle",
+          "L_Foot",
+          "L_Forearm",
+          "L_ForearmTwist01",
+          "L_ForearmTwist02",
+          "L_Hand",
+          "L_Thigh",
+          "L_ThighTwist01",
+          "L_ThighTwist02",
+          "L_ToeBase",
+          "L_Upperarm",
+          "L_UpperarmTwist01",
+          "L_UpperarmTwist02",
+          "NeckTwist01",
+          "NeckTwist02",
+          "Pelvis",
+          "R_Calf",
+          "R_CalfTwist01",
+          "R_CalfTwist02",
+          "R_Clavicle",
+          "R_Foot",
+          "R_Forearm",
+          "R_ForearmTwist01",
+          "R_ForearmTwist02",
+          "R_Hand",
+          "R_Thigh",
+          "R_ThighTwist01",
+          "R_ThighTwist02",
+          "R_ToeBase",
+          "R_Upperarm",
+          "R_UpperarmTwist01",
+          "R_UpperarmTwist02",
+          "Root",
+          "Spine01",
+          "Spine02",
+          "Waist"
+        ],
+        "meshRecords": [
+          {
+            "name": "Pagoda",
+            "parentName": "L_Hand",
+            "skinned": false,
+            "vertices": 150048,
+            "triangles": 50016
+          },
+          {
+            "name": "Sword",
+            "parentName": "R_Hand",
+            "skinned": false,
+            "vertices": 150006,
+            "triangles": 50002
+          },
+          {
+            "name": "tripo_part_14",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35646,
+            "triangles": 11882
+          },
+          {
+            "name": "tripo_part_13",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35631,
+            "triangles": 11877
+          },
+          {
+            "name": "tripo_part_0",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35631,
+            "triangles": 11877
+          },
+          {
+            "name": "tripo_part_5",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35397,
+            "triangles": 11799
+          },
+          {
+            "name": "tripo_part_16",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35388,
+            "triangles": 11796
+          },
+          {
+            "name": "tripo_part_11",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35334,
+            "triangles": 11778
+          },
+          {
+            "name": "tripo_part_19",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35331,
+            "triangles": 11777
+          },
+          {
+            "name": "tripo_part_8",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35301,
+            "triangles": 11767
+          },
+          {
+            "name": "tripo_part_9",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35295,
+            "triangles": 11765
+          },
+          {
+            "name": "tripo_part_39",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35292,
+            "triangles": 11764
+          },
+          {
+            "name": "tripo_part_3",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35250,
+            "triangles": 11750
+          },
+          {
+            "name": "tripo_part_38",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35244,
+            "triangles": 11748
+          },
+          {
+            "name": "tripo_part_6",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35232,
+            "triangles": 11744
+          },
+          {
+            "name": "tripo_part_10",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35223,
+            "triangles": 11741
+          },
+          {
+            "name": "tripo_part_12",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35211,
+            "triangles": 11737
+          },
+          {
+            "name": "tripo_part_7",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35157,
+            "triangles": 11719
+          },
+          {
+            "name": "tripo_part_4",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35133,
+            "triangles": 11711
+          },
+          {
+            "name": "tripo_part_1",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35109,
+            "triangles": 11703
+          },
+          {
+            "name": "tripo_part_2",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35091,
+            "triangles": 11697
+          },
+          {
+            "name": "tripo_part_15",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35088,
+            "triangles": 11696
+          },
+          {
+            "name": "tripo_part_23",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 34875,
+            "triangles": 11625
+          },
+          {
+            "name": "tripo_part_40",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 34812,
+            "triangles": 11604
+          },
+          {
+            "name": "tripo_part_27",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 34773,
+            "triangles": 11591
+          },
+          {
+            "name": "tripo_part_18",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 34425,
+            "triangles": 11475
+          },
+          {
+            "name": "tripo_part_17",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 33768,
+            "triangles": 11256
+          },
+          {
+            "name": "tripo_part_31",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 33177,
+            "triangles": 11059
+          },
+          {
+            "name": "tripo_part_41",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 31545,
+            "triangles": 10515
+          },
+          {
+            "name": "tripo_part_20",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 30675,
+            "triangles": 10225
+          },
+          {
+            "name": "tripo_part_32",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 30513,
+            "triangles": 10171
+          },
+          {
+            "name": "tripo_part_25",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 28356,
+            "triangles": 9452
+          },
+          {
+            "name": "tripo_part_34",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 28149,
+            "triangles": 9383
+          },
+          {
+            "name": "tripo_part_24",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 27945,
+            "triangles": 9315
+          },
+          {
+            "name": "tripo_part_28",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 26919,
+            "triangles": 8973
+          },
+          {
+            "name": "tripo_part_42",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 25317,
+            "triangles": 8439
+          },
+          {
+            "name": "tripo_part_22",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 24855,
+            "triangles": 8285
+          },
+          {
+            "name": "tripo_part_26",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 24786,
+            "triangles": 8262
+          },
+          {
+            "name": "tripo_part_29",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 24495,
+            "triangles": 8165
+          },
+          {
+            "name": "tripo_part_43",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 23274,
+            "triangles": 7758
+          },
+          {
+            "name": "tripo_part_44",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 23082,
+            "triangles": 7694
+          },
+          {
+            "name": "tripo_part_45",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 19830,
+            "triangles": 6610
+          },
+          {
+            "name": "tripo_part_46",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 19647,
+            "triangles": 6549
+          },
+          {
+            "name": "tripo_part_21",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 18516,
+            "triangles": 6172
+          },
+          {
+            "name": "tripo_part_47",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 18051,
+            "triangles": 6017
+          },
+          {
+            "name": "tripo_part_48",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 17823,
+            "triangles": 5941
+          },
+          {
+            "name": "tripo_part_33",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 17136,
+            "triangles": 5712
+          },
+          {
+            "name": "tripo_part_37",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 16488,
+            "triangles": 5496
+          },
+          {
+            "name": "tripo_part_30",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 16392,
+            "triangles": 5464
+          },
+          {
+            "name": "tripo_part_35",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 15687,
+            "triangles": 5229
+          },
+          {
+            "name": "tripo_part_36",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 15468,
+            "triangles": 5156
+          },
+          {
+            "name": "tripo_part_49",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 14817,
+            "triangles": 4939
+          },
+          {
+            "name": "tripo_part_50",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 14643,
+            "triangles": 4881
+          },
+          {
+            "name": "tripo_part_51",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 14067,
+            "triangles": 4689
+          },
+          {
+            "name": "tripo_part_52",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 13449,
+            "triangles": 4483
+          },
+          {
+            "name": "tripo_part_53",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 12825,
+            "triangles": 4275
+          },
+          {
+            "name": "tripo_part_54",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 11316,
+            "triangles": 3772
+          },
+          {
+            "name": "tripo_part_55",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 11244,
+            "triangles": 3748
+          },
+          {
+            "name": "tripo_part_56",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 10842,
+            "triangles": 3614
+          },
+          {
+            "name": "tripo_part_58",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 10320,
+            "triangles": 3440
+          },
+          {
+            "name": "tripo_part_57",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 10299,
+            "triangles": 3433
+          },
+          {
+            "name": "tripo_part_59",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 10158,
+            "triangles": 3386
+          },
+          {
+            "name": "tripo_part_60",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 9897,
+            "triangles": 3299
+          },
+          {
+            "name": "tripo_part_61",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 9846,
+            "triangles": 3282
+          },
+          {
+            "name": "tripo_part_63",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 9666,
+            "triangles": 3222
+          },
+          {
+            "name": "tripo_part_62",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 9663,
+            "triangles": 3221
+          },
+          {
+            "name": "tripo_part_64",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 8844,
+            "triangles": 2948
+          },
+          {
+            "name": "tripo_part_66",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 8232,
+            "triangles": 2744
+          },
+          {
+            "name": "tripo_part_65",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 8169,
+            "triangles": 2723
+          },
+          {
+            "name": "tripo_part_67",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 7815,
+            "triangles": 2605
+          },
+          {
+            "name": "tripo_part_68",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 6576,
+            "triangles": 2192
+          },
+          {
+            "name": "tripo_part_69",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 6300,
+            "triangles": 2100
+          },
+          {
+            "name": "tripo_part_70",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 5520,
+            "triangles": 1840
+          },
+          {
+            "name": "tripo_part_72",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4944,
+            "triangles": 1648
+          },
+          {
+            "name": "tripo_part_71",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4887,
+            "triangles": 1629
+          },
+          {
+            "name": "tripo_part_73",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4797,
+            "triangles": 1599
+          },
+          {
+            "name": "tripo_part_74",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4689,
+            "triangles": 1563
+          },
+          {
+            "name": "tripo_part_75",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4680,
+            "triangles": 1560
+          },
+          {
+            "name": "tripo_part_77",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4284,
+            "triangles": 1428
+          },
+          {
+            "name": "tripo_part_76",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4266,
+            "triangles": 1422
+          },
+          {
+            "name": "tripo_part_79",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4164,
+            "triangles": 1388
+          },
+          {
+            "name": "tripo_part_78",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4095,
+            "triangles": 1365
+          },
+          {
+            "name": "tripo_part_80",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4053,
+            "triangles": 1351
+          },
+          {
+            "name": "tripo_part_81",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3990,
+            "triangles": 1330
+          },
+          {
+            "name": "tripo_part_82",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3918,
+            "triangles": 1306
+          },
+          {
+            "name": "tripo_part_83",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3888,
+            "triangles": 1296
+          },
+          {
+            "name": "tripo_part_84",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3702,
+            "triangles": 1234
+          },
+          {
+            "name": "tripo_part_85",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3642,
+            "triangles": 1214
+          },
+          {
+            "name": "tripo_part_86",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3408,
+            "triangles": 1136
+          },
+          {
+            "name": "tripo_part_88",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 2895,
+            "triangles": 965
+          },
+          {
+            "name": "tripo_part_87",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 2862,
+            "triangles": 954
+          }
+        ],
+        "duration": 1.25,
+        "tracks": 84,
+        "keyframes": 599,
+        "retargetedPositionTracks": 42,
+        "maximumRestPositionCorrection": 5.496983853904467e-7,
+        "droppedTracks": 0,
+        "droppedTrackNames": []
+      },
+      {
+        "name": "Attack",
+        "selectedClip": "Armature|LiTianWang_Attack",
+        "availableClips": [
+          "Armature|LiTianWang_Attack"
+        ],
+        "meshes": 91,
+        "skinnedMeshes": 89,
+        "staticMeshes": 2,
+        "vertices": 2034489,
+        "triangles": 678163,
+        "bones": [
+          "Head",
+          "Hip",
+          "L_Calf",
+          "L_CalfTwist01",
+          "L_CalfTwist02",
+          "L_Clavicle",
+          "L_Foot",
+          "L_Forearm",
+          "L_ForearmTwist01",
+          "L_ForearmTwist02",
+          "L_Hand",
+          "L_Thigh",
+          "L_ThighTwist01",
+          "L_ThighTwist02",
+          "L_ToeBase",
+          "L_Upperarm",
+          "L_UpperarmTwist01",
+          "L_UpperarmTwist02",
+          "NeckTwist01",
+          "NeckTwist02",
+          "Pelvis",
+          "R_Calf",
+          "R_CalfTwist01",
+          "R_CalfTwist02",
+          "R_Clavicle",
+          "R_Foot",
+          "R_Forearm",
+          "R_ForearmTwist01",
+          "R_ForearmTwist02",
+          "R_Hand",
+          "R_Thigh",
+          "R_ThighTwist01",
+          "R_ThighTwist02",
+          "R_ToeBase",
+          "R_Upperarm",
+          "R_UpperarmTwist01",
+          "R_UpperarmTwist02",
+          "Root",
+          "Spine01",
+          "Spine02",
+          "Waist"
+        ],
+        "meshRecords": [
+          {
+            "name": "Pagoda",
+            "parentName": "L_Hand",
+            "skinned": false,
+            "vertices": 150048,
+            "triangles": 50016
+          },
+          {
+            "name": "Sword",
+            "parentName": "R_Hand",
+            "skinned": false,
+            "vertices": 150006,
+            "triangles": 50002
+          },
+          {
+            "name": "tripo_part_14",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35646,
+            "triangles": 11882
+          },
+          {
+            "name": "tripo_part_0",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35631,
+            "triangles": 11877
+          },
+          {
+            "name": "tripo_part_13",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35631,
+            "triangles": 11877
+          },
+          {
+            "name": "tripo_part_5",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35397,
+            "triangles": 11799
+          },
+          {
+            "name": "tripo_part_16",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35388,
+            "triangles": 11796
+          },
+          {
+            "name": "tripo_part_11",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35334,
+            "triangles": 11778
+          },
+          {
+            "name": "tripo_part_19",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35331,
+            "triangles": 11777
+          },
+          {
+            "name": "tripo_part_8",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35301,
+            "triangles": 11767
+          },
+          {
+            "name": "tripo_part_9",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35295,
+            "triangles": 11765
+          },
+          {
+            "name": "tripo_part_39",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35292,
+            "triangles": 11764
+          },
+          {
+            "name": "tripo_part_3",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35250,
+            "triangles": 11750
+          },
+          {
+            "name": "tripo_part_38",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35244,
+            "triangles": 11748
+          },
+          {
+            "name": "tripo_part_6",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35232,
+            "triangles": 11744
+          },
+          {
+            "name": "tripo_part_10",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35223,
+            "triangles": 11741
+          },
+          {
+            "name": "tripo_part_12",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35211,
+            "triangles": 11737
+          },
+          {
+            "name": "tripo_part_7",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35157,
+            "triangles": 11719
+          },
+          {
+            "name": "tripo_part_4",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35133,
+            "triangles": 11711
+          },
+          {
+            "name": "tripo_part_1",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35109,
+            "triangles": 11703
+          },
+          {
+            "name": "tripo_part_2",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35091,
+            "triangles": 11697
+          },
+          {
+            "name": "tripo_part_15",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35088,
+            "triangles": 11696
+          },
+          {
+            "name": "tripo_part_23",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 34875,
+            "triangles": 11625
+          },
+          {
+            "name": "tripo_part_40",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 34812,
+            "triangles": 11604
+          },
+          {
+            "name": "tripo_part_27",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 34773,
+            "triangles": 11591
+          },
+          {
+            "name": "tripo_part_18",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 34425,
+            "triangles": 11475
+          },
+          {
+            "name": "tripo_part_17",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 33768,
+            "triangles": 11256
+          },
+          {
+            "name": "tripo_part_31",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 33177,
+            "triangles": 11059
+          },
+          {
+            "name": "tripo_part_41",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 31545,
+            "triangles": 10515
+          },
+          {
+            "name": "tripo_part_20",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 30675,
+            "triangles": 10225
+          },
+          {
+            "name": "tripo_part_32",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 30513,
+            "triangles": 10171
+          },
+          {
+            "name": "tripo_part_25",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 28356,
+            "triangles": 9452
+          },
+          {
+            "name": "tripo_part_34",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 28149,
+            "triangles": 9383
+          },
+          {
+            "name": "tripo_part_24",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 27945,
+            "triangles": 9315
+          },
+          {
+            "name": "tripo_part_28",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 26919,
+            "triangles": 8973
+          },
+          {
+            "name": "tripo_part_42",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 25317,
+            "triangles": 8439
+          },
+          {
+            "name": "tripo_part_22",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 24855,
+            "triangles": 8285
+          },
+          {
+            "name": "tripo_part_26",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 24786,
+            "triangles": 8262
+          },
+          {
+            "name": "tripo_part_29",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 24495,
+            "triangles": 8165
+          },
+          {
+            "name": "tripo_part_43",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 23274,
+            "triangles": 7758
+          },
+          {
+            "name": "tripo_part_44",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 23082,
+            "triangles": 7694
+          },
+          {
+            "name": "tripo_part_45",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 19830,
+            "triangles": 6610
+          },
+          {
+            "name": "tripo_part_46",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 19647,
+            "triangles": 6549
+          },
+          {
+            "name": "tripo_part_21",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 18516,
+            "triangles": 6172
+          },
+          {
+            "name": "tripo_part_47",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 18051,
+            "triangles": 6017
+          },
+          {
+            "name": "tripo_part_48",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 17823,
+            "triangles": 5941
+          },
+          {
+            "name": "tripo_part_33",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 17136,
+            "triangles": 5712
+          },
+          {
+            "name": "tripo_part_37",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 16488,
+            "triangles": 5496
+          },
+          {
+            "name": "tripo_part_30",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 16392,
+            "triangles": 5464
+          },
+          {
+            "name": "tripo_part_35",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 15687,
+            "triangles": 5229
+          },
+          {
+            "name": "tripo_part_36",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 15468,
+            "triangles": 5156
+          },
+          {
+            "name": "tripo_part_49",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 14817,
+            "triangles": 4939
+          },
+          {
+            "name": "tripo_part_50",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 14643,
+            "triangles": 4881
+          },
+          {
+            "name": "tripo_part_51",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 14067,
+            "triangles": 4689
+          },
+          {
+            "name": "tripo_part_52",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 13449,
+            "triangles": 4483
+          },
+          {
+            "name": "tripo_part_53",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 12825,
+            "triangles": 4275
+          },
+          {
+            "name": "tripo_part_54",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 11316,
+            "triangles": 3772
+          },
+          {
+            "name": "tripo_part_55",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 11244,
+            "triangles": 3748
+          },
+          {
+            "name": "tripo_part_56",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 10842,
+            "triangles": 3614
+          },
+          {
+            "name": "tripo_part_58",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 10320,
+            "triangles": 3440
+          },
+          {
+            "name": "tripo_part_57",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 10299,
+            "triangles": 3433
+          },
+          {
+            "name": "tripo_part_59",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 10158,
+            "triangles": 3386
+          },
+          {
+            "name": "tripo_part_60",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 9897,
+            "triangles": 3299
+          },
+          {
+            "name": "tripo_part_61",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 9846,
+            "triangles": 3282
+          },
+          {
+            "name": "tripo_part_63",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 9666,
+            "triangles": 3222
+          },
+          {
+            "name": "tripo_part_62",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 9663,
+            "triangles": 3221
+          },
+          {
+            "name": "tripo_part_64",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 8844,
+            "triangles": 2948
+          },
+          {
+            "name": "tripo_part_66",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 8232,
+            "triangles": 2744
+          },
+          {
+            "name": "tripo_part_65",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 8169,
+            "triangles": 2723
+          },
+          {
+            "name": "tripo_part_67",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 7815,
+            "triangles": 2605
+          },
+          {
+            "name": "tripo_part_68",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 6576,
+            "triangles": 2192
+          },
+          {
+            "name": "tripo_part_69",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 6300,
+            "triangles": 2100
+          },
+          {
+            "name": "tripo_part_70",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 5520,
+            "triangles": 1840
+          },
+          {
+            "name": "tripo_part_72",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4944,
+            "triangles": 1648
+          },
+          {
+            "name": "tripo_part_71",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4887,
+            "triangles": 1629
+          },
+          {
+            "name": "tripo_part_73",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4797,
+            "triangles": 1599
+          },
+          {
+            "name": "tripo_part_74",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4689,
+            "triangles": 1563
+          },
+          {
+            "name": "tripo_part_75",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4680,
+            "triangles": 1560
+          },
+          {
+            "name": "tripo_part_77",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4284,
+            "triangles": 1428
+          },
+          {
+            "name": "tripo_part_76",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4266,
+            "triangles": 1422
+          },
+          {
+            "name": "tripo_part_79",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4164,
+            "triangles": 1388
+          },
+          {
+            "name": "tripo_part_78",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4095,
+            "triangles": 1365
+          },
+          {
+            "name": "tripo_part_80",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4053,
+            "triangles": 1351
+          },
+          {
+            "name": "tripo_part_81",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3990,
+            "triangles": 1330
+          },
+          {
+            "name": "tripo_part_82",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3918,
+            "triangles": 1306
+          },
+          {
+            "name": "tripo_part_83",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3888,
+            "triangles": 1296
+          },
+          {
+            "name": "tripo_part_84",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3702,
+            "triangles": 1234
+          },
+          {
+            "name": "tripo_part_85",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3642,
+            "triangles": 1214
+          },
+          {
+            "name": "tripo_part_86",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3408,
+            "triangles": 1136
+          },
+          {
+            "name": "tripo_part_88",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 2895,
+            "triangles": 965
+          },
+          {
+            "name": "tripo_part_87",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 2862,
+            "triangles": 954
+          }
+        ],
+        "duration": 0.6666666865348816,
+        "tracks": 84,
+        "keyframes": 251,
+        "retargetedPositionTracks": 42,
+        "maximumRestPositionCorrection": 1.0481939542659398e-7,
+        "droppedTracks": 0,
+        "droppedTrackNames": []
+      },
+      {
+        "name": "Spell",
+        "selectedClip": "Armature|LiTianWang_Cast",
+        "availableClips": [
+          "Armature|LiTianWang_Cast",
+          "Pagoda|Pagoda动作.001",
+          "Armature|Pagoda动作.001"
+        ],
+        "meshes": 91,
+        "skinnedMeshes": 89,
+        "staticMeshes": 2,
+        "vertices": 2034489,
+        "triangles": 678163,
+        "bones": [
+          "Head",
+          "Hip",
+          "L_Calf",
+          "L_CalfTwist01",
+          "L_CalfTwist02",
+          "L_Clavicle",
+          "L_Foot",
+          "L_Forearm",
+          "L_ForearmTwist01",
+          "L_ForearmTwist02",
+          "L_Hand",
+          "L_Thigh",
+          "L_ThighTwist01",
+          "L_ThighTwist02",
+          "L_ToeBase",
+          "L_Upperarm",
+          "L_UpperarmTwist01",
+          "L_UpperarmTwist02",
+          "NeckTwist01",
+          "NeckTwist02",
+          "Pelvis",
+          "R_Calf",
+          "R_CalfTwist01",
+          "R_CalfTwist02",
+          "R_Clavicle",
+          "R_Foot",
+          "R_Forearm",
+          "R_ForearmTwist01",
+          "R_ForearmTwist02",
+          "R_Hand",
+          "R_Thigh",
+          "R_ThighTwist01",
+          "R_ThighTwist02",
+          "R_ToeBase",
+          "R_Upperarm",
+          "R_UpperarmTwist01",
+          "R_UpperarmTwist02",
+          "Root",
+          "Spine01",
+          "Spine02",
+          "Waist"
+        ],
+        "meshRecords": [
+          {
+            "name": "Pagoda",
+            "parentName": "L_Hand",
+            "skinned": false,
+            "vertices": 150048,
+            "triangles": 50016
+          },
+          {
+            "name": "Sword",
+            "parentName": "R_Hand",
+            "skinned": false,
+            "vertices": 150006,
+            "triangles": 50002
+          },
+          {
+            "name": "tripo_part_14",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35646,
+            "triangles": 11882
+          },
+          {
+            "name": "tripo_part_0",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35631,
+            "triangles": 11877
+          },
+          {
+            "name": "tripo_part_13",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35631,
+            "triangles": 11877
+          },
+          {
+            "name": "tripo_part_5",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35397,
+            "triangles": 11799
+          },
+          {
+            "name": "tripo_part_16",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35388,
+            "triangles": 11796
+          },
+          {
+            "name": "tripo_part_11",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35334,
+            "triangles": 11778
+          },
+          {
+            "name": "tripo_part_19",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35331,
+            "triangles": 11777
+          },
+          {
+            "name": "tripo_part_8",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35301,
+            "triangles": 11767
+          },
+          {
+            "name": "tripo_part_9",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35295,
+            "triangles": 11765
+          },
+          {
+            "name": "tripo_part_39",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35292,
+            "triangles": 11764
+          },
+          {
+            "name": "tripo_part_3",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35250,
+            "triangles": 11750
+          },
+          {
+            "name": "tripo_part_38",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35244,
+            "triangles": 11748
+          },
+          {
+            "name": "tripo_part_6",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35232,
+            "triangles": 11744
+          },
+          {
+            "name": "tripo_part_10",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35223,
+            "triangles": 11741
+          },
+          {
+            "name": "tripo_part_12",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35211,
+            "triangles": 11737
+          },
+          {
+            "name": "tripo_part_7",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35157,
+            "triangles": 11719
+          },
+          {
+            "name": "tripo_part_4",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35133,
+            "triangles": 11711
+          },
+          {
+            "name": "tripo_part_1",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35109,
+            "triangles": 11703
+          },
+          {
+            "name": "tripo_part_2",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35091,
+            "triangles": 11697
+          },
+          {
+            "name": "tripo_part_15",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 35088,
+            "triangles": 11696
+          },
+          {
+            "name": "tripo_part_23",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 34875,
+            "triangles": 11625
+          },
+          {
+            "name": "tripo_part_40",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 34812,
+            "triangles": 11604
+          },
+          {
+            "name": "tripo_part_27",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 34773,
+            "triangles": 11591
+          },
+          {
+            "name": "tripo_part_18",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 34425,
+            "triangles": 11475
+          },
+          {
+            "name": "tripo_part_17",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 33768,
+            "triangles": 11256
+          },
+          {
+            "name": "tripo_part_31",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 33177,
+            "triangles": 11059
+          },
+          {
+            "name": "tripo_part_41",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 31545,
+            "triangles": 10515
+          },
+          {
+            "name": "tripo_part_20",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 30675,
+            "triangles": 10225
+          },
+          {
+            "name": "tripo_part_32",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 30513,
+            "triangles": 10171
+          },
+          {
+            "name": "tripo_part_25",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 28356,
+            "triangles": 9452
+          },
+          {
+            "name": "tripo_part_34",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 28149,
+            "triangles": 9383
+          },
+          {
+            "name": "tripo_part_24",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 27945,
+            "triangles": 9315
+          },
+          {
+            "name": "tripo_part_28",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 26919,
+            "triangles": 8973
+          },
+          {
+            "name": "tripo_part_42",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 25317,
+            "triangles": 8439
+          },
+          {
+            "name": "tripo_part_22",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 24855,
+            "triangles": 8285
+          },
+          {
+            "name": "tripo_part_26",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 24786,
+            "triangles": 8262
+          },
+          {
+            "name": "tripo_part_29",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 24495,
+            "triangles": 8165
+          },
+          {
+            "name": "tripo_part_43",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 23274,
+            "triangles": 7758
+          },
+          {
+            "name": "tripo_part_44",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 23082,
+            "triangles": 7694
+          },
+          {
+            "name": "tripo_part_45",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 19830,
+            "triangles": 6610
+          },
+          {
+            "name": "tripo_part_46",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 19647,
+            "triangles": 6549
+          },
+          {
+            "name": "tripo_part_21",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 18516,
+            "triangles": 6172
+          },
+          {
+            "name": "tripo_part_47",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 18051,
+            "triangles": 6017
+          },
+          {
+            "name": "tripo_part_48",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 17823,
+            "triangles": 5941
+          },
+          {
+            "name": "tripo_part_33",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 17136,
+            "triangles": 5712
+          },
+          {
+            "name": "tripo_part_37",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 16488,
+            "triangles": 5496
+          },
+          {
+            "name": "tripo_part_30",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 16392,
+            "triangles": 5464
+          },
+          {
+            "name": "tripo_part_35",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 15687,
+            "triangles": 5229
+          },
+          {
+            "name": "tripo_part_36",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 15468,
+            "triangles": 5156
+          },
+          {
+            "name": "tripo_part_49",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 14817,
+            "triangles": 4939
+          },
+          {
+            "name": "tripo_part_50",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 14643,
+            "triangles": 4881
+          },
+          {
+            "name": "tripo_part_51",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 14067,
+            "triangles": 4689
+          },
+          {
+            "name": "tripo_part_52",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 13449,
+            "triangles": 4483
+          },
+          {
+            "name": "tripo_part_53",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 12825,
+            "triangles": 4275
+          },
+          {
+            "name": "tripo_part_54",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 11316,
+            "triangles": 3772
+          },
+          {
+            "name": "tripo_part_55",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 11244,
+            "triangles": 3748
+          },
+          {
+            "name": "tripo_part_56",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 10842,
+            "triangles": 3614
+          },
+          {
+            "name": "tripo_part_58",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 10320,
+            "triangles": 3440
+          },
+          {
+            "name": "tripo_part_57",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 10299,
+            "triangles": 3433
+          },
+          {
+            "name": "tripo_part_59",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 10158,
+            "triangles": 3386
+          },
+          {
+            "name": "tripo_part_60",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 9897,
+            "triangles": 3299
+          },
+          {
+            "name": "tripo_part_61",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 9846,
+            "triangles": 3282
+          },
+          {
+            "name": "tripo_part_63",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 9666,
+            "triangles": 3222
+          },
+          {
+            "name": "tripo_part_62",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 9663,
+            "triangles": 3221
+          },
+          {
+            "name": "tripo_part_64",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 8844,
+            "triangles": 2948
+          },
+          {
+            "name": "tripo_part_66",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 8232,
+            "triangles": 2744
+          },
+          {
+            "name": "tripo_part_65",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 8169,
+            "triangles": 2723
+          },
+          {
+            "name": "tripo_part_67",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 7815,
+            "triangles": 2605
+          },
+          {
+            "name": "tripo_part_68",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 6576,
+            "triangles": 2192
+          },
+          {
+            "name": "tripo_part_69",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 6300,
+            "triangles": 2100
+          },
+          {
+            "name": "tripo_part_70",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 5520,
+            "triangles": 1840
+          },
+          {
+            "name": "tripo_part_72",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4944,
+            "triangles": 1648
+          },
+          {
+            "name": "tripo_part_71",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4887,
+            "triangles": 1629
+          },
+          {
+            "name": "tripo_part_73",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4797,
+            "triangles": 1599
+          },
+          {
+            "name": "tripo_part_74",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4689,
+            "triangles": 1563
+          },
+          {
+            "name": "tripo_part_75",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4680,
+            "triangles": 1560
+          },
+          {
+            "name": "tripo_part_77",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4284,
+            "triangles": 1428
+          },
+          {
+            "name": "tripo_part_76",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4266,
+            "triangles": 1422
+          },
+          {
+            "name": "tripo_part_79",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4164,
+            "triangles": 1388
+          },
+          {
+            "name": "tripo_part_78",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4095,
+            "triangles": 1365
+          },
+          {
+            "name": "tripo_part_80",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 4053,
+            "triangles": 1351
+          },
+          {
+            "name": "tripo_part_81",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3990,
+            "triangles": 1330
+          },
+          {
+            "name": "tripo_part_82",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3918,
+            "triangles": 1306
+          },
+          {
+            "name": "tripo_part_83",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3888,
+            "triangles": 1296
+          },
+          {
+            "name": "tripo_part_84",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3702,
+            "triangles": 1234
+          },
+          {
+            "name": "tripo_part_85",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3642,
+            "triangles": 1214
+          },
+          {
+            "name": "tripo_part_86",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 3408,
+            "triangles": 1136
+          },
+          {
+            "name": "tripo_part_88",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 2895,
+            "triangles": 965
+          },
+          {
+            "name": "tripo_part_87",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 2862,
+            "triangles": 954
+          }
+        ],
+        "duration": 1.2916666269302368,
+        "tracks": 84,
+        "keyframes": 363,
+        "retargetedPositionTracks": 42,
+        "maximumRestPositionCorrection": 1.3983244825670338e-7,
+        "droppedTracks": 0,
+        "droppedTrackNames": []
+      }
+    ],
+    "retainedMesh": {
+      "meshes": 91,
+      "skinnedMeshes": 89,
+      "staticMeshes": 2,
+      "vertices": 2034489,
+      "triangles": 678163,
+      "bones": [
+        "Head",
+        "Hip",
+        "L_Calf",
+        "L_CalfTwist01",
+        "L_CalfTwist02",
+        "L_Clavicle",
+        "L_Foot",
+        "L_Forearm",
+        "L_ForearmTwist01",
+        "L_ForearmTwist02",
+        "L_Hand",
+        "L_Thigh",
+        "L_ThighTwist01",
+        "L_ThighTwist02",
+        "L_ToeBase",
+        "L_Upperarm",
+        "L_UpperarmTwist01",
+        "L_UpperarmTwist02",
+        "NeckTwist01",
+        "NeckTwist02",
+        "Pelvis",
+        "R_Calf",
+        "R_CalfTwist01",
+        "R_CalfTwist02",
+        "R_Clavicle",
+        "R_Foot",
+        "R_Forearm",
+        "R_ForearmTwist01",
+        "R_ForearmTwist02",
+        "R_Hand",
+        "R_Thigh",
+        "R_ThighTwist01",
+        "R_ThighTwist02",
+        "R_ToeBase",
+        "R_Upperarm",
+        "R_UpperarmTwist01",
+        "R_UpperarmTwist02",
+        "Root",
+        "Spine01",
+        "Spine02",
+        "Waist"
+      ],
+      "meshRecords": [
+        {
+          "name": "H031-Weapon-01",
+          "parentName": "L_Hand",
+          "skinned": false,
+          "vertices": 150048,
+          "triangles": 50016
+        },
+        {
+          "name": "H031-Weapon-02",
+          "parentName": "R_Hand",
+          "skinned": false,
+          "vertices": 150006,
+          "triangles": 50002
+        },
+        {
+          "name": "H031-Body-59",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 35646,
+          "triangles": 11882
+        },
+        {
+          "name": "H031-Body-02",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 35631,
+          "triangles": 11877
+        },
+        {
+          "name": "H031-Body-81",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 35631,
+          "triangles": 11877
+        },
+        {
+          "name": "H031-Body-16",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 35397,
+          "triangles": 11799
+        },
+        {
+          "name": "H031-Body-58",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 35388,
+          "triangles": 11796
+        },
+        {
+          "name": "H031-Body-30",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 35334,
+          "triangles": 11778
+        },
+        {
+          "name": "H031-Body-01",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 35331,
+          "triangles": 11777
+        },
+        {
+          "name": "H031-Body-89",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 35301,
+          "triangles": 11767
+        },
+        {
+          "name": "H031-Body-70",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 35295,
+          "triangles": 11765
+        },
+        {
+          "name": "H031-Body-87",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 35292,
+          "triangles": 11764
+        },
+        {
+          "name": "H031-Body-60",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 35250,
+          "triangles": 11750
+        },
+        {
+          "name": "H031-Body-61",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 35244,
+          "triangles": 11748
+        },
+        {
+          "name": "H031-Body-40",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 35232,
+          "triangles": 11744
+        },
+        {
+          "name": "H031-Body-03",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 35223,
+          "triangles": 11741
+        },
+        {
+          "name": "H031-Body-25",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 35211,
+          "triangles": 11737
+        },
+        {
+          "name": "H031-Body-36",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 35157,
+          "triangles": 11719
+        },
+        {
+          "name": "H031-Body-49",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 35133,
+          "triangles": 11711
+        },
+        {
+          "name": "H031-Body-33",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 35109,
+          "triangles": 11703
+        },
+        {
+          "name": "H031-Body-53",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 35091,
+          "triangles": 11697
+        },
+        {
+          "name": "H031-Body-43",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 35088,
+          "triangles": 11696
+        },
+        {
+          "name": "H031-Body-75",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 34875,
+          "triangles": 11625
+        },
+        {
+          "name": "H031-Body-79",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 34812,
+          "triangles": 11604
+        },
+        {
+          "name": "H031-Body-54",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 34773,
+          "triangles": 11591
+        },
+        {
+          "name": "H031-Body-15",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 34425,
+          "triangles": 11475
+        },
+        {
+          "name": "H031-Body-48",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 33768,
+          "triangles": 11256
+        },
+        {
+          "name": "H031-Body-78",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 33177,
+          "triangles": 11059
+        },
+        {
+          "name": "H031-Body-18",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 31545,
+          "triangles": 10515
+        },
+        {
+          "name": "H031-Body-42",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 30675,
+          "triangles": 10225
+        },
+        {
+          "name": "H031-Body-85",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 30513,
+          "triangles": 10171
+        },
+        {
+          "name": "H031-Body-55",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 28356,
+          "triangles": 9452
+        },
+        {
+          "name": "H031-Body-08",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 28149,
+          "triangles": 9383
+        },
+        {
+          "name": "H031-Body-32",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 27945,
+          "triangles": 9315
+        },
+        {
+          "name": "H031-Body-63",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 26919,
+          "triangles": 8973
+        },
+        {
+          "name": "H031-Body-45",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 25317,
+          "triangles": 8439
+        },
+        {
+          "name": "H031-Body-26",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 24855,
+          "triangles": 8285
+        },
+        {
+          "name": "H031-Body-05",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 24786,
+          "triangles": 8262
+        },
+        {
+          "name": "H031-Body-71",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 24495,
+          "triangles": 8165
+        },
+        {
+          "name": "H031-Body-74",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 23274,
+          "triangles": 7758
+        },
+        {
+          "name": "H031-Body-13",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 23082,
+          "triangles": 7694
+        },
+        {
+          "name": "H031-Body-88",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 19830,
+          "triangles": 6610
+        },
+        {
+          "name": "H031-Body-12",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 19647,
+          "triangles": 6549
+        },
+        {
+          "name": "H031-Body-46",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 18516,
+          "triangles": 6172
+        },
+        {
+          "name": "H031-Body-62",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 18051,
+          "triangles": 6017
+        },
+        {
+          "name": "H031-Body-19",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 17823,
+          "triangles": 5941
+        },
+        {
+          "name": "H031-Body-67",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 17136,
+          "triangles": 5712
+        },
+        {
+          "name": "H031-Body-39",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 16488,
+          "triangles": 5496
+        },
+        {
+          "name": "H031-Body-38",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 16392,
+          "triangles": 5464
+        },
+        {
+          "name": "H031-Body-83",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 15687,
+          "triangles": 5229
+        },
+        {
+          "name": "H031-Body-04",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 15468,
+          "triangles": 5156
+        },
+        {
+          "name": "H031-Body-86",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 14817,
+          "triangles": 4939
+        },
+        {
+          "name": "H031-Body-23",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 14643,
+          "triangles": 4881
+        },
+        {
+          "name": "H031-Body-52",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 14067,
+          "triangles": 4689
+        },
+        {
+          "name": "H031-Body-80",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 13449,
+          "triangles": 4483
+        },
+        {
+          "name": "H031-Body-76",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 12825,
+          "triangles": 4275
+        },
+        {
+          "name": "H031-Body-07",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 11316,
+          "triangles": 3772
+        },
+        {
+          "name": "H031-Body-06",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 11244,
+          "triangles": 3748
+        },
+        {
+          "name": "H031-Body-11",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 10842,
+          "triangles": 3614
+        },
+        {
+          "name": "H031-Body-24",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 10320,
+          "triangles": 3440
+        },
+        {
+          "name": "H031-Body-73",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 10299,
+          "triangles": 3433
+        },
+        {
+          "name": "H031-Body-84",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 10158,
+          "triangles": 3386
+        },
+        {
+          "name": "H031-Body-65",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 9897,
+          "triangles": 3299
+        },
+        {
+          "name": "H031-Body-82",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 9846,
+          "triangles": 3282
+        },
+        {
+          "name": "H031-Body-31",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 9666,
+          "triangles": 3222
+        },
+        {
+          "name": "H031-Body-64",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 9663,
+          "triangles": 3221
+        },
+        {
+          "name": "H031-Body-41",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 8844,
+          "triangles": 2948
+        },
+        {
+          "name": "H031-Body-69",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 8232,
+          "triangles": 2744
+        },
+        {
+          "name": "H031-Body-77",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 8169,
+          "triangles": 2723
+        },
+        {
+          "name": "H031-Body-47",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 7815,
+          "triangles": 2605
+        },
+        {
+          "name": "H031-Body-50",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 6576,
+          "triangles": 2192
+        },
+        {
+          "name": "H031-Body-10",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 6300,
+          "triangles": 2100
+        },
+        {
+          "name": "H031-Body-21",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 5520,
+          "triangles": 1840
+        },
+        {
+          "name": "H031-Body-34",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 4944,
+          "triangles": 1648
+        },
+        {
+          "name": "H031-Body-68",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 4887,
+          "triangles": 1629
+        },
+        {
+          "name": "H031-Body-22",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 4797,
+          "triangles": 1599
+        },
+        {
+          "name": "H031-Body-09",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 4689,
+          "triangles": 1563
+        },
+        {
+          "name": "H031-Body-20",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 4680,
+          "triangles": 1560
+        },
+        {
+          "name": "H031-Body-51",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 4284,
+          "triangles": 1428
+        },
+        {
+          "name": "H031-Body-29",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 4266,
+          "triangles": 1422
+        },
+        {
+          "name": "H031-Body-44",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 4164,
+          "triangles": 1388
+        },
+        {
+          "name": "H031-Body-28",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 4095,
+          "triangles": 1365
+        },
+        {
+          "name": "H031-Body-57",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 4053,
+          "triangles": 1351
+        },
+        {
+          "name": "H031-Body-14",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 3990,
+          "triangles": 1330
+        },
+        {
+          "name": "H031-Body-66",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 3918,
+          "triangles": 1306
+        },
+        {
+          "name": "H031-Body-37",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 3888,
+          "triangles": 1296
+        },
+        {
+          "name": "H031-Body-27",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 3702,
+          "triangles": 1234
+        },
+        {
+          "name": "H031-Body-17",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 3642,
+          "triangles": 1214
+        },
+        {
+          "name": "H031-Body-35",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 3408,
+          "triangles": 1136
+        },
+        {
+          "name": "H031-Body-72",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 2895,
+          "triangles": 965
+        },
+        {
+          "name": "H031-Body-56",
+          "parentName": "H031-托塔李天王-Animated",
+          "skinned": true,
+          "vertices": 2862,
+          "triangles": 954
+        }
+      ]
+    },
+    "exportedClips": [
+      {
+        "name": "Idle",
+        "duration": 1.9583333730697632,
+        "tracks": 84,
+        "keyframes": 357
+      },
+      {
+        "name": "Move",
+        "duration": 1.25,
+        "tracks": 84,
+        "keyframes": 599
+      },
+      {
+        "name": "Attack",
+        "duration": 0.6666666865348816,
+        "tracks": 84,
+        "keyframes": 251
+      },
+      {
+        "name": "Spell",
+        "duration": 1.2916666269302368,
+        "tracks": 84,
+        "keyframes": 363
+      }
+    ],
+    "bodyTriangleBudget": 28000,
+    "weaponTriangleBudget": 10000,
+    "bodySimplifyRatio": 0.04843075699002845,
+    "weaponSimplifyRatio": 0.0999820032394169
+  },
+  "optimized": {
+    "bytes": 2628128,
+    "vertices": 40956,
+    "triangles": 37673,
+    "meshes": 91,
+    "materials": 91,
+    "textures": 182,
+    "bodyTriangles": 27924,
+    "weaponTriangles": 9749,
+    "animations": [
+      {
+        "name": "Idle",
+        "channels": 84,
+        "samplers": 84
+      },
+      {
+        "name": "Move",
+        "channels": 84,
+        "samplers": 84
+      },
+      {
+        "name": "Attack",
+        "channels": 84,
+        "samplers": 84
+      },
+      {
+        "name": "Spell",
+        "channels": 84,
+        "samplers": 84
+      }
+    ],
+    "skins": [
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      }
+    ],
+    "meshRecords": [
+      {
+        "name": "",
+        "skinned": false,
+        "triangles": 7859
+      },
+      {
+        "name": "",
+        "skinned": false,
+        "triangles": 1890
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 575
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 575
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 575
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 571
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 570
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 570
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 569
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 569
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 569
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 569
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 568
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 568
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 568
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 567
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 567
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 567
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 566
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 566
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 566
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 565
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 562
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 561
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 560
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 555
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 545
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 534
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 509
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 495
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 491
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 457
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 453
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 450
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 433
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 407
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 400
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 398
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 395
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 375
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 371
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 317
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 317
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 298
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 290
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 287
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 276
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 265
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 264
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 252
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 248
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 239
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 235
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 226
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 217
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 207
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 181
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 181
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 175
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 166
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 165
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 162
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 159
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 158
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 156
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 155
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 141
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 132
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 130
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 126
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 106
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 101
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 89
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 78
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 78
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 77
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 75
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 75
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 68
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 68
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 66
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 66
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 65
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 64
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 63
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 62
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 59
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 58
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 55
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 49
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 46
+      }
+    ]
+  },
+  "errors": [],
+  "status": "passed"
+}

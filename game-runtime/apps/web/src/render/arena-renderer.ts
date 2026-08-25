@@ -46,7 +46,18 @@ import {
 } from './models/character-model-library';
 import { collectModelAnimationEventTriggers } from './models/model-animation-events';
 import { heroModelDefinition, monsterModelDefinition } from './models/web-model-catalog';
+import {
+  characterAnimationIntervalSeconds,
+  shouldCastCharacterShadow,
+  shouldReduceGraphicsLoad,
+} from './render-performance-policy';
 import { tickWind } from './shading/wind';
+import {
+  createSpawnMarkerVisual,
+  hasMovedFromSpawn,
+  type SpawnMarkerVisual,
+  updateSpawnMarkerVisual,
+} from './spawn-marker';
 import { WORLD_SCALE_PROFILE } from './world-scale-profile';
 
 interface PlayerVisual {
@@ -54,13 +65,16 @@ interface PlayerVisual {
   readonly group: THREE.Group;
   readonly bodyMaterial: THREE.MeshStandardMaterial;
   readonly model: CharacterModelInstance | null;
-  readonly selectionRing: THREE.Mesh;
+  spawnMarker: SpawnMarkerVisual | null;
+  readonly spawnPositionX: number;
+  readonly spawnPositionZ: number;
   readonly healthGroup: THREE.Group;
   readonly healthBar: THREE.Mesh;
   readonly healthMaterial: THREE.MeshBasicMaterial;
   readonly shieldShell: THREE.Mesh;
   readonly iceCoffinShell: THREE.Mesh;
   readonly whirlwindRing: THREE.Mesh;
+  spawnMarkerDismissed: boolean;
   previousAttackCooldownTicks: number;
   previousAttackIntent: boolean;
   previousActiveCooldownTicks: number;
@@ -231,12 +245,18 @@ const HERO_COLORS: Readonly<Record<string, number>> = {
 const MAX_PERFORMANCE_FRAME_SAMPLES = 240;
 const BALANCED_ENTITY_VISUAL_CULL_DISTANCE_SQUARED = 55_000 ** 2;
 const REDUCED_ENTITY_VISUAL_CULL_DISTANCE_SQUARED = 45_000 ** 2;
+const BALANCED_PLAYER_STATUS_DISTANCE_SQUARED = 38_000 ** 2;
+const BALANCED_MONSTER_STATUS_DISTANCE_SQUARED = 34_000 ** 2;
 const REDUCED_PLAYER_STATUS_DISTANCE_SQUARED = 30_000 ** 2;
 const REDUCED_MONSTER_STATUS_DISTANCE_SQUARED = 26_000 ** 2;
 const REDUCED_PIXEL_RATIO_CAP = 0.85;
+const AUTO_BALANCED_PIXEL_RATIO_CAP = 1.25;
+const QUALITY_PIXEL_RATIO_CAP = 1.5;
+const ADAPTIVE_GRAPHICS_READINESS_CHECK_INTERVAL_FRAMES = 15;
+const ADAPTIVE_GRAPHICS_SETTLE_SECONDS = 2;
 // CharacterModelLibrary normalizes every imported model to its catalog height.
-// Do not apply a second presentation multiplier here: simulation and visuals
-// must share the same metre scale.
+// The player presentation multiplier is intentional: it improves in-world
+// readability without changing simulation collision or movement scale.
 const PLAYER_MODEL_VISUAL_SCALE = WORLD_SCALE_PROFILE.character.playerModelScale;
 const MONSTER_MODEL_VISUAL_SCALE = WORLD_SCALE_PROFILE.character.monsterModelScale;
 const CAMERA_VIEW_ORDER: readonly CameraViewMode[] = ['standard', 'close', 'tactical'];
@@ -324,11 +344,16 @@ export class ArenaRenderer {
   private readonly stormWall: THREE.Mesh<THREE.CylinderGeometry, THREE.MeshBasicMaterial>;
   private readonly combatEffects: CombatEffectsLayer;
   private readonly renderFrameIntervalsMs: number[] = [];
+  private readonly adaptiveFrameIntervalsMs: number[] = [];
   private graphicsTier: 'balanced' | 'reduced';
   private readonly detectedGraphicsTier: 'balanced' | 'reduced';
   private graphicsPreference: WebGraphicsPreference;
   private readonly gpuRenderer: string;
   private previousRenderSeconds: number | null = null;
+  private adaptiveReadinessCheckFrames = 0;
+  private adaptiveResourcesReady = false;
+  private adaptiveReadySinceSeconds: number | null = null;
+  private adaptiveSamplingStarted = false;
   private previousCameraSeconds: number | null = null;
   private localEntityId: EntityId | null = null;
   private cameraSnapRequested = true;
@@ -366,12 +391,7 @@ export class ArenaRenderer {
     this.graphicsPreference = graphicsPreference;
     this.graphicsTier = this.resolveGraphicsTier(graphicsPreference);
     this.gpuRenderer = graphics.renderer;
-    this.renderer.setPixelRatio(
-      Math.min(
-        window.devicePixelRatio,
-        this.graphicsTier === 'reduced' ? REDUCED_PIXEL_RATIO_CAP : 1.5,
-      ),
-    );
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.pixelRatioCap()));
     this.renderer.shadowMap.enabled = this.graphicsTier === 'balanced';
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -437,11 +457,29 @@ export class ArenaRenderer {
 
   setGraphicsPreference(preference: WebGraphicsPreference): void {
     this.graphicsPreference = preference;
+    this.resetAdaptiveQualitySampling();
     this.applyGraphicsTier(this.resolveGraphicsTier(preference));
   }
 
   private footingMeters(xMm: number, zMm: number): number {
     return this.mapEnvironment ? standingSurfaceMeters(worldMeters(xMm), worldMeters(zMm)) : 0;
+  }
+
+  private isWithinEntityVisualDistance(
+    position: { readonly x: number; readonly z: number },
+    localPosition: { readonly x: number; readonly z: number } | null,
+  ): boolean {
+    if (!localPosition) {
+      return true;
+    }
+    const dx = position.x - localPosition.x;
+    const dz = position.z - localPosition.z;
+    return (
+      dx * dx + dz * dz <=
+      (this.graphicsTier === 'reduced'
+        ? REDUCED_ENTITY_VISUAL_CULL_DISTANCE_SQUARED
+        : BALANCED_ENTITY_VISUAL_CULL_DISTANCE_SQUARED)
+    );
   }
 
   setNavigationWaypoint(point: MapPointMm | null): void {
@@ -648,7 +686,6 @@ export class ArenaRenderer {
 
   render(snapshot: WorldSnapshot, elapsedSeconds: number, events: readonly SimEvent[] = []): void {
     this.recordRenderFrame(elapsedSeconds);
-    this.maybeReduceGraphicsLoad();
     const animationTriggers = collectModelAnimationEventTriggers(events);
     if (this.environmentKind === 'none') {
       if (snapshot.mapGeometryHash !== null) {
@@ -755,7 +792,7 @@ export class ArenaRenderer {
     }
     for (const wall of snapshot.windWalls) {
       const visual = this.windWallVisuals.get(wall.entityId) ?? this.createWindWallVisual(wall);
-      this.updateWindWallVisual(visual, wall, elapsedSeconds);
+      this.updateWindWallVisual(visual, wall, elapsedSeconds, localPlayer?.position ?? null);
     }
 
     const currentProjectileIds = new Set(
@@ -772,7 +809,12 @@ export class ArenaRenderer {
     for (const projectile of snapshot.projectiles) {
       const visual =
         this.projectileVisuals.get(projectile.entityId) ?? this.createProjectileVisual(projectile);
-      this.updateProjectileVisual(visual, projectile, elapsedSeconds);
+      this.updateProjectileVisual(
+        visual,
+        projectile,
+        elapsedSeconds,
+        localPlayer?.position ?? null,
+      );
     }
 
     const currentMonsterIds = new Set(snapshot.monsters.map((monster) => monster.entityId));
@@ -816,7 +858,7 @@ export class ArenaRenderer {
     }
     for (const drop of snapshot.lootDrops) {
       const visual = this.lootVisuals.get(drop.entityId) ?? this.createLootVisual(drop);
-      this.updateLootVisual(visual, drop, elapsedSeconds);
+      this.updateLootVisual(visual, drop, elapsedSeconds, localPlayer?.position ?? null);
     }
 
     const currentSummonIds = new Set(snapshot.summons.map((summon) => summon.entityId));
@@ -835,7 +877,7 @@ export class ArenaRenderer {
     }
     for (const summon of snapshot.summons) {
       const visual = this.summonVisuals.get(summon.entityId) ?? this.createSummonVisual(summon);
-      this.updateSummonVisual(visual, summon, elapsedSeconds);
+      this.updateSummonVisual(visual, summon, elapsedSeconds, localPlayer?.position ?? null);
     }
 
     const currentAfterimageIds = new Set(
@@ -852,9 +894,14 @@ export class ArenaRenderer {
     for (const afterimage of snapshot.afterimages) {
       const visual =
         this.afterimageVisuals.get(afterimage.entityId) ?? this.createAfterimageVisual(afterimage);
-      this.updateAfterimageVisual(visual, afterimage, elapsedSeconds);
+      this.updateAfterimageVisual(
+        visual,
+        afterimage,
+        elapsedSeconds,
+        localPlayer?.position ?? null,
+      );
     }
-    this.combatEffects.update(snapshot, events, elapsedSeconds);
+    this.combatEffects.update(snapshot, events, elapsedSeconds, localPlayer?.position ?? null);
 
     const local = localPlayer;
     if (local) {
@@ -918,17 +965,32 @@ export class ArenaRenderer {
     }
 
     for (const visual of this.playerVisuals.values()) {
-      this.faceCamera(visual.healthGroup);
+      if (
+        visual.group.parent === this.scene &&
+        visual.group.visible &&
+        visual.healthGroup.visible
+      ) {
+        this.faceCamera(visual.healthGroup);
+      }
     }
     for (const visual of this.monsterVisuals.values()) {
-      this.faceCamera(visual.healthGroup);
+      if (
+        visual.group.parent === this.scene &&
+        visual.group.visible &&
+        visual.healthGroup.visible
+      ) {
+        this.faceCamera(visual.healthGroup);
+      }
     }
     for (const visual of this.summonVisuals.values()) {
-      this.faceCamera(visual.healthGroup);
+      if (visual.group.visible && visual.healthGroup.visible) {
+        this.faceCamera(visual.healthGroup);
+      }
     }
 
     tickWind(elapsedSeconds);
     this.renderer.render(this.scene, this.camera);
+    this.maybeReduceGraphicsLoad(elapsedSeconds);
   }
 
   private faceCamera(object: THREE.Object3D): void {
@@ -1650,26 +1712,11 @@ export class ArenaRenderer {
       group.add(placeholder);
     }
 
-    const selectionRing = new THREE.Mesh(
-      new THREE.RingGeometry(
-        WORLD_SCALE_PROFILE.character.playerSelectionRing.innerRadius,
-        WORLD_SCALE_PROFILE.character.playerSelectionRing.outerRadius,
-        40,
-      ),
-      new THREE.MeshBasicMaterial({
-        color: 0xe7bd57,
-        transparent: true,
-        opacity: 0.9,
-        depthTest: true,
-        depthWrite: false,
-        side: THREE.DoubleSide,
-      }),
-    );
-    selectionRing.rotation.x = -Math.PI / 2;
-    selectionRing.position.y = WORLD_SCALE_PROFILE.character.playerSelectionRing.elevation;
-    selectionRing.renderOrder = 2;
-    selectionRing.visible = player.entityId === this.localEntityId;
-    group.add(selectionRing);
+    const spawnMarker =
+      player.entityId === this.localEntityId ? this.createPlayerSpawnMarker() : null;
+    if (spawnMarker) {
+      group.add(spawnMarker.group);
+    }
 
     const healthGroup = new THREE.Group();
     healthGroup.position.set(
@@ -1753,13 +1800,16 @@ export class ArenaRenderer {
       group,
       bodyMaterial,
       model,
-      selectionRing,
+      spawnMarker,
+      spawnPositionX: player.position.x,
+      spawnPositionZ: player.position.z,
       healthGroup,
       healthBar,
       healthMaterial,
       shieldShell,
       iceCoffinShell,
       whirlwindRing,
+      spawnMarkerDismissed: false,
       previousAttackCooldownTicks: player.attackCooldownTicks,
       previousAttackIntent: player.intent.attack,
       previousActiveCooldownTicks: player.activeCooldownTicks,
@@ -1779,19 +1829,24 @@ export class ArenaRenderer {
   ): void {
     const isSoul = player.lifeState === 'soul-flight';
     const isAlive = player.lifeState !== 'eliminated';
-    const surface = this.footingMeters(player.position.x, player.position.z);
-    visual.group.position.set(
-      worldMeters(player.position.x),
-      isSoul ? surface + 2.4 + Math.sin(elapsedSeconds * 4) * 0.24 : surface,
-      worldMeters(player.position.z),
-    );
-    visual.group.rotation.y = Math.atan2(player.facing.x, player.facing.z);
     const distanceSquared = localPosition
       ? (player.position.x - localPosition.x) ** 2 + (player.position.z - localPosition.z) ** 2
       : 0;
+    const isLocal = player.entityId === this.localEntityId;
+    if (
+      !visual.spawnMarkerDismissed &&
+      hasMovedFromSpawn(
+        visual.spawnPositionX,
+        visual.spawnPositionZ,
+        player.position.x,
+        player.position.z,
+      )
+    ) {
+      visual.spawnMarkerDismissed = true;
+    }
     const visible =
       isAlive &&
-      (player.entityId === this.localEntityId ||
+      (isLocal ||
         !localPosition ||
         distanceSquared <=
           (this.graphicsTier === 'reduced'
@@ -1815,23 +1870,35 @@ export class ArenaRenderer {
       visual.previousWhirlwindTicks = player.whirlwindTicks;
       return;
     }
-    visual.model?.ensureLoaded(player.entityId === this.localEntityId);
-    visual.selectionRing.visible = player.entityId === this.localEntityId;
+    const surface = this.footingMeters(player.position.x, player.position.z);
+    visual.group.position.set(
+      worldMeters(player.position.x),
+      isSoul ? surface + 2.4 + Math.sin(elapsedSeconds * 4) * 0.24 : surface,
+      worldMeters(player.position.z),
+    );
+    visual.group.rotation.y = Math.atan2(player.facing.x, player.facing.z);
+    visual.model?.setShadows(
+      shouldCastCharacterShadow(this.graphicsTier, distanceSquared, isLocal),
+      this.graphicsTier === 'balanced',
+    );
+    visual.model?.ensureLoaded(isLocal);
+    const showSpawnMarker = isLocal && !visual.spawnMarkerDismissed && !isSoul;
+    if (showSpawnMarker && !visual.spawnMarker) {
+      visual.spawnMarker = this.createPlayerSpawnMarker();
+      visual.group.add(visual.spawnMarker.group);
+    }
+    if (visual.spawnMarker) {
+      visual.spawnMarker.group.visible = showSpawnMarker;
+    }
+    if (showSpawnMarker && visual.spawnMarker) {
+      updateSpawnMarkerVisual(visual.spawnMarker, elapsedSeconds);
+    }
     visual.healthGroup.visible =
-      this.graphicsTier === 'balanced' ||
-      player.entityId === this.localEntityId ||
-      distanceSquared <= REDUCED_PLAYER_STATUS_DISTANCE_SQUARED;
-    visual.selectionRing.material =
-      visual.selectionRing.material instanceof THREE.MeshBasicMaterial
-        ? visual.selectionRing.material
-        : new THREE.MeshBasicMaterial();
-    const ringMaterial = visual.selectionRing.material as THREE.MeshBasicMaterial;
-    ringMaterial.opacity =
-      player.lifeState === 'revive-protection'
-        ? 0.55 + Math.sin(elapsedSeconds * 8) * 0.25
-        : player.entityId === this.localEntityId
-          ? 0.9
-          : 0;
+      isLocal ||
+      distanceSquared <=
+        (this.graphicsTier === 'reduced'
+          ? REDUCED_PLAYER_STATUS_DISTANCE_SQUARED
+          : BALANCED_PLAYER_STATUS_DISTANCE_SQUARED);
 
     const healthRatio = player.maxHp > 0 ? player.hp / player.maxHp : 0;
     visual.healthBar.scale.x = Math.max(0.001, healthRatio);
@@ -1885,11 +1952,24 @@ export class ArenaRenderer {
             player.attackCooldownTicks > visual.previousAttackCooldownTicks
           ? 'Attack'
           : null;
-    visual.model?.update(elapsedSeconds, moving ? 'Move' : 'Idle', trigger);
+    visual.model?.update(
+      elapsedSeconds,
+      moving ? 'Move' : 'Idle',
+      trigger,
+      characterAnimationIntervalSeconds(this.graphicsTier, distanceSquared, isLocal),
+    );
     visual.previousAttackCooldownTicks = player.attackCooldownTicks;
     visual.previousAttackIntent = player.intent.attack;
     visual.previousActiveCooldownTicks = player.activeCooldownTicks;
     visual.previousWhirlwindTicks = player.whirlwindTicks;
+  }
+
+  private createPlayerSpawnMarker(): SpawnMarkerVisual {
+    return createSpawnMarkerVisual(
+      WORLD_SCALE_PROFILE.character.playerSelectionRing.innerRadius,
+      WORLD_SCALE_PROFILE.character.playerSelectionRing.outerRadius,
+      WORLD_SCALE_PROFILE.character.playerSelectionRing.elevation,
+    );
   }
 
   private createStaticSolidVisual(solid: StaticSolidRect): StaticSolidVisual {
@@ -2145,16 +2225,6 @@ export class ArenaRenderer {
     spellTriggered: boolean,
   ): void {
     const radius = Math.max(0.38, worldMeters(monster.collisionRadiusMm));
-    visual.group.position.set(
-      worldMeters(monster.position.x),
-      monster.kind === 'flying'
-        ? this.footingMeters(monster.position.x, monster.position.z) +
-            1.4 +
-            Math.sin(elapsedSeconds * 3.6 + Number(monster.entityId)) * 0.24
-        : this.footingMeters(monster.position.x, monster.position.z),
-      worldMeters(monster.position.z),
-    );
-    visual.group.rotation.y = Math.atan2(monster.facing.x, monster.facing.z);
     const distanceSquared = localPosition
       ? (monster.position.x - localPosition.x) ** 2 + (monster.position.z - localPosition.z) ** 2
       : 0;
@@ -2181,10 +2251,25 @@ export class ArenaRenderer {
       visual.previousPositionZ = monster.position.z;
       return;
     }
+    const surface = this.footingMeters(monster.position.x, monster.position.z);
+    visual.group.position.set(
+      worldMeters(monster.position.x),
+      monster.kind === 'flying'
+        ? surface + 1.4 + Math.sin(elapsedSeconds * 3.6 + Number(monster.entityId)) * 0.24
+        : surface,
+      worldMeters(monster.position.z),
+    );
+    visual.group.rotation.y = Math.atan2(monster.facing.x, monster.facing.z);
+    visual.model?.setShadows(
+      shouldCastCharacterShadow(this.graphicsTier, distanceSquared, false),
+      this.graphicsTier === 'balanced',
+    );
     visual.model?.ensureLoaded();
     visual.healthGroup.visible =
-      this.graphicsTier === 'balanced' ||
-      distanceSquared <= REDUCED_MONSTER_STATUS_DISTANCE_SQUARED;
+      distanceSquared <=
+      (this.graphicsTier === 'reduced'
+        ? REDUCED_MONSTER_STATUS_DISTANCE_SQUARED
+        : BALANCED_MONSTER_STATUS_DISTANCE_SQUARED);
     const healthRatio = monster.maxHp > 0 ? monster.hp / monster.maxHp : 0;
     visual.healthBar.scale.x = Math.max(0.001, healthRatio);
     visual.healthBar.position.x = -((1 - healthRatio) * Math.max(1.02, radius * 2.15)) / 2;
@@ -2214,7 +2299,12 @@ export class ArenaRenderer {
       : monster.attackCooldownTicks > visual.previousAttackCooldownTicks
         ? 'Attack'
         : null;
-    visual.model?.update(elapsedSeconds, moved ? 'Move' : 'Idle', trigger);
+    visual.model?.update(
+      elapsedSeconds,
+      moved ? 'Move' : 'Idle',
+      trigger,
+      characterAnimationIntervalSeconds(this.graphicsTier, distanceSquared, false),
+    );
     visual.previousAttackCooldownTicks = monster.attackCooldownTicks;
     visual.previousPositionX = monster.position.x;
     visual.previousPositionZ = monster.position.z;
@@ -2228,27 +2318,78 @@ export class ArenaRenderer {
         if (this.renderFrameIntervalsMs.length > MAX_PERFORMANCE_FRAME_SAMPLES) {
           this.renderFrameIntervalsMs.shift();
         }
+        if (this.graphicsPreference === 'auto' && this.graphicsTier === 'balanced') {
+          this.adaptiveFrameIntervalsMs.push(intervalMs);
+          if (this.adaptiveFrameIntervalsMs.length > MAX_PERFORMANCE_FRAME_SAMPLES) {
+            this.adaptiveFrameIntervalsMs.shift();
+          }
+        }
       }
     }
     this.previousRenderSeconds = elapsedSeconds;
   }
 
-  private maybeReduceGraphicsLoad(): void {
-    if (
-      this.graphicsPreference !== 'auto' ||
-      this.graphicsTier === 'reduced' ||
-      this.renderFrameIntervalsMs.length < 120
-    ) {
+  private maybeReduceGraphicsLoad(elapsedSeconds: number): void {
+    if (this.graphicsPreference !== 'auto' || this.graphicsTier === 'reduced') {
       return;
     }
-    const recent = this.renderFrameIntervalsMs.slice(-120).sort((left, right) => left - right);
-    const averageFrameMs =
-      recent.reduce((sum, value) => sum + value, 0) / Math.max(1, recent.length);
-    const p95FrameMs = recent[Math.min(recent.length - 1, Math.floor(recent.length * 0.95))] ?? 0;
-    if (averageFrameMs <= 20 && p95FrameMs <= 30) {
+
+    this.adaptiveReadinessCheckFrames += 1;
+    if (this.adaptiveReadinessCheckFrames >= ADAPTIVE_GRAPHICS_READINESS_CHECK_INTERVAL_FRAMES) {
+      this.adaptiveReadinessCheckFrames = 0;
+      const resourcesReady = this.performanceResourcesReady();
+      if (resourcesReady !== this.adaptiveResourcesReady) {
+        this.adaptiveResourcesReady = resourcesReady;
+        this.adaptiveReadySinceSeconds = resourcesReady ? elapsedSeconds : null;
+        this.adaptiveSamplingStarted = false;
+        this.adaptiveFrameIntervalsMs.length = 0;
+      }
+    }
+
+    if (!this.adaptiveResourcesReady || this.adaptiveReadySinceSeconds === null) {
+      return;
+    }
+    if (!this.adaptiveSamplingStarted) {
+      if (elapsedSeconds - this.adaptiveReadySinceSeconds < ADAPTIVE_GRAPHICS_SETTLE_SECONDS) {
+        return;
+      }
+      this.adaptiveSamplingStarted = true;
+      this.adaptiveFrameIntervalsMs.length = 0;
+      return;
+    }
+    if (this.adaptiveFrameIntervalsMs.length < 120) {
+      return;
+    }
+
+    const shouldReduce = shouldReduceGraphicsLoad(this.adaptiveFrameIntervalsMs);
+    this.adaptiveFrameIntervalsMs.length = 0;
+    if (!shouldReduce) {
       return;
     }
     this.applyGraphicsTier('reduced');
+  }
+
+  private performanceResourcesReady(): boolean {
+    if (this.environmentKind === 'none') {
+      return false;
+    }
+    if (this.modelLibrary.diagnostics().pendingTemplateLoads > 0) {
+      return false;
+    }
+    if (!this.mapEnvironment) {
+      return true;
+    }
+    const floraStatus = this.mapEnvironment.getFloraModelDiagnostics().status;
+    const mapAssetStatus = this.mapEnvironment.getMapAssetDiagnostics().status;
+    return floraStatus !== 'loading' && mapAssetStatus !== 'loading';
+  }
+
+  private resetAdaptiveQualitySampling(): void {
+    this.adaptiveFrameIntervalsMs.length = 0;
+    this.adaptiveReadinessCheckFrames = ADAPTIVE_GRAPHICS_READINESS_CHECK_INTERVAL_FRAMES - 1;
+    this.adaptiveResourcesReady = false;
+    this.adaptiveReadySinceSeconds = null;
+    this.adaptiveSamplingStarted = false;
   }
 
   private resolveGraphicsTier(preference: WebGraphicsPreference): 'balanced' | 'reduced' {
@@ -2264,15 +2405,22 @@ export class ArenaRenderer {
   private applyGraphicsTier(tier: 'balanced' | 'reduced'): void {
     this.graphicsTier = tier;
     this.renderer.shadowMap.enabled = tier === 'balanced';
-    this.renderer.setPixelRatio(
-      Math.min(window.devicePixelRatio, tier === 'reduced' ? REDUCED_PIXEL_RATIO_CAP : 1.5),
-    );
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.pixelRatioCap()));
     if (this.sun) {
       this.sun.castShadow = tier === 'balanced';
     }
     this.mapEnvironment?.setGraphicsTier(tier);
     this.combatEffects.setGraphicsTier(tier);
     this.resize();
+  }
+
+  private pixelRatioCap(): number {
+    if (this.graphicsTier === 'reduced') {
+      return REDUCED_PIXEL_RATIO_CAP;
+    }
+    return this.graphicsPreference === 'quality'
+      ? QUALITY_PIXEL_RATIO_CAP
+      : AUTO_BALANCED_PIXEL_RATIO_CAP;
   }
 
   private detectGraphicsTier(): {
@@ -2285,10 +2433,12 @@ export class ArenaRenderer {
       ? String(gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL))
       : String(gl.getParameter(gl.RENDERER));
     const deviceMemory = (navigator as Navigator & { readonly deviceMemory?: number }).deviceMemory;
+    const hardwareConcurrency = navigator.hardwareConcurrency;
     const softwareRenderer = /swiftshader|llvmpipe|software/i.test(renderer);
-    const discreteDesktopGpu = /nvidia|geforce|quadro|radeon(?: rx)?|arc(?:\(tm\))? a\d/i.test(
+    const integratedGpu = /intel|iris|uhd|radeon\(tm\) graphics|vega \d|adreno|mali/i.test(
       renderer,
     );
+    const discreteDesktopGpu = /nvidia|geforce|quadro|radeon rx|arc(?:\(tm\))? a\d/i.test(renderer);
     const touchMobile =
       navigator.maxTouchPoints > 0 &&
       window.matchMedia('(pointer: coarse)').matches &&
@@ -2296,7 +2446,10 @@ export class ArenaRenderer {
     const reduced =
       softwareRenderer ||
       touchMobile ||
-      (!discreteDesktopGpu && typeof deviceMemory === 'number' && deviceMemory <= 4);
+      integratedGpu ||
+      (!discreteDesktopGpu &&
+        ((typeof deviceMemory === 'number' && deviceMemory <= 6) ||
+          (typeof hardwareConcurrency === 'number' && hardwareConcurrency <= 4)));
     return {
       tier: reduced ? 'reduced' : 'balanced',
       renderer,
@@ -2330,7 +2483,18 @@ export class ArenaRenderer {
     return visual;
   }
 
-  private updateLootVisual(visual: LootVisual, drop: LootSnapshot, elapsedSeconds: number): void {
+  private updateLootVisual(
+    visual: LootVisual,
+    drop: LootSnapshot,
+    elapsedSeconds: number,
+    localPosition: PlayerSnapshot['position'] | null,
+  ): void {
+    const visible = this.isWithinEntityVisualDistance(drop.position, localPosition);
+    visual.mesh.visible = visible;
+    if (!visible) {
+      return;
+    }
+    visual.mesh.castShadow = this.graphicsTier === 'balanced';
     visual.mesh.position.set(
       worldMeters(drop.position.x),
       this.footingMeters(drop.position.x, drop.position.z) +
@@ -2395,7 +2559,13 @@ export class ArenaRenderer {
     visual: SummonVisual,
     summon: SummonSnapshot,
     elapsedSeconds: number,
+    localPosition: PlayerSnapshot['position'] | null,
   ): void {
+    const visible = this.isWithinEntityVisualDistance(summon.position, localPosition);
+    visual.group.visible = visible;
+    if (!visible) {
+      return;
+    }
     visual.group.position.set(
       worldMeters(summon.position.x),
       this.footingMeters(summon.position.x, summon.position.z) +
@@ -2435,7 +2605,13 @@ export class ArenaRenderer {
     visual: AfterimageVisual,
     afterimage: AfterimageSnapshot,
     elapsedSeconds: number,
+    localPosition: PlayerSnapshot['position'] | null,
   ): void {
+    const visible = this.isWithinEntityVisualDistance(afterimage.position, localPosition);
+    visual.mesh.visible = visible;
+    if (!visible) {
+      return;
+    }
     visual.mesh.position.set(
       worldMeters(afterimage.position.x),
       this.footingMeters(afterimage.position.x, afterimage.position.z) + 0.055,
@@ -2468,7 +2644,13 @@ export class ArenaRenderer {
     visual: WindWallVisual,
     wall: WindWallSnapshot,
     elapsedSeconds: number,
+    localPosition: PlayerSnapshot['position'] | null,
   ): void {
+    const visible = this.isWithinEntityVisualDistance(wall.center, localPosition);
+    visual.mesh.visible = visible;
+    if (!visible) {
+      return;
+    }
     visual.mesh.position.set(
       worldMeters(wall.center.x),
       this.footingMeters(wall.center.x, wall.center.z) + 1.6,
@@ -2503,7 +2685,13 @@ export class ArenaRenderer {
     visual: ProjectileVisual,
     projectile: ProjectileSnapshot,
     elapsedSeconds: number,
+    localPosition: PlayerSnapshot['position'] | null,
   ): void {
+    const visible = this.isWithinEntityVisualDistance(projectile.position, localPosition);
+    visual.mesh.visible = visible;
+    if (!visible) {
+      return;
+    }
     visual.mesh.position.set(
       worldMeters(projectile.position.x),
       this.footingMeters(projectile.position.x, projectile.position.z) + 1.15,

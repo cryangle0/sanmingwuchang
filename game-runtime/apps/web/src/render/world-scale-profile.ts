@@ -5,7 +5,7 @@
  */
 export const WORLD_SCALE_PROFILE = {
   character: {
-    playerModelScale: 1,
+    playerModelScale: 1.5,
     monsterModelScale: 1,
     playerSelectionRing: {
       innerRadius: 0.7,
@@ -44,6 +44,10 @@ export const WORLD_SCALE_PROFILE = {
       'lowpoly-asian-house': 8.5,
       'lowpoly-torii': 7.5,
       'lowpoly-rock-formation': 4.7,
+      'free-pagoda-niko313': 16,
+      'free-stone-cart': 2.866,
+      'free-stone-lion': 1.8,
+      'free-pagoda-ruin': 14,
     },
     rockMinWorldHeight: 1.45,
     rockMaxWorldHeight: 4.25,
@@ -61,6 +65,7 @@ export const WORLD_SCALE_PROFILE = {
       cypress: 7.2,
       beech: 7.8,
       willow: 7.4,
+      lush: 7.8,
     },
     rockTargetHeight: 2.45,
     bushTargetHeight: 2.65,

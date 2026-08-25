@@ -120,11 +120,14 @@ async function waitForObjectTextures(root: THREE.Object3D): Promise<void> {
   throw new Error(`only ${ready}/${textures.length} model textures became ready`);
 }
 
-export function characterModelRenderableBounds(root: THREE.Group): THREE.Box3 {
+function renderableBounds(
+  root: THREE.Group,
+  include: (child: THREE.Mesh) => boolean,
+): THREE.Box3 {
   root.updateMatrixWorld(true);
   const bounds = new THREE.Box3().makeEmpty();
   root.traverse((child) => {
-    if (!(child instanceof THREE.Mesh) || !child.visible) {
+    if (!(child instanceof THREE.Mesh) || !child.visible || !include(child)) {
       return;
     }
     if (!child.matrixWorld.elements.every(Number.isFinite)) {
@@ -156,6 +159,19 @@ export function characterModelRenderableBounds(root: THREE.Group): THREE.Box3 {
   return bounds;
 }
 
+function renderableMeshBounds(root: THREE.Group): THREE.Box3 {
+  return renderableBounds(root, () => true);
+}
+
+function skinnedMeshBounds(root: THREE.Group): THREE.Box3 | null {
+  const bounds = renderableBounds(root, (child) => child instanceof THREE.SkinnedMesh);
+  return bounds.isEmpty() ? null : bounds;
+}
+
+export function characterModelRenderableBounds(root: THREE.Group): THREE.Box3 {
+  return renderableMeshBounds(root);
+}
+
 export function createCharacterPresentationRoot(
   sourceRoot: THREE.Group,
   targetHeight: number,
@@ -165,15 +181,17 @@ export function createCharacterPresentationRoot(
   presentationRoot.userData.characterModelPresentation = true;
   presentationRoot.add(sourceRoot);
 
-  const bounds = characterModelRenderableBounds(presentationRoot);
+  const bounds = renderableMeshBounds(presentationRoot);
   const size = bounds.getSize(new THREE.Vector3());
   if (!Number.isFinite(size.y) || size.y <= 0.001 || bounds.isEmpty()) {
     throw new Error(`model has invalid bounds (${size.x}, ${size.y}, ${size.z})`);
   }
   presentationRoot.scale.multiplyScalar(targetHeight / size.y);
 
-  const scaledBounds = characterModelRenderableBounds(presentationRoot);
-  const center = scaledBounds.getCenter(new THREE.Vector3());
+  const scaledBounds = renderableMeshBounds(presentationRoot);
+  const center = (skinnedMeshBounds(presentationRoot) ?? scaledBounds).getCenter(
+    new THREE.Vector3(),
+  );
   presentationRoot.position.add(new THREE.Vector3(-center.x, -scaledBounds.min.y, -center.z));
   presentationRoot.updateMatrixWorld(true);
   return presentationRoot;
@@ -240,7 +258,11 @@ function disposeObjectMaterials(root: THREE.Object3D): void {
   }
 }
 
-function cloneTemplate(root: THREE.Group): {
+function cloneTemplate(
+  root: THREE.Group,
+  castShadow: boolean,
+  receiveShadow: boolean,
+): {
   readonly root: THREE.Group;
   readonly materials: readonly MaterialState[];
 } {
@@ -250,8 +272,8 @@ function cloneTemplate(root: THREE.Group): {
     if (!(child instanceof THREE.Mesh)) {
       return;
     }
-    child.castShadow = true;
-    child.receiveShadow = true;
+    child.castShadow = castShadow;
+    child.receiveShadow = receiveShadow;
     const sourceMaterials = Array.isArray(child.material) ? child.material : [child.material];
     const clonedMaterials = sourceMaterials.map((material) => {
       const cloned = material.clone();
@@ -295,11 +317,14 @@ export class CharacterModelInstance {
   private pendingTrigger: 'Attack' | 'Spell' | null = null;
   private overrideUntilSeconds = 0;
   private previousElapsedSeconds: number | null = null;
+  private animationAccumulatorSeconds = 0;
   private effectOpacity = 1;
   private effectEmissiveHex = 0;
   private appliedEffectOpacity = Number.NaN;
   private appliedEffectEmissiveHex = -1;
   private readonly effectEmissive = new THREE.Color();
+  private castShadow = true;
+  private receiveShadow = true;
   private loadStarted = false;
   private disposed = false;
 
@@ -368,7 +393,7 @@ export class CharacterModelInstance {
         if (this.disposed) {
           return;
         }
-        const instance = cloneTemplate(template.root);
+        const instance = cloneTemplate(template.root, this.castShadow, this.receiveShadow);
         this.loadedRoot = instance.root;
         this.materials = instance.materials;
         this.appliedEffectOpacity = Number.NaN;
@@ -377,6 +402,7 @@ export class CharacterModelInstance {
         disposeObjectMaterials(this.placeholder);
         this.root.add(instance.root);
         this.mixer = new THREE.AnimationMixer(instance.root);
+        this.animationAccumulatorSeconds = 0;
         this.actions = new Map(
           [...template.clips.entries()].map(([state, clip]) => {
             const action = this.mixer?.clipAction(clip);
@@ -404,11 +430,13 @@ export class CharacterModelInstance {
     elapsedSeconds: number,
     locomotion: 'Idle' | 'Move',
     trigger: 'Attack' | 'Spell' | null,
+    animationIntervalSeconds = 0,
   ): void {
     this.desiredLocomotion = locomotion;
     const previous = this.previousElapsedSeconds ?? elapsedSeconds;
-    const delta = Math.max(0, Math.min(0.1, elapsedSeconds - previous));
+    const delta = Math.max(0, Math.min(0.25, elapsedSeconds - previous));
     this.previousElapsedSeconds = elapsedSeconds;
+    this.animationAccumulatorSeconds += delta;
 
     if (trigger) {
       if (trigger === 'Spell' || this.pendingTrigger === null) {
@@ -426,7 +454,29 @@ export class CharacterModelInstance {
     } else if (elapsedSeconds >= this.overrideUntilSeconds && this.currentState !== locomotion) {
       this.play(locomotion, false);
     }
-    this.mixer?.update(delta);
+    if (
+      this.mixer &&
+      (trigger !== null ||
+        animationIntervalSeconds <= 0 ||
+        this.animationAccumulatorSeconds >= animationIntervalSeconds)
+    ) {
+      this.mixer.update(this.animationAccumulatorSeconds);
+      this.animationAccumulatorSeconds = 0;
+    }
+  }
+
+  setShadows(castShadow: boolean, receiveShadow: boolean): void {
+    if (this.castShadow === castShadow && this.receiveShadow === receiveShadow) {
+      return;
+    }
+    this.castShadow = castShadow;
+    this.receiveShadow = receiveShadow;
+    this.loadedRoot?.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        child.castShadow = castShadow;
+        child.receiveShadow = receiveShadow;
+      }
+    });
   }
 
   setEffects(opacity: number, emissiveHex: number): void {

@@ -31,7 +31,10 @@ import { createRandomStream, isOpenGround, sampleOpenGround } from './map-sampli
 
 const MM = 1_000;
 
-const TREE_COUNT = 360;
+const TREE_SEED_SALT = 0x9e3779b9;
+const TREE_COUNT = 720;
+const DENSE_TREE_COUNT = 500;
+const SPARSE_TREE_COUNT = TREE_COUNT - DENSE_TREE_COUNT;
 const BAMBOO_CLUSTERS = 112;
 const BOULDER_COUNT = 196;
 const MODEL_DRESSING_MAX = 360;
@@ -72,9 +75,9 @@ export function buildFlora(
   renderer: THREE.WebGLRenderer | null = null,
   graphicsTier: 'balanced' | 'reduced' = 'balanced',
 ): FloraController {
-  const nextRandom = createRandomStream(seed ^ 0x9e3779b9);
+  const nextRandom = createRandomStream(seed ^ TREE_SEED_SALT);
 
-  const treePoints = sampleClusteredOpenGround(TREE_COUNT, 72, nextRandom, 5_500, 3_500, 1.4, 9.4);
+  const treePoints = sampleTreePoints(nextRandom);
   const proceduralTrees = new THREE.Group();
   proceduralTrees.name = 'flora-procedural-trees';
   group.add(proceduralTrees);
@@ -158,6 +161,34 @@ export function buildFlora(
   };
 }
 
+function sampleTreePoints(nextRandom: () => number): MapPointMm[] {
+  const dense = sampleClusteredOpenGround(
+    DENSE_TREE_COUNT,
+    34,
+    nextRandom,
+    9_000,
+    4_500,
+    2.2,
+    22,
+    12,
+    20,
+    3.2,
+  );
+  const sparse = sampleClusteredOpenGround(
+    SPARSE_TREE_COUNT,
+    58,
+    nextRandom,
+    5_500,
+    3_500,
+    1.4,
+    10,
+    2,
+    5,
+    3.8,
+  );
+  return [...dense, ...sparse];
+}
+
 function sampleClusteredOpenGround(
   count: number,
   anchorCount: number,
@@ -166,6 +197,9 @@ function sampleClusteredOpenGround(
   pointRoadVergeMm: number,
   minRadiusMeters: number,
   maxRadiusMeters: number,
+  minClusterCount = 2,
+  maxClusterCount = 5,
+  minDistanceMeters = 0,
 ): MapPointMm[] {
   const anchors = sampleOpenGround(anchorCount, anchorCount * 18, nextRandom, {
     roadVergeMm: anchorRoadVergeMm,
@@ -177,6 +211,9 @@ function sampleClusteredOpenGround(
     pointRoadVergeMm,
     minRadiusMeters,
     maxRadiusMeters,
+    minClusterCount,
+    maxClusterCount,
+    minDistanceMeters,
   );
 }
 
@@ -187,11 +224,33 @@ function expandClusteredPoints(
   roadVergeMm: number,
   minRadiusMeters: number,
   maxRadiusMeters: number,
+  minClusterCount = 2,
+  maxClusterCount = 5,
+  minDistanceMeters = 0,
 ): MapPointMm[] {
   const points: MapPointMm[] = [];
+  const minDistanceSquaredMm = (minDistanceMeters * MM) ** 2;
+  const canPlace = (candidate: MapPointMm): boolean =>
+    isOpenGround(candidate, { roadVergeMm }) &&
+    (minDistanceSquaredMm <= 0 ||
+      points.every((point) => {
+        const dx = candidate.x - point.x;
+        const dz = candidate.z - point.z;
+        return dx * dx + dz * dz >= minDistanceSquaredMm;
+      }));
+
   for (const anchor of anchors) {
-    const count = 2 + Math.floor(nextRandom() * 4);
-    for (let index = 0; index < count && points.length < target; index += 1) {
+    const count =
+      minClusterCount +
+      Math.floor(
+        nextRandom() * (Math.max(minClusterCount, maxClusterCount) - minClusterCount + 1),
+      );
+    let added = 0;
+    for (
+      let attempt = 0;
+      attempt < count * 10 && added < count && points.length < target;
+      attempt += 1
+    ) {
       const angle = nextRandom() * Math.PI * 2;
       const radius =
         minRadiusMeters + Math.sqrt(nextRandom()) * (maxRadiusMeters - minRadiusMeters);
@@ -199,8 +258,9 @@ function expandClusteredPoints(
         x: Math.round(anchor.x + Math.cos(angle) * radius * MM),
         z: Math.round(anchor.z + Math.sin(angle) * radius * MM),
       };
-      if (isOpenGround(candidate, { roadVergeMm })) {
+      if (canPlace(candidate)) {
         points.push(candidate);
+        added += 1;
       }
     }
     if (points.length >= target) {
@@ -210,11 +270,19 @@ function expandClusteredPoints(
 
   const remaining = target - points.length;
   if (remaining > 0) {
-    points.push(
-      ...sampleOpenGround(remaining, Math.max(remaining * 14, 2_000), nextRandom, {
-        roadVergeMm,
-      }),
-    );
+    for (const point of sampleOpenGround(
+      remaining * 4,
+      Math.max(remaining * 40, 4_000),
+      nextRandom,
+      { roadVergeMm },
+    )) {
+      if (points.length >= target) {
+        break;
+      }
+      if (canPlace(point)) {
+        points.push(point);
+      }
+    }
   }
   return points;
 }

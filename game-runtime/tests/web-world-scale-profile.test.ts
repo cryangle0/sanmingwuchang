@@ -7,8 +7,8 @@ import {
 import { WORLD_SCALE_PROFILE } from '../apps/web/src/render/world-scale-profile';
 
 describe('web world scale profile', () => {
-  it('keeps characters in metre scale without a second presentation multiplier', () => {
-    expect(WORLD_SCALE_PROFILE.character.playerModelScale).toBe(1);
+  it('keeps the player presentation multiplier explicit and separate from simulation scale', () => {
+    expect(WORLD_SCALE_PROFILE.character.playerModelScale).toBeCloseTo(1.5, 6);
     expect(WORLD_SCALE_PROFILE.character.monsterModelScale).toBe(1);
     expect(Math.min(...WEB_HERO_MODELS.map((model) => model.height))).toBeGreaterThanOrEqual(2.2);
     expect(Math.max(...WEB_HERO_MODELS.map((model) => model.height))).toBeLessThanOrEqual(2.5);

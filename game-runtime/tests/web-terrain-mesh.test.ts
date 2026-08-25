@@ -32,9 +32,13 @@ describe('web terrain mesh', () => {
     const geometry = buildWaterGeometry();
     expect(geometry).not.toBeNull();
     const positions = geometry?.getAttribute('position');
+    const waterDepths = geometry?.getAttribute('waterDepth');
+    const index = geometry?.getIndex();
     expect(positions?.count).toBeGreaterThan(12);
-    if (!positions) {
-      throw new Error('missing water positions');
+    expect(waterDepths?.count).toBe(positions?.count);
+    expect(index?.count).toBeGreaterThan(12);
+    if (!positions || !waterDepths || !index) {
+      throw new Error('missing indexed water geometry');
     }
     let covered = 0;
     const levels = new Set<number>();
@@ -56,6 +60,42 @@ describe('web terrain mesh', () => {
     // And water must stay a feature, not a flood: the old absolute-level rule
     // drowned more than half the playfield.
     expect(covered).toBeLessThan(120_000);
+
+    const edgeUse = new Map<string, readonly [number, number]>();
+    const edgeCounts = new Map<string, number>();
+    for (let offset = 0; offset < index.count; offset += 3) {
+      const triangle = [index.getX(offset), index.getX(offset + 1), index.getX(offset + 2)];
+      for (let edge = 0; edge < 3; edge += 1) {
+        const a = triangle[edge] as number;
+        const b = triangle[(edge + 1) % 3] as number;
+        const low = Math.min(a, b);
+        const high = Math.max(a, b);
+        const key = `${low}:${high}`;
+        edgeUse.set(key, [low, high]);
+        edgeCounts.set(key, (edgeCounts.get(key) ?? 0) + 1);
+      }
+    }
+    const shorelineLengths = [...edgeCounts.entries()]
+      .filter(([, count]) => count === 1)
+      .map(([key]) => {
+        const [a, b] = edgeUse.get(key) as readonly [number, number];
+        return {
+          depth: Math.max(Math.abs(waterDepths.getX(a)), Math.abs(waterDepths.getX(b))),
+          length: Math.hypot(
+            positions.getX(a) - positions.getX(b),
+            positions.getZ(a) - positions.getZ(b),
+          ),
+        };
+      })
+      // Refined shoreline cells meet coarse, coplanar interior cells at
+      // topology-only LOD seams. Water depth separates those invisible joins
+      // from the actual zero-depth land/water contour.
+      .filter((edge) => edge.depth <= 0.02)
+      .map((edge) => edge.length);
+    expect(shorelineLengths.length).toBeGreaterThan(100);
+    // The old contour exposed one 4 m terrain edge at a time. The refined
+    // rounded contour never presents more than one 0.5 m cell diagonal.
+    expect(Math.max(...shorelineLengths)).toBeLessThanOrEqual(Math.SQRT1_2 + 0.02);
   });
 
   it('keeps footing on the rendered triangles instead of under them', () => {

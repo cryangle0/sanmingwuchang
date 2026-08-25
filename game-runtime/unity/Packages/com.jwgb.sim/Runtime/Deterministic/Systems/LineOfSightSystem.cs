@@ -27,6 +27,14 @@ namespace Jwgb.Sim.Deterministic
                 return false;
             }
 
+            if (state.MapField != null &&
+                TerrainHeight.BlocksLineOfSight(
+                    MapCollisionAdapter.ToMapPoint(start),
+                    MapCollisionAdapter.ToMapPoint(end)))
+            {
+                return false;
+            }
+
             return !HasStaticSolidLineBlock(state, start, end, clearanceMm);
         }
 

@@ -294,8 +294,15 @@ function constantScaleTrack(track) {
   return true;
 }
 
-function sanitizedClip(source, name, sourceRestPositions, idleRestPositions) {
+function sanitizedClip(
+  source,
+  name,
+  sourceRestPositions,
+  idleRestPositions,
+  allowAnimationBoneSetDifferences,
+) {
   const tracks = [];
+  const droppedTrackNames = [];
   let retargetedPositionTracks = 0;
   let maximumRestPositionCorrection = 0;
   for (const sourceTrack of source.tracks) {
@@ -304,10 +311,21 @@ function sanitizedClip(source, name, sourceRestPositions, idleRestPositions) {
     }
     const track = sourceTrack.clone();
     const target = trackTarget(track.name);
+    const idleRest = idleRestPositions.get(target);
+    if (!idleRest) {
+      if (allowAnimationBoneSetDifferences) {
+        droppedTrackNames.push(track.name);
+        continue;
+      }
+      throw new Error(`${name} track ${track.name} has no matching Idle target`);
+    }
     if (track instanceof THREE.VectorKeyframeTrack && track.name.endsWith('.position')) {
       const sourceRest = sourceRestPositions.get(target);
-      const idleRest = idleRestPositions.get(target);
       if (!sourceRest || !idleRest) {
+        if (allowAnimationBoneSetDifferences) {
+          droppedTrackNames.push(track.name);
+          continue;
+        }
         throw new Error(`${name} position track ${track.name} has no matching Idle rest transform`);
       }
       const correction = idleRest.clone().sub(sourceRest);
@@ -332,6 +350,8 @@ function sanitizedClip(source, name, sourceRestPositions, idleRestPositions) {
     clip,
     retargetedPositionTracks,
     maximumRestPositionCorrection,
+    droppedTracks: droppedTrackNames.length,
+    droppedTrackNames,
   };
 }
 
@@ -409,7 +429,13 @@ window.addCharacterAnimationSource = async (input) => {
     disposeSource(root);
     throw new Error('Idle must be loaded before the other character animation sources');
   }
-  const sanitized = sanitizedClip(source, input.name, sourceRestPositions, state.idleRestPositions);
+  const sanitized = sanitizedClip(
+    source,
+    input.name,
+    sourceRestPositions,
+    state.idleRestPositions,
+    state.config.allowAnimationBoneSetDifferences === true,
+  );
   const clip = sanitized.clip;
   state.sourceMetrics.push({
     name: input.name,
@@ -421,6 +447,8 @@ window.addCharacterAnimationSource = async (input) => {
     keyframes: clip.tracks.reduce((sum, track) => sum + track.times.length, 0),
     retargetedPositionTracks: sanitized.retargetedPositionTracks,
     maximumRestPositionCorrection: sanitized.maximumRestPositionCorrection,
+    droppedTracks: sanitized.droppedTracks,
+    droppedTrackNames: sanitized.droppedTrackNames,
   });
   state.clips.set(input.name, clip);
   if (input.name === 'Idle') {
@@ -441,7 +469,10 @@ window.exportCharacterAnimationAsset = async () => {
   }
   const sourceBones = state.sourceMetrics[0]?.bones ?? [];
   for (const metrics of state.sourceMetrics) {
-    if (JSON.stringify(metrics.bones) !== JSON.stringify(sourceBones)) {
+    if (
+      state.config.allowAnimationBoneSetDifferences !== true &&
+      JSON.stringify(metrics.bones) !== JSON.stringify(sourceBones)
+    ) {
       throw new Error(`skeleton mismatch in ${metrics.name}`);
     }
   }

@@ -19,6 +19,20 @@ export const ANIMATED_CHARACTER_CONFIGS = [
     },
   },
   {
+    modelId: 'H008',
+    displayName: '太上老君',
+    sourceDirectory:
+      process.env.JWGB_H008_ANIMATION_SOURCE?.trim() || join(sourceRoot, '太上老君_FBX'),
+    targetHeight: 2.2,
+    expectedBones: 41,
+    clipPatterns: {
+      Idle: 'TaiShangLaoJun_Idle',
+      Move: 'TaiShangLaoJun_Run',
+      Attack: 'TaiShangLaoJun_Attack',
+      Spell: 'TaiShangLaoJun_Cast',
+    },
+  },
+  {
     modelId: 'H010',
     displayName: '二郎神',
     sourceDirectory:
@@ -118,6 +132,35 @@ export const ANIMATED_CHARACTER_CONFIGS = [
     },
   },
   {
+    modelId: 'H031',
+    displayName: '托塔李天王',
+    sourceDirectory:
+      process.env.JWGB_H031_ANIMATION_SOURCE?.trim() || join(sourceRoot, '李天王_FBX'),
+    targetHeight: 2.2,
+    expectedBones: 41,
+    clipPatterns: {
+      Idle: 'LiTianWang_Idle',
+      Move: 'preset:biped:run',
+      Attack: 'LiTianWang_Attack',
+      Spell: 'LiTianWang_Cast',
+    },
+  },
+  {
+    modelId: 'H033',
+    displayName: '沙和尚',
+    sourceDirectory:
+      process.env.JWGB_H033_ANIMATION_SOURCE?.trim() || join(sourceRoot, '沙和尚_FBX'),
+    targetHeight: 2.2,
+    expectedBones: 53,
+    allowAnimationBoneSetDifferences: true,
+    clipPatterns: {
+      Idle: 'ShaHeShang_Idle',
+      Move: 'ShaHeShang_Run',
+      Attack: 'ShaHeShang_Attack',
+      Spell: 'ShaHeShang_Cast',
+    },
+  },
+  {
     modelId: 'H034',
     displayName: '黑熊精',
     sourceDirectory:
@@ -148,6 +191,7 @@ export const ANIMATED_CHARACTER_CONFIGS = [
 ].map((config) => ({
   ...config,
   requiresSeparateWeapon: config.requiresSeparateWeapon ?? true,
+  allowAnimationBoneSetDifferences: config.allowAnimationBoneSetDifferences ?? false,
   outputDirectory: join(
     repositoryRoot,
     'apps',

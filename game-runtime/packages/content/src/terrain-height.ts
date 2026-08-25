@@ -177,13 +177,13 @@ export function terrainHeightMm(xMm: number, zMm: number): number {
   if (localX <= localZ) {
     return (
       a +
-      Math.trunc(((b - a) * (localZ - localX)) / TERRAIN_LATTICE_MM) +
+      Math.trunc(((b - a) * localZ) / TERRAIN_LATTICE_MM) +
       Math.trunc(((c - b) * localX) / TERRAIN_LATTICE_MM)
     );
   }
   return (
     a +
-    Math.trunc(((d - a) * (localX - localZ)) / TERRAIN_LATTICE_MM) +
+    Math.trunc(((d - a) * localX) / TERRAIN_LATTICE_MM) +
     Math.trunc(((c - d) * localZ) / TERRAIN_LATTICE_MM)
   );
 }

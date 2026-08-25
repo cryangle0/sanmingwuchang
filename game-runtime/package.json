@@ -27,6 +27,8 @@
     "models:verify:web": "tsx tools/models/verify-web-model-assets.ts",
     "models:verify:render": "node tools/web/verify-web-models.mjs",
     "models:convert:map": "node tools/models/convert-map-assets.mjs",
+    "models:import:free-map": "node tools/models/import-free-map-assets.mjs",
+    "models:convert:lush-tree": "node tools/models/convert-lush-tree.mjs",
     "models:convert:wukong": "node tools/models/convert-wukong-animation-assets.mjs",
     "models:convert:animated": "node tools/models/convert-character-animation-assets.mjs",
     "models:capture:wukong": "node tools/models/capture-wukong-glb.mjs",

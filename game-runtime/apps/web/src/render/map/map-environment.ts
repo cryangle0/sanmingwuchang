@@ -55,7 +55,7 @@ export function buildMapEnvironment(
   // Same derivation as the decorative scatter: textures stay deterministic
   // per compiled map, and any geometry change repaints the world with it.
   const surfaceSeed = Number.parseInt(MAP_GEOMETRY_HASH.slice(0, 8), 16) >>> 0 || 1;
-  const materials = createMapMaterials(surfaceSeed);
+  const materials = createMapMaterials(surfaceSeed, graphicsTier);
   const group = new THREE.Group();
   group.name = 'map-environment';
   const geometries: THREE.BufferGeometry[] = [];
@@ -147,6 +147,7 @@ export function buildMapEnvironment(
     group,
     setGraphicsTier(tier): void {
       const reduced = tier === 'reduced';
+      materials.setGraphicsTier(tier);
       scatter.visible = !reduced;
       floraOcclusion.setEnabled(!reduced);
       floraOcclusion.setGraphicsTier(tier);

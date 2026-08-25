@@ -36,6 +36,7 @@ const REDUCED_TREE_CULL_DISTANCE = 104;
 const REDUCED_ROCK_CULL_DISTANCE = 88;
 const REDUCED_DRESSING_CULL_DISTANCE = 68;
 const MODEL_BOUNDS_PADDING = 6;
+const REDUCED_TREE_DENSITY = 0.6;
 
 type TreeModelKind =
   | 'pine'
@@ -46,7 +47,8 @@ type TreeModelKind =
   | 'maple'
   | 'cypress'
   | 'beech'
-  | 'willow';
+  | 'willow'
+  | 'lush';
 export type DressingModelKind =
   | 'bush'
   | 'fern'
@@ -60,15 +62,16 @@ type ModelKind = TreeModelKind | 'rock' | DressingModelKind;
 export type GraphicsTier = 'balanced' | 'reduced';
 
 const MODEL_PATHS: Readonly<Record<ModelKind, readonly string[]>> = {
-  pine: ['pine_4.glb', 'pine_5.glb', 'cypress-poly.glb'],
-  oak: ['oak_3.glb', 'oak_5.glb', 'beech-poly.glb'],
-  twisted: ['willow-poly.glb', 'twisted_1.glb'],
+  pine: ['mission-lush-tree.glb'],
+  oak: ['mission-lush-tree.glb'],
+  twisted: ['mission-lush-tree.glb'],
   dead: ['dead-cypress-poly.glb', 'dead-beech-poly.glb', 'dead_3.glb'],
-  asia: ['asia-tree.glb'],
-  maple: ['red-maple.glb'],
-  cypress: ['cypress-poly.glb'],
-  beech: ['beech-poly.glb'],
-  willow: ['willow-poly.glb'],
+  asia: ['mission-lush-tree.glb'],
+  maple: ['mission-lush-tree.glb'],
+  cypress: ['mission-lush-tree.glb'],
+  beech: ['mission-lush-tree.glb'],
+  willow: ['mission-lush-tree.glb'],
+  lush: ['mission-lush-tree.glb'],
   rock: ['rock_1.glb', 'rock_2.glb', 'rock_3.glb'],
   bush: ['bush.glb'],
   fern: ['fern.glb'],
@@ -81,15 +84,16 @@ const MODEL_PATHS: Readonly<Record<ModelKind, readonly string[]>> = {
 };
 
 const REDUCED_MODEL_PATHS: Readonly<Record<ModelKind, readonly string[]>> = {
-  pine: ['cypress-poly.glb'],
-  oak: ['beech-poly.glb'],
-  twisted: ['willow-poly.glb'],
+  pine: ['mission-lush-tree.glb'],
+  oak: ['mission-lush-tree.glb'],
+  twisted: ['mission-lush-tree.glb'],
   dead: ['dead-cypress-poly.glb', 'dead-beech-poly.glb'],
-  asia: ['asia-tree.glb'],
-  maple: ['red-maple.glb'],
-  cypress: ['cypress-poly.glb'],
-  beech: ['beech-poly.glb'],
-  willow: ['willow-poly.glb'],
+  asia: ['mission-lush-tree.glb'],
+  maple: ['mission-lush-tree.glb'],
+  cypress: ['mission-lush-tree.glb'],
+  beech: ['mission-lush-tree.glb'],
+  willow: ['mission-lush-tree.glb'],
+  lush: ['mission-lush-tree.glb'],
   rock: ['rock_1.glb'],
   bush: [],
   fern: [],
@@ -364,9 +368,9 @@ function isLeafMaterial(material: THREE.Material, path: string): boolean {
 
 function applyLeafLighting(
   material: THREE.MeshStandardMaterial,
-  profile: 'tree' | 'bush' | 'fern' | 'maple' | 'lowpoly' | 'polyNature',
+  profile: 'tree' | 'bush' | 'fern' | 'maple' | 'lowpoly' | 'polyNature' | 'lush',
 ): void {
-  if ((profile === 'tree' || profile === 'bush') && material.map) {
+  if ((profile === 'tree' || profile === 'bush' || profile === 'lush') && material.map) {
     material.emissiveMap = material.map;
   }
   if (profile === 'tree') {
@@ -396,6 +400,10 @@ function applyLeafLighting(
     material.emissive.setRGB(0.045, 0.065, 0.025);
     material.emissiveIntensity = material.map ? 0.28 : 0.08;
     material.color.multiplyScalar(0.96);
+  } else if (profile === 'lush') {
+    material.emissive.setRGB(0.045, 0.075, 0.025);
+    material.emissiveIntensity = material.map ? 0.38 : 0.08;
+    material.color.multiplyScalar(0.94);
   } else {
     material.emissiveMap = null;
     material.emissive.setRGB(0.012, 0.018, 0.009);
@@ -416,13 +424,15 @@ function applyLeafLighting(
         `objectNormal = normalize(mix(objectNormal, jwgbCanopyDirection, ${
           profile === 'tree'
             ? '0.72'
-            : profile === 'bush'
-              ? '0.62'
-              : profile === 'lowpoly'
-                ? '0.26'
-                : profile === 'polyNature'
-                  ? '0.46'
-                  : '0.42'
+            : profile === 'lush'
+              ? '0.5'
+              : profile === 'bush'
+                ? '0.62'
+                : profile === 'lowpoly'
+                  ? '0.26'
+                  : profile === 'polyNature'
+                    ? '0.46'
+                    : '0.42'
         }));`,
       ].join('\n'),
     );
@@ -457,17 +467,19 @@ function prepareMaterial(
     applyWindSway(material, lowpolyFoliage ? 0.018 : 0.035);
     const profile = /(?:^|\/)red-maple\.glb$/i.test(path)
       ? 'maple'
-      : polyNatureFoliage
-        ? 'polyNature'
-        : /(?:^|\/)(?:asia-)?bush\.glb$/i.test(path)
-          ? 'bush'
-          : /(?:^|\/)(?:fern|reed-big|small-plant-\d+)\.glb$/i.test(path)
-            ? lowpolyFoliage
-              ? 'lowpoly'
-              : 'fern'
-            : lowpolyFoliage
-              ? 'lowpoly'
-              : 'tree';
+      : /(?:^|\/)mission-lush-tree\.glb$/i.test(path)
+        ? 'lush'
+        : polyNatureFoliage
+          ? 'polyNature'
+          : /(?:^|\/)(?:asia-)?bush\.glb$/i.test(path)
+            ? 'bush'
+            : /(?:^|\/)(?:fern|reed-big|small-plant-\d+)\.glb$/i.test(path)
+              ? lowpolyFoliage
+                ? 'lowpoly'
+                : 'fern'
+              : lowpolyFoliage
+                ? 'lowpoly'
+                : 'tree';
     applyLeafLighting(material, profile);
   } else {
     material.roughness = Math.max(material.roughness, 0.82);
@@ -628,6 +640,15 @@ function modelPathFor(kind: ModelKind, x: number, z: number, tier: GraphicsTier)
   return paths[index] as string;
 }
 
+function filterTreePlacements(
+  placements: readonly FloraModelTreePlacement[],
+  tier: GraphicsTier,
+): readonly FloraModelTreePlacement[] {
+  return tier === 'balanced'
+    ? placements
+    : placements.filter((placement) => hashAt(placement.x, placement.z, 109) < REDUCED_TREE_DENSITY);
+}
+
 function composeModelMatrix(
   template: ModelTemplate,
   x: number,
@@ -663,6 +684,15 @@ function materialTintForTree(
     return softTint(
       leaf ? region.scatter : region.groundAlt,
       leaf ? 0.88 : 0.8,
+      placement.x,
+      placement.z,
+      leaf ? 31 : 37,
+    );
+  }
+  if (kind === 'lush') {
+    return softTint(
+      leaf ? region.scatter : region.groundAlt,
+      leaf ? 0.22 : 0.62,
       placement.x,
       placement.z,
       leaf ? 31 : 37,
@@ -774,6 +804,7 @@ function uniqueModelPaths(tier: GraphicsTier): {
     ...paths.cypress,
     ...paths.beech,
     ...paths.willow,
+    ...paths.lush,
     ...paths.rock,
   ];
   const dressing = [
@@ -855,7 +886,9 @@ function addTreeBatches(
                       ? 'asia'
                       : fileName.startsWith('red-maple')
                         ? 'maple'
-                        : 'pine';
+                        : fileName.startsWith('mission-lush-tree')
+                          ? 'lush'
+                          : 'pine';
       chunk.instanceCount += list.length;
       const partRefs = list.map((placement) => {
         const entry = {
@@ -875,10 +908,11 @@ function addTreeBatches(
           kind === 'maple' ||
           kind === 'cypress' ||
           kind === 'beech' ||
-          kind === 'willow';
+          kind === 'willow' ||
+          kind === 'lush';
         instanced.castShadow = !lightweightFoliage && (part.isLeaf || kind === 'dead');
         instanced.receiveShadow = !lightweightFoliage;
-        instanced.frustumCulled = false;
+        instanced.frustumCulled = true;
         for (const [index, placement] of list.entries()) {
           const variationScale =
             (kind === 'dead' ? 0.86 : 0.84) + Math.min(1.35, placement.size) * 0.16;
@@ -907,6 +941,7 @@ function addTreeBatches(
         if (instanced.instanceColor) {
           instanced.instanceColor.needsUpdate = true;
         }
+        instanced.computeBoundingSphere();
         chunk.group.add(instanced);
         batches.push({
           mesh: instanced,
@@ -982,7 +1017,7 @@ function addRockBatches(
           `${chunk.chunkX}-${chunk.chunkZ}-${partIndex}`;
         instanced.castShadow = false;
         instanced.receiveShadow = true;
-        instanced.frustumCulled = false;
+        instanced.frustumCulled = true;
         for (const [index, point] of list.entries()) {
           const variationScale = 0.72 + hashAt(point.x, point.z, 67) * 0.68;
           const modelMatrix = composeModelMatrix(
@@ -1002,6 +1037,7 @@ function addRockBatches(
         if (instanced.instanceColor) {
           instanced.instanceColor.needsUpdate = true;
         }
+        instanced.computeBoundingSphere();
         chunk.group.add(instanced);
         batches.push({
           mesh: instanced,
@@ -1080,7 +1116,7 @@ function addDressingBatches(
         instanced.receiveShadow = !['asiaBush', 'reed', 'smallPlant1', 'smallPlant2'].includes(
           kind,
         );
-        instanced.frustumCulled = false;
+        instanced.frustumCulled = true;
         for (const [index, placement] of list.entries()) {
           const targetHeight =
             kind === 'bush'
@@ -1117,6 +1153,7 @@ function addDressingBatches(
         if (instanced.instanceColor) {
           instanced.instanceColor.needsUpdate = true;
         }
+        instanced.computeBoundingSphere();
         chunk.group.add(instanced);
         batches.push({
           mesh: instanced,
@@ -1330,7 +1367,8 @@ export function buildFloraModelLayer(
     nextRockGroup.name = 'flora-model-rocks';
     const nextDressingGroup = new THREE.Group();
     nextDressingGroup.name = 'flora-model-dressing';
-    const treeResult = addTreeBatches(nextTreeGroup, coreTemplates, options.trees, nextTier);
+    const treePlacements = filterTreePlacements(options.trees, nextTier);
+    const treeResult = addTreeBatches(nextTreeGroup, coreTemplates, treePlacements, nextTier);
     const rockResult = addRockBatches(nextRockGroup, coreTemplates, options.rocks, nextTier);
     const dressingResult = addDressingBatches(
       nextDressingGroup,
@@ -1339,7 +1377,7 @@ export function buildFloraModelLayer(
       nextTier,
     );
     const nextBatches = [...treeResult.batches, ...rockResult.batches, ...dressingResult.batches];
-    if (options.trees.length > 0 && treeResult.count < options.trees.length) {
+    if (treePlacements.length > 0 && treeResult.count < treePlacements.length) {
       for (const chunk of [...treeResult.chunks, ...rockResult.chunks, ...dressingResult.chunks]) {
         chunk.group.removeFromParent();
       }
