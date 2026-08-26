@@ -54,6 +54,11 @@ export interface MapMaterialLibrary {
   readonly groundMoss: THREE.MeshStandardMaterial;
   readonly groundSoil: THREE.MeshStandardMaterial;
   readonly groundLeaves: THREE.MeshStandardMaterial;
+  /**
+   * Wildflower blooms. White base, tinted per instance from the district
+   * accent, so one material carries every meadow on the map.
+   */
+  readonly bloom: THREE.MeshStandardMaterial;
   /** Flora set: white-base materials tinted per instance by district. */
   readonly floraTrunk: THREE.MeshStandardMaterial;
   readonly floraCanopy: THREE.MeshStandardMaterial;
@@ -709,6 +714,18 @@ export function createMapMaterials(
     depthWrite: false,
     side: THREE.DoubleSide,
   });
+  // Wildflowers use per-instance district colours so one instanced mesh can
+  // carry every meadow without a material per region.
+  const bloom = new THREE.MeshStandardMaterial({
+    color: 0xffffff,
+    // InstancedMesh supplies the district tint through instanceColor.
+    vertexColors: false,
+    roughness: 0.82,
+    metalness: 0,
+    side: THREE.DoubleSide,
+    flatShading: true,
+  });
+
   const groundLeaves = new THREE.MeshStandardMaterial({
     map: assetTextures.texture('Ground023_Stylized.jpg', 1.45),
     color: 0xffffff,
@@ -863,6 +880,7 @@ export function createMapMaterials(
     groundMoss,
     groundSoil,
     groundLeaves,
+    bloom,
     floraTrunk,
     floraCanopy,
     floraBamboo,
@@ -907,6 +925,7 @@ export function createMapMaterials(
     groundMoss,
     groundSoil,
     groundLeaves,
+    bloom,
     floraTrunk,
     floraCanopy,
     floraBamboo,

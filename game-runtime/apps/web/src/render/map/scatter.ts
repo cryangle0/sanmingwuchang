@@ -1,12 +1,28 @@
-import { type MapPointMm, terrainHeightMeters } from '@jwgb/content';
+import type { MapPointMm } from '@jwgb/content';
 import * as THREE from 'three';
 import { regionAt } from './map-regions';
-import { createRandomStream, isOpenGround, sampleOpenGround } from './map-sampling';
+import {
+  createRandomStream,
+  dressingSurfaceMeters,
+  isOpenGround,
+  sampleOpenGround,
+} from './map-sampling';
 
 const MM = 1_000;
-const GRASS_TUFT_TARGET = 9_600;
-const PEBBLE_TARGET = 840;
-const GROUND_COVER_TARGET = 1_120;
+/**
+ * Ground-cover budgets.
+ *
+ * The playfield is roughly 460,000 m2, so the previous 9,600 tufts worked out
+ * to one per 48 m2 — sparse enough that open ground read as an empty test
+ * field. These targets bring grass to roughly one clump per 16 m2, which is
+ * still instanced geometry: the whole layer is four draw calls plus one per
+ * flower colour, and the reduced graphics tier hides it wholesale.
+ */
+const GRASS_TUFT_TARGET = 28_000;
+const PEBBLE_TARGET = 1_500;
+const GROUND_COVER_TARGET = 2_800;
+/** Wildflower blooms, clustered into meadow patches rather than spread. */
+const BLOOM_TARGET = 9_600;
 
 interface ScatterMaterials {
   readonly grass: THREE.Material;
@@ -15,6 +31,7 @@ interface ScatterMaterials {
   readonly groundMoss: THREE.Material;
   readonly groundSoil: THREE.Material;
   readonly groundLeaves: THREE.Material;
+  readonly bloom: THREE.Material;
 }
 
 type GroundCoverKind = 'moss' | 'soil' | 'leaves';
@@ -33,12 +50,12 @@ export function buildScatter(
 ): void {
   const nextRandom = createRandomStream(seed);
 
-  const grassAnchors = sampleOpenGround(980, 22_000, nextRandom, { roadVergeMm: 780 });
+  const grassAnchors = sampleOpenGround(2_100, 46_000, nextRandom, { roadVergeMm: 780 });
   const grassPoints = expandClusters(grassAnchors, GRASS_TUFT_TARGET, nextRandom, {
-    minPerAnchor: 6,
-    maxPerAnchor: 11,
+    minPerAnchor: 9,
+    maxPerAnchor: 17,
     minRadiusMeters: 0.25,
-    maxRadiusMeters: 3.8,
+    maxRadiusMeters: 4.6,
     roadVergeMm: 500,
   });
   const grassGeometry = track(buildGrassTuftGeometry());
@@ -62,7 +79,7 @@ export function buildScatter(
     false,
   );
 
-  const pebbleAnchors = sampleOpenGround(155, 5_000, nextRandom, { roadVergeMm: 750 });
+  const pebbleAnchors = sampleOpenGround(260, 9_000, nextRandom, { roadVergeMm: 750 });
   const pebblePoints = expandClusters(pebbleAnchors, PEBBLE_TARGET, nextRandom, {
     minPerAnchor: 4,
     maxPerAnchor: 8,
@@ -78,10 +95,10 @@ export function buildScatter(
     nextRandom,
   );
 
-  const coverAnchors = sampleOpenGround(290, 9_000, nextRandom, { roadVergeMm: 900 });
+  const coverAnchors = sampleOpenGround(640, 18_000, nextRandom, { roadVergeMm: 900 });
   const coverPoints = expandClusters(coverAnchors, GROUND_COVER_TARGET, nextRandom, {
-    minPerAnchor: 3,
-    maxPerAnchor: 7,
+    minPerAnchor: 4,
+    maxPerAnchor: 9,
     minRadiusMeters: 0.35,
     maxRadiusMeters: 5.4,
     roadVergeMm: 650,
@@ -116,6 +133,109 @@ export function buildScatter(
     nextRandom,
     'leaves',
   );
+
+  // Wildflowers last: tight clusters so they read as meadows rather than as
+  // confetti, and a wider road verge than the grass so a bloom never sits on
+  // the edge of a route a player is reading.
+  const bloomAnchors = sampleOpenGround(1_200, 34_000, nextRandom, { roadVergeMm: 1_400 });
+  const bloomPoints = expandClusters(bloomAnchors, BLOOM_TARGET, nextRandom, {
+    minPerAnchor: 8,
+    maxPerAnchor: 22,
+    minRadiusMeters: 0.2,
+    maxRadiusMeters: 2.6,
+    roadVergeMm: 1_100,
+  });
+  placeBloomInstances(group, track(buildBloomGeometry()), materials.bloom, bloomPoints, nextRandom);
+}
+
+/**
+ * A five-petal bloom on a short stem: six triangles, small enough that the
+ * silhouette is all that reads at the gameplay camera.
+ */
+function buildBloomGeometry(): THREE.BufferGeometry {
+  const positions: number[] = [];
+  const stemHeight = 0.46;
+  const petalLength = 0.17;
+  const petalWidth = 0.085;
+
+  // Stem: one narrow upright triangle, enough to root the bloom visually.
+  positions.push(-0.008, 0, 0, 0.008, 0, 0, 0, stemHeight, 0);
+
+  for (let petal = 0; petal < 5; petal += 1) {
+    const angle = (petal / 5) * Math.PI * 2;
+    const outX = Math.cos(angle);
+    const outZ = Math.sin(angle);
+    const sideX = -outZ * petalWidth;
+    const sideZ = outX * petalWidth;
+    // Petals tilt up so the flower reads as a cup from the overhead camera.
+    positions.push(
+      sideX,
+      stemHeight,
+      sideZ,
+      -sideX,
+      stemHeight,
+      -sideZ,
+      outX * petalLength,
+      stemHeight + 0.05,
+      outZ * petalLength,
+    );
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.computeVertexNormals();
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
+/**
+ * Blooms take their hue from the district accent, which is where the palette
+ * keeps 朱砂红 / 金色 / 五行 colour. Mixing each one part-way toward white
+ * keeps a meadow from turning into a solid sheet of the accent.
+ */
+function placeBloomInstances(
+  group: THREE.Group,
+  geometry: THREE.BufferGeometry,
+  material: THREE.Material,
+  points: readonly MapPointMm[],
+  nextRandom: () => number,
+): void {
+  if (points.length === 0) {
+    return;
+  }
+  const mesh = new THREE.InstancedMesh(geometry, material, points.length);
+  mesh.name = 'scatter-blooms';
+  mesh.receiveShadow = false;
+  mesh.castShadow = false;
+  const matrix = new THREE.Matrix4();
+  const rotation = new THREE.Euler();
+  const quaternion = new THREE.Quaternion();
+  const scale = new THREE.Vector3();
+  const position = new THREE.Vector3();
+  const colour = new THREE.Color();
+  const pale = new THREE.Color(0xfdf6e4);
+  points.forEach((point, index) => {
+    const uniformScale = 0.88 + nextRandom() * 0.34;
+    rotation.set(0, 0, 0);
+    quaternion.setFromEuler(rotation);
+    scale.setScalar(uniformScale);
+    position.set(point.x / MM, dressingSurfaceMeters(point), point.z / MM);
+    matrix.compose(position, quaternion, scale);
+    mesh.setMatrixAt(index, matrix);
+
+    colour.setHex(regionAt(point.x / MM, point.z / MM).accent);
+    // Roughly a third of any meadow is pale, which reads as species variety
+    // instead of one dyed field.
+    colour.lerp(pale, nextRandom() < 0.34 ? 0.62 + nextRandom() * 0.24 : nextRandom() * 0.3);
+    colour.multiplyScalar(0.88 + nextRandom() * 0.24);
+    mesh.setColorAt(index, colour);
+  });
+  mesh.instanceMatrix.needsUpdate = true;
+  if (mesh.instanceColor) {
+    mesh.instanceColor.needsUpdate = true;
+  }
+  group.add(mesh);
 }
 
 function expandClusters(
@@ -243,15 +363,11 @@ function placeGrassInstances(
   const colour = new THREE.Color();
   const grassBase = new THREE.Color(bright ? 0x779b50 : 0x506d39);
   points.forEach((point, index) => {
-    const uniformScale = (bright ? 0.72 : 0.64) + nextRandom() * (bright ? 0.72 : 0.62);
+    const uniformScale = (bright ? 0.98 : 0.88) + nextRandom() * (bright ? 0.86 : 0.78);
     rotation.set(0, nextRandom() * Math.PI * 2, 0);
     quaternion.setFromEuler(rotation);
     scale.setScalar(uniformScale);
-    position.set(
-      point.x / MM,
-      terrainHeightMeters(point.x / MM, point.z / MM) + 0.018 * uniformScale,
-      point.z / MM,
-    );
+    position.set(point.x / MM, dressingSurfaceMeters(point) + 0.018 * uniformScale, point.z / MM);
     matrix.compose(position, quaternion, scale);
     mesh.setMatrixAt(index, matrix);
     colour.setHex(regionAt(point.x / MM, point.z / MM).scatter);
@@ -291,11 +407,7 @@ function placePebbleInstances(
     rotation.set(nextRandom() * 0.32, nextRandom() * Math.PI * 2, nextRandom() * 0.32);
     quaternion.setFromEuler(rotation);
     scale.set(size * (0.72 + nextRandom() * 0.5), size * 0.65, size);
-    position.set(
-      point.x / MM,
-      terrainHeightMeters(point.x / MM, point.z / MM) + size * 0.075,
-      point.z / MM,
-    );
+    position.set(point.x / MM, dressingSurfaceMeters(point) + size * 0.075, point.z / MM);
     matrix.compose(position, quaternion, scale);
     mesh.setMatrixAt(index, matrix);
     colour.setHex(regionAt(point.x / MM, point.z / MM).groundAlt);
@@ -347,7 +459,7 @@ function placeGroundCoverInstances(
     const lift = kind === 'moss' ? 0.014 : kind === 'soil' ? 0.018 : 0.022;
     position.set(
       point.x / MM,
-      terrainHeightMeters(point.x / MM, point.z / MM) + lift + nextRandom() * 0.004,
+      dressingSurfaceMeters(point) + lift + nextRandom() * 0.004,
       point.z / MM,
     );
     matrix.compose(position, quaternion, scale);

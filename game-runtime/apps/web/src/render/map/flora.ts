@@ -1,4 +1,4 @@
-import { MAP_BOUNDARY, MAP_WALL_PIECES, type MapPointMm, terrainHeightMeters } from '@jwgb/content';
+import { MAP_BOUNDARY, MAP_WALL_PIECES, type MapPointMm } from '@jwgb/content';
 import * as THREE from 'three';
 import { mergeMixedParts } from './dressing/prop-kit';
 import {
@@ -17,7 +17,12 @@ import {
 } from './flora-occlusion';
 import type { MapMaterialLibrary } from './map-palette';
 import { regionAt } from './map-regions';
-import { createRandomStream, isOpenGround, sampleOpenGround } from './map-sampling';
+import {
+  createRandomStream,
+  dressingSurfaceMeters,
+  isOpenGround,
+  sampleOpenGround,
+} from './map-sampling';
 
 /**
  * Region-tinted vegetation and rock dressing for 百眼迷城.
@@ -573,7 +578,7 @@ function buildTrees(
     euler.set(0, yaw, trunkTilt);
     quaternion.setFromEuler(euler);
     scale.set(size, size, size);
-    position.set(x, terrainHeightMeters(x, z), z);
+    position.set(x, dressingSurfaceMeters({ x: Math.round(x * MM), z: Math.round(z * MM) }), z);
     matrix.compose(position, quaternion, scale);
     trunks.setMatrixAt(index, matrix);
     const trunkMatrix = matrix.clone();
@@ -584,7 +589,7 @@ function buildTrees(
     scale.set(size * 2.25, 1, size * 1.7);
     position.set(
       x + Math.cos(yaw) * lean * 0.32,
-      terrainHeightMeters(x, z) + 0.021,
+      dressingSurfaceMeters({ x: Math.round(x * MM), z: Math.round(z * MM) }) + 0.021,
       z + Math.sin(yaw) * lean * 0.32,
     );
     matrix.compose(position, quaternion, scale);
@@ -647,7 +652,10 @@ function buildTrees(
       scale.setScalar(placement.size);
       position.set(
         placement.canopyX,
-        terrainHeightMeters(placement.canopyX, placement.canopyZ) +
+        dressingSurfaceMeters({
+          x: Math.round(placement.canopyX * MM),
+          z: Math.round(placement.canopyZ * MM),
+        }) +
           (placement.dead ? 3.48 : 3.92) * placement.size,
         placement.canopyZ,
       );
@@ -814,7 +822,7 @@ function buildBamboo(
     euler.set(0, nextRandom() * Math.PI * 2, 0);
     quaternion.setFromEuler(euler);
     scale.set(size, size, size);
-    position.set(x, terrainHeightMeters(x, z), z);
+    position.set(x, dressingSurfaceMeters({ x: Math.round(x * MM), z: Math.round(z * MM) }), z);
     matrix.compose(position, quaternion, scale);
     clusters.setMatrixAt(index, matrix);
     districtColour.setHex(regionAt(x, z).scatter);
@@ -917,7 +925,11 @@ function buildBoulders(
     euler.set(nextRandom() * 0.4, nextRandom() * Math.PI * 2, nextRandom() * 0.4);
     quaternion.setFromEuler(euler);
     scale.set(size * (0.8 + nextRandom() * 0.5), size, size);
-    position.set(x, terrainHeightMeters(x, z) + size * 0.18, z);
+    position.set(
+      x,
+      dressingSurfaceMeters({ x: Math.round(x * MM), z: Math.round(z * MM) }) + size * 0.18,
+      z,
+    );
     matrix.compose(position, quaternion, scale);
     boulders.setMatrixAt(index, matrix);
     // Boulders lean toward neutral stone but keep a whisper of the district.

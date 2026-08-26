@@ -4,11 +4,13 @@ import {
   MAP_COURTS,
   MAP_DRAGONS,
   MAP_ELITES,
+  MAP_HIGHLANDS,
   MAP_PIGS,
   MAP_ROUTE_EDGES,
   MAP_ROUTE_NODES,
   MAP_WALL_PIECES,
   type MapPointMm,
+  terrainHeightMeters,
 } from '@jwgb/content';
 
 /**
@@ -204,6 +206,39 @@ export function isOpenGround(point: MapPointMm, options: SampleOptions = {}): bo
     !isNearLandmark(point) &&
     (roadVergeMm < 0 || !isOnRoad(point, roadVergeMm))
   );
+}
+
+const MM_PER_METER = 1_000;
+
+/**
+ * Top surface of the plateau a point stands on, or null on open terrain.
+ *
+ * The three 高台 are drawn as separate raised geometry sitting on the terrain,
+ * so `terrainHeightMeters` still reports the ground *under* the table. Dressing
+ * placed by that height inside a plateau footprint ends up buried beneath it,
+ * which is why the highlands read as bare rock while the lowland around them
+ * carries grass.
+ */
+export function highlandTopMeters(point: MapPointMm): number | null {
+  for (const highland of MAP_HIGHLANDS) {
+    if (ringContains(highland.vertices, point)) {
+      return highland.topHeightMm / MM_PER_METER;
+    }
+  }
+  return null;
+}
+
+/**
+ * Height to place visual ground dressing at: the plateau top where there is
+ * one, the terrain surface everywhere else. Render-only; the simulation keeps
+ * using its own height field.
+ */
+export function dressingSurfaceMeters(point: MapPointMm): number {
+  const top = highlandTopMeters(point);
+  if (top !== null) {
+    return top;
+  }
+  return terrainHeightMeters(point.x / MM_PER_METER, point.z / MM_PER_METER);
 }
 
 export function toMetersPoint(point: MapPointMm): { x: number; z: number } {
