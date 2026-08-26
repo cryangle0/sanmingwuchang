@@ -6,6 +6,17 @@ import { regionBlendAt } from './map-regions';
  * Render-only climate per 真源 district. Weather never enters the sim:
  * rain/snow are particles and lighting, ground wetness/soil/frost are
  * vertex colours plus the ground splat shader.
+ *
+ * Balance follows the scene prompt sections 7 and 13. Two rules shape every
+ * row below:
+ *
+ * 1. The key light stays warm and bright in every district. Weather varies
+ *    the *ambient* — hemisphere sky goes cool 青 under cloud — rather than
+ *    draining the sun to grey, which is what flattened the rainy districts
+ *    into the 灰蒙/低对比 the prompt forbids.
+ * 2. Fog and precipitation are capped so 前景 and 中景 stay sharp. Districts
+ *    still read as wet, frozen or dusty, but mist never covers the roads,
+ *    drops, enemies or telegraphs a player is supposed to see.
  */
 
 export type RegionWeather = 'clear' | 'rain' | 'snow';
@@ -24,86 +35,93 @@ export interface RegionClimate {
 }
 
 const CLIMATE: Readonly<Record<RegionId, RegionClimate>> = {
+  // 断金坡: 低风险、清晰的石坡和断墙. The map's clearest, most legible district.
   duanjin: {
     weather: 'clear',
     intensity: 0,
-    fogDensity: 0.0024,
-    sunIntensity: 3.15,
-    sunColor: 0xffe0b0,
-    hemiSky: 0xe8dcc8,
-    hemiGround: 0x6a5c4c,
+    fogDensity: 0.0016,
+    sunIntensity: 3.25,
+    sunColor: 0xffe3b6,
+    hemiSky: 0xcbdff0,
+    hemiGround: 0x776a55,
     wetness: 0.04,
     soilBias: 0.38,
     frost: 0,
   },
+  // 蛛丝峡: 狭窄峡谷、垂直岩壁. Wet rock and a cool sky slot overhead.
   zhusi: {
     weather: 'rain',
-    intensity: 0.62,
-    fogDensity: 0.004,
-    sunIntensity: 2.15,
-    sunColor: 0xc5d4dc,
-    hemiSky: 0xb7c8c6,
-    hemiGround: 0x3f4f4c,
+    intensity: 0.5,
+    fogDensity: 0.0028,
+    sunIntensity: 2.6,
+    sunColor: 0xe8ecf2,
+    hemiSky: 0xb9d0e6,
+    hemiGround: 0x4a5866,
     wetness: 0.72,
     soilBias: 0.12,
     frost: 0,
   },
+  // 龙脊渊: 高台、龙宫、水汽和远距离视野. Frost belongs to the high ground.
   longji: {
     weather: 'snow',
-    intensity: 0.88,
-    fogDensity: 0.0035,
-    sunIntensity: 2.55,
-    sunColor: 0xe8f2f6,
-    hemiSky: 0xd5e4ea,
-    hemiGround: 0x4a5c58,
+    intensity: 0.62,
+    fogDensity: 0.0025,
+    sunIntensity: 2.95,
+    sunColor: 0xf2f7fa,
+    hemiSky: 0xcfe6ee,
+    hemiGround: 0x51625f,
     wetness: 0.18,
     soilBias: 0.08,
     frost: 0.82,
   },
+  // 百足城: 密集道路、城墙、建筑. Brightest outer district so chases read.
   baizu: {
     weather: 'clear',
     intensity: 0,
-    fogDensity: 0.0022,
-    sunIntensity: 3.45,
-    sunColor: 0xffe8bc,
-    hemiSky: 0xe7f2d8,
-    hemiGround: 0x556048,
+    fogDensity: 0.0015,
+    sunIntensity: 3.5,
+    sunColor: 0xffe9be,
+    hemiSky: 0xcde2f2,
+    hemiGround: 0x5c6a4a,
     wetness: 0.08,
     soilBias: 0.06,
     frost: 0,
   },
+  // 热水市: 商店、桥梁、灯火. Warmest key in the map, lantern-side.
   jinshui: {
     weather: 'clear',
     intensity: 0,
-    fogDensity: 0.0029,
-    sunIntensity: 2.85,
-    sunColor: 0xffc48a,
-    hemiSky: 0xf0d0b0,
-    hemiGround: 0x5a4030,
+    fogDensity: 0.002,
+    sunIntensity: 3.05,
+    sunColor: 0xffcf96,
+    hemiSky: 0xdcd6d2,
+    hemiGround: 0x6a4c36,
     wetness: 0.02,
     soilBias: 0.58,
     frost: 0,
   },
+  // 迷魂滩: 森林、猪窝、伏击点. Damp forest air, not a grey wall of rain.
   mihun: {
     weather: 'rain',
-    intensity: 0.95,
-    fogDensity: 0.0037,
-    sunIntensity: 2.05,
-    sunColor: 0xb8c4a8,
-    hemiSky: 0xc4cbb0,
-    hemiGround: 0x3e4634,
+    intensity: 0.6,
+    fogDensity: 0.0026,
+    sunIntensity: 2.55,
+    sunColor: 0xdfe6d8,
+    hemiSky: 0xc2d6da,
+    hemiGround: 0x46523c,
     wetness: 0.86,
     soilBias: 0.22,
     frost: 0,
   },
+  // 万劫三庭: the 终局 stage. Thinnest fog and the strongest key on the map.
   santing: {
     weather: 'clear',
     intensity: 0,
-    fogDensity: 0.0019,
-    sunIntensity: 3.55,
-    sunColor: 0xffe7b4,
-    hemiSky: 0xf2ecd4,
-    hemiGround: 0x6a6048,
+    fogDensity: 0.0013,
+    sunIntensity: 3.7,
+    sunColor: 0xffeabb,
+    hemiSky: 0xdfe9f2,
+    hemiGround: 0x746848,
     wetness: 0,
     soilBias: 0.28,
     frost: 0,

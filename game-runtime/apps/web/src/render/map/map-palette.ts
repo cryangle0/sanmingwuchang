@@ -432,7 +432,8 @@ export function createMapMaterials(
 
   const boundaryCliff = standard(tiled(surfaces.cliff, 13), {
     map: assetTextures.texture('Rock026_Color.jpg', 1 / 13),
-    color: 0x666b65,
+    // Crest stone reads in the same warm-grey family as the face's lit end.
+    color: 0x7d8177,
     roughness: 1,
     metalness: 0.04,
     normalScale: new THREE.Vector2(0.48, 0.48),
@@ -639,22 +640,27 @@ export function createMapMaterials(
     side: THREE.DoubleSide,
   });
 
-  // The world outside the boundary cliffs: an ink-dark apron so the void
+  // The world outside the boundary cliffs: a cool slate apron so the void
   // never reads as a hole, and two ridge tones for layered mountain
-  // silhouettes that dissolve into the fog.
+  // silhouettes.
+  //
+  // Aerial perspective sets the order (prompt section 4: 远景必须与中景分层):
+  // the near ring is darker and holds more hue, the far ring sits closer to
+  // the sky, and scene fog carries both the rest of the way. The previous
+  // near-black pair inverted that and read as one flat wall behind the map.
   const beyondApron = new THREE.MeshStandardMaterial({
-    color: 0x1d2622,
+    color: 0x415058,
     roughness: 1,
     metalness: 0,
   });
   const beyondRidgeNear = new THREE.MeshStandardMaterial({
-    color: 0x33413a,
+    color: 0x4a6470,
     roughness: 1,
     metalness: 0,
     flatShading: true,
   });
   const beyondRidgeFar = new THREE.MeshStandardMaterial({
-    color: 0x2c3a34,
+    color: 0x7b9cb4,
     roughness: 1,
     metalness: 0,
     flatShading: true,

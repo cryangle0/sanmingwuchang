@@ -646,7 +646,9 @@ function filterTreePlacements(
 ): readonly FloraModelTreePlacement[] {
   return tier === 'balanced'
     ? placements
-    : placements.filter((placement) => hashAt(placement.x, placement.z, 109) < REDUCED_TREE_DENSITY);
+    : placements.filter(
+        (placement) => hashAt(placement.x, placement.z, 109) < REDUCED_TREE_DENSITY,
+      );
 }
 
 function composeModelMatrix(

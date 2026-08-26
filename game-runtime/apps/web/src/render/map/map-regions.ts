@@ -7,9 +7,21 @@
  * around themselves. That is deterministic, needs no extra authored data, and
  * produces organic borders that follow the road network.
  *
- * Palette direction is 暗黑西游·水墨写意: a desaturated blue-grey ink base with
- * one saturated accent per district, so a player can name where they are from
- * a single frame while 30 characters stay readable against it.
+ * Palette direction follows JourneyWestGreatBrawl_AI游戏场景提示词 section 6:
+ * multi-hue layering on a 青玉绿 / 暖灰石 base, with 朱砂红, 金色 and 五行 accents.
+ * Every district owns its own hue family so a player can name where they are
+ * from a single frame, and any wide shot spans at least three separable hues
+ * (district ground, district accent, and the water / sky / court set).
+ *
+ * Saturation stays moderate (14-40% on ground tones) rather than desaturated:
+ * the prompt forbids 浑浊或灰败 and 大面积灰雾, but 30 saturated hero silhouettes
+ * still have to read against the world, so accents carry the saturation and
+ * ground tones stay one step below the characters.
+ *
+ * 断金坊 is deliberately the most neutral district: the prompt describes it as
+ * 低风险、清晰的石坡和断墙, so it reads as clean warm stone while its neighbours
+ * carry hue. That keeps it distinguishable from the two other warm districts
+ * (烬水市 amber, 万劫三庭 gold) by saturation rather than by hue alone.
  */
 
 import { MAP_COURTS } from '@jwgb/content';
@@ -53,78 +65,85 @@ const REGION_STYLES: readonly RegionStyle[] = [
     id: 'duanjin',
     name: '断金坊',
     anchor: { x: -270, z: 210 },
-    ground: 0x838b72,
-    groundAlt: 0x525848,
-    soil: 0x88745d,
-    mist: 0xabb3a1,
-    accent: 0xb8763f,
-    scatter: 0x5d6b52,
+    // 低风险、清晰的石坡和断墙: clean warm stone, the map's neutral reference.
+    ground: 0x9f977f,
+    groundAlt: 0x6a614e,
+    soil: 0x957750,
+    mist: 0xd0cbbe,
+    accent: 0xcf6530,
+    scatter: 0x858351,
   },
   {
     id: 'zhusi',
     name: '蛛丝峡',
     anchor: { x: -10, z: 268 },
-    ground: 0x7f9d93,
-    groundAlt: 0x4d655e,
-    soil: 0x68736d,
-    mist: 0xa9c1bd,
-    accent: 0x8199ce,
-    scatter: 0x4f7268,
+    // 狭窄峡谷、垂直岩壁、蛛网: 青灰岩 walls, cold blue web glow.
+    ground: 0x668499,
+    groundAlt: 0x3e5265,
+    soil: 0x5e6f78,
+    mist: 0xb2c6d2,
+    accent: 0x707ccd,
+    scatter: 0x546f78,
   },
   {
     id: 'longji',
     name: '龙脊渊',
     anchor: { x: 322, z: 175 },
-    ground: 0x6d9883,
-    groundAlt: 0x405e50,
-    soil: 0x657566,
-    mist: 0x9fc2b1,
-    accent: 0x3f9d8e,
-    scatter: 0x4b765a,
+    // 高台、龙宫、水汽和远距离视野: 青玉 jade over wet stone.
+    ground: 0x57948c,
+    groundAlt: 0x366362,
+    soil: 0x58746d,
+    mist: 0xbddbda,
+    accent: 0x3eccaf,
+    scatter: 0x487a69,
   },
   {
     id: 'baizu',
     name: '百足城',
     anchor: { x: -282, z: -180 },
-    ground: 0x799956,
-    groundAlt: 0x465f38,
-    soil: 0x8b7650,
-    mist: 0xaab98a,
-    accent: 0x759c4e,
-    scatter: 0x587c42,
+    // 密集道路、城墙、建筑: 草木绿 over 青灰石, 朱砂红 city banners.
+    ground: 0x668d53,
+    groundAlt: 0x465c38,
+    soil: 0x87784f,
+    mist: 0xbed0b3,
+    accent: 0xc44531,
+    scatter: 0x47713d,
   },
   {
     id: 'jinshui',
     name: '烬水市',
     anchor: { x: 300, z: -145 },
-    ground: 0xa77c59,
-    groundAlt: 0x684934,
-    soil: 0x7b5140,
-    mist: 0xc4a181,
-    accent: 0xc96838,
-    scatter: 0x795339,
+    // 商店、桥梁、灯火: warm timber and amber lantern light.
+    ground: 0xa47551,
+    groundAlt: 0x674937,
+    soil: 0x7c5646,
+    mist: 0xd9c2ab,
+    accent: 0xdf973a,
+    scatter: 0x745c44,
   },
   {
     id: 'mihun',
     name: '迷魂田',
     anchor: { x: -20, z: -265 },
-    ground: 0x859060,
-    groundAlt: 0x4e573b,
-    soil: 0x76684d,
-    mist: 0xb3ba8c,
-    accent: 0x9d6f62,
-    scatter: 0x596946,
+    // 森林、猪窝、伏击点: deep 草木绿 with a 五行 purple accent.
+    ground: 0x487a52,
+    groundAlt: 0x2e5239,
+    soil: 0x626845,
+    mist: 0xa8c7ac,
+    accent: 0xa35dc0,
+    scatter: 0x366345,
   },
   {
     id: 'santing',
     name: '万劫三庭',
     anchor: { x: 53, z: -3 },
-    ground: 0xb69f63,
-    groundAlt: 0x725a36,
-    soil: 0x92784d,
-    mist: 0xc9b57b,
-    accent: 0xcbaa4c,
-    scatter: 0x75804d,
+    // 金色、白色雷光和强烈的五行对比: the map's brightest, most saturated set.
+    ground: 0xb7a466,
+    groundAlt: 0x806d42,
+    soil: 0x968054,
+    mist: 0xe3dcbf,
+    accent: 0xe7be40,
+    scatter: 0x8b8b55,
   },
 ];
 

@@ -1,3 +1,4 @@
+import { terrainHeightMeters } from '@jwgb/content';
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import { addRoof, type GeometryBag } from '../apps/web/src/render/map/dressing/prop-kit';
@@ -35,6 +36,13 @@ describe('web map occlusion', () => {
       return;
     }
     const controller = new MapOcclusionController([batch]);
+    // addRoof places its geometry on the terrain, so the roof over x=0 sits at
+    // terrainHeightMeters(0, 0) + its own height, not at y=0. Passing a literal
+    // eye height put the player above the roof instead of under it once the
+    // heightfield stopped being flat near the origin, which is why this has to
+    // sample the ground the same way map-climate.test.ts does.
+    const groundY = terrainHeightMeters(0, 0);
+    const clearGroundY = terrainHeightMeters(40, 0);
     const near = batch.targets.find((target) => target.id === 'near');
     const far = batch.targets.find((target) => target.id === 'far');
     expect(near).toBeDefined();
@@ -43,7 +51,10 @@ describe('web map occlusion', () => {
       return;
     }
 
-    controller.update(new THREE.Vector3(0, 10, 10), new THREE.Vector3(0, 0.9, 0));
+    controller.update(
+      new THREE.Vector3(0, groundY + 10, 10),
+      new THREE.Vector3(0, groundY + 0.9, 0),
+    );
     const blocked = controller.diagnostics();
     expect(blocked.active).toBe(true);
     expect(blocked.activeOccluderIds).toEqual(['near']);
@@ -65,7 +76,10 @@ describe('web map occlusion', () => {
     expect(parent.getObjectByName('occlusion-ghost-far')).toBeUndefined();
 
     for (let frame = 0; frame < 60; frame += 1) {
-      controller.update(new THREE.Vector3(40, 10, 10), new THREE.Vector3(40, 0.9, 0));
+      controller.update(
+        new THREE.Vector3(40, clearGroundY + 10, 10),
+        new THREE.Vector3(40, clearGroundY + 0.9, 0),
+      );
     }
     const clear = controller.diagnostics();
     expect(clear.active).toBe(false);

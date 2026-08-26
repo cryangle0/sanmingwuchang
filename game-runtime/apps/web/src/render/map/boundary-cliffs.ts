@@ -72,9 +72,17 @@ const TALUS_METERS = 1.6;
 /** World metres per texture tile on the face. */
 const TEXTURE_METERS = 12;
 
-const ROCK_LIT = new THREE.Color(0xa9a493);
-const ROCK_SHADOW = new THREE.Color(0x24262a);
-const TALUS_COLOUR = new THREE.Color(0x6d6656);
+/**
+ * Face gradient ends.
+ *
+ * The shadow end is skylight, not absence of light: a rock face turned away
+ * from the sun under an open sky picks up the cool 浅青 bounce, which is what
+ * keeps a 49 m escarpment reading as stone with visible form instead of as a
+ * black wall across the frame (prompt sections 7 and 8).
+ */
+const ROCK_LIT = new THREE.Color(0xb4ab97);
+const ROCK_SHADOW = new THREE.Color(0x4a5766);
+const TALUS_COLOUR = new THREE.Color(0x7b7362);
 
 export function buildBoundaryCliffs(
   group: THREE.Group,

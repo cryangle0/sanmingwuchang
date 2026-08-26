@@ -398,8 +398,11 @@ export class ArenaRenderer {
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.32;
 
-    this.scene.background = new THREE.Color(0x2a3630);
-    this.scene.fog = new THREE.FogExp2(0x2a3630, 0.0045);
+    // Placeholder sky until the map environment installs its own gradient.
+    // Keeping it in the same 浅青 family as the map sky means the first frames
+    // of a match no longer flash a dark ink background before the world lands.
+    this.scene.background = new THREE.Color(0x9dbdd6);
+    this.scene.fog = new THREE.FogExp2(0xa9c6d8, 0.0022);
 
     // Far plane reaches the ridge line beyond the boundary cliffs; the
     // orthographic rig only ever needed 180 m.
@@ -1363,7 +1366,11 @@ export class ArenaRenderer {
   };
 
   private createLighting(): void {
-    const hemisphere = new THREE.HemisphereLight(0xe7f2e9, 0x55605a, 2.35);
+    // Section 7 of the scene prompt: warm gold key from the upper side, cool
+    // 青 sky bounce as ambient, and a cool counter-light so nothing falls into
+    // black. The sky half of the hemisphere carries the cool, which is what
+    // keeps overcast districts from reading as grey.
+    const hemisphere = new THREE.HemisphereLight(0xcfe1f2, 0x6a6350, 2.35);
     this.scene.add(hemisphere);
     this.hemisphere = hemisphere;
 

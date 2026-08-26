@@ -5,8 +5,12 @@ import { blendClimateAt } from './region-climate';
 import { MapWeather } from './weather';
 
 /**
- * Map-mode atmosphere: ink-wash sky, district fog, lighting, and
- * render-only rain/snow. None of this writes sim state.
+ * Map-mode atmosphere: sky, district fog, lighting, and render-only
+ * rain/snow. None of this writes sim state.
+ *
+ * Direction follows JourneyWestGreatBrawl_AI游戏场景提示词 sections 7 and 13:
+ * a bright morning-to-afternoon key, 浅青 sky light, and fog that layers
+ * distance without turning the playfield into 灰蒙/低对比.
  */
 
 export interface MapAtmosphere {
@@ -21,8 +25,21 @@ export interface MapAtmosphereLights {
   readonly graphicsReduced: boolean;
 }
 
-const INK_ANCHOR = 0.22;
-const INK_BASE = 0x858c7d;
+/**
+ * Distance anchor for aerial perspective. Every district mist is pulled a
+ * little toward pale sky blue so 远景 separates from 中景 (section 4), which
+ * is what the old grey-olive ink anchor was doing structurally — but pulling
+ * toward a hue instead of toward grey keeps district colour alive at range
+ * rather than draining it, which section 15 forbids.
+ */
+const AERIAL_ANCHOR = 0.16;
+const AERIAL_BASE = 0xa9c6d8;
+/**
+ * Base extinction. Districts override this; the value only has to be low
+ * enough that foreground and mid-ground stay sharp before a district's own
+ * climate speaks.
+ */
+const BASE_FOG_DENSITY = 0.0017;
 
 export function createMapAtmosphere(
   scene: THREE.Scene,
@@ -30,17 +47,17 @@ export function createMapAtmosphere(
 ): MapAtmosphere {
   const skyTexture = paintSkyTexture();
   scene.background = skyTexture;
-  const fog = new THREE.FogExp2(INK_BASE, 0.00225);
+  const fog = new THREE.FogExp2(AERIAL_BASE, BASE_FOG_DENSITY);
   scene.fog = fog;
   const weather = new MapWeather(scene, lights.graphicsReduced);
 
   const targetColour = new THREE.Color();
   const secondaryColour = new THREE.Color();
-  const inkBase = new THREE.Color(INK_BASE);
+  const aerialBase = new THREE.Color(AERIAL_BASE);
   const sunColour = new THREE.Color();
   const hemiSky = new THREE.Color();
   const hemiGround = new THREE.Color();
-  let currentDensity = 0.00225;
+  let currentDensity = BASE_FOG_DENSITY;
   const baseFill = lights.fill.intensity;
 
   return {
@@ -49,7 +66,7 @@ export function createMapAtmosphere(
       targetColour.setHex(primary.mist);
       secondaryColour.setHex(secondary.mist);
       targetColour.lerp(secondaryColour, mix);
-      targetColour.lerp(inkBase, INK_ANCHOR);
+      targetColour.lerp(aerialBase, AERIAL_ANCHOR);
       fog.color.lerp(targetColour, 0.06);
 
       currentDensity += (climate.fogDensity - currentDensity) * 0.04;
@@ -89,11 +106,15 @@ function paintSkyTexture(): THREE.CanvasTexture {
     throw new Error('map atmosphere: 2D canvas context unavailable');
   }
 
+  // Bright morning-to-afternoon key (section 7): 浅青 zenith grading down to a
+  // warm gold horizon, so the frame carries a cool/warm split before any
+  // district colour lands on it.
   const gradient = context.createLinearGradient(0, 0, 0, size);
-  gradient.addColorStop(0, '#d0d6c5');
-  gradient.addColorStop(0.42, '#aab99d');
-  gradient.addColorStop(0.72, '#84967b');
-  gradient.addColorStop(1, '#5e715f');
+  gradient.addColorStop(0, '#7ea9cc');
+  gradient.addColorStop(0.38, '#a8c8de');
+  gradient.addColorStop(0.68, '#d5e0dd');
+  gradient.addColorStop(0.88, '#e9dcc2');
+  gradient.addColorStop(1, '#cbc4a8');
   context.fillStyle = gradient;
   context.fillRect(0, 0, size, size);
 
@@ -105,25 +126,27 @@ function paintSkyTexture(): THREE.CanvasTexture {
     const height = size * (0.02 + nextRandom() * 0.035);
     const alpha = 0.045 + nextRandom() * 0.05;
     const bright = nextRandom() > 0.35;
+    // Lit cloud faces take the warm key, shadowed ones the cool sky bounce.
     context.fillStyle = bright
-      ? `rgba(214, 226, 218, ${alpha})`
-      : `rgba(52, 66, 58, ${alpha * 0.8})`;
+      ? `rgba(246, 244, 235, ${alpha})`
+      : `rgba(96, 122, 142, ${alpha * 0.8})`;
     context.beginPath();
     context.ellipse(x, y, width / 2, height / 2, 0, 0, Math.PI * 2);
     context.fill();
   }
 
+  // Section 7 puts the key light upper-left or upper-side.
   const sun = context.createRadialGradient(
-    size * 0.72,
+    size * 0.28,
     size * 0.18,
     4,
-    size * 0.72,
+    size * 0.28,
     size * 0.18,
-    size * 0.22,
+    size * 0.24,
   );
-  sun.addColorStop(0, 'rgba(255, 236, 196, 0.55)');
-  sun.addColorStop(0.35, 'rgba(232, 214, 168, 0.16)');
-  sun.addColorStop(1, 'rgba(208, 214, 197, 0)');
+  sun.addColorStop(0, 'rgba(255, 240, 206, 0.62)');
+  sun.addColorStop(0.35, 'rgba(246, 224, 176, 0.2)');
+  sun.addColorStop(1, 'rgba(214, 230, 240, 0)');
   context.fillStyle = sun;
   context.fillRect(0, 0, size, size);
 

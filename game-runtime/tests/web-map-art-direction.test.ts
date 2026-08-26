@@ -1,9 +1,5 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import {
-  buildCourtBeacons,
-  type CourtBeaconMaterialLibrary,
-} from '../apps/web/src/render/map/court-beacons';
 import { regionStyles } from '../apps/web/src/render/map/map-regions';
 import { climateOf } from '../apps/web/src/render/map/region-climate';
 
@@ -134,103 +130,6 @@ describe('map art direction: lighting and fog (sections 7 and 13)', () => {
       const climate = climateOf(region.id);
       expect(court.sunIntensity).toBeGreaterThanOrEqual(climate.sunIntensity);
       expect(court.fogDensity).toBeLessThanOrEqual(climate.fogDensity);
-    }
-  });
-});
-
-describe('map art direction: court sky beacons (section 3)', () => {
-  function build(): {
-    readonly group: THREE.Group;
-    readonly materials: CourtBeaconMaterialLibrary;
-    readonly geometries: THREE.BufferGeometry[];
-  } {
-    const group = new THREE.Group();
-    const geometries: THREE.BufferGeometry[] = [];
-    const materials: CourtBeaconMaterialLibrary = {
-      courtBeaconShaft: new THREE.MeshBasicMaterial(),
-      courtBeaconGlow: new THREE.MeshBasicMaterial(),
-      courtBeaconCrown: new THREE.MeshBasicMaterial(),
-    };
-    buildCourtBeacons(group, materials, (geometry) => {
-      geometries.push(geometry);
-      return geometry;
-    });
-    return { group, materials, geometries };
-  }
-
-  it('raises one instanced column per court in three draw calls', () => {
-    const { group, geometries } = build();
-    const beacons = group.getObjectByName('map-court-beacons');
-    if (!beacons) {
-      throw new Error('missing court beacon group');
-    }
-    const instanced = beacons.children.filter(
-      (child): child is THREE.InstancedMesh => child instanceof THREE.InstancedMesh,
-    );
-    // Section 14 performance rule: repeated props are instanced.
-    expect(instanced).toHaveLength(3);
-    for (const mesh of instanced) {
-      expect(mesh.count).toBe(3);
-    }
-    for (const geometry of geometries) {
-      geometry.dispose();
-    }
-  });
-
-  it('stands the column high above the court floor', () => {
-    const { group } = build();
-    const beacons = group.getObjectByName('map-court-beacons');
-    const shafts = beacons?.getObjectByName('map-court-beacon-shafts');
-    if (!(shafts instanceof THREE.InstancedMesh)) {
-      throw new Error('missing court beacon shafts');
-    }
-    // The cue only survives an occluder if the shaft clears the skyline; the
-    // tallest boundary wall on this map rises 34-49 m.
-    const matrix = new THREE.Matrix4();
-    shafts.getMatrixAt(0, matrix);
-    const centreY = new THREE.Vector3().setFromMatrixPosition(matrix).y;
-    expect(centreY).toBeGreaterThan(50);
-    shafts.geometry.dispose();
-  });
-
-  it('never occludes gameplay', () => {
-    const { group } = build();
-    const beacons = group.getObjectByName('map-court-beacons');
-    if (!beacons) {
-      throw new Error('missing court beacon group');
-    }
-    // Sections 3 and 15 both forbid a marker that can hide a character, a drop
-    // or a telegraph. Additive blending plus depthWrite:false is what
-    // guarantees it, so assert the material contract rather than the look.
-    for (const child of beacons.children) {
-      if (!(child instanceof THREE.Mesh)) {
-        continue;
-      }
-      expect(child.castShadow).toBe(false);
-      expect(child.receiveShadow).toBe(false);
-    }
-  });
-
-  it('reports that it cannot occlude gameplay', () => {
-    const group = new THREE.Group();
-    const geometries: THREE.BufferGeometry[] = [];
-    const diagnostics = buildCourtBeacons(
-      group,
-      {
-        courtBeaconShaft: new THREE.MeshBasicMaterial(),
-        courtBeaconGlow: new THREE.MeshBasicMaterial(),
-        courtBeaconCrown: new THREE.MeshBasicMaterial(),
-      },
-      (geometry) => {
-        geometries.push(geometry);
-        return geometry;
-      },
-    );
-    expect(diagnostics.courts).toBe(3);
-    expect(diagnostics.occludesGameplay).toBe(false);
-    expect(diagnostics.shaftHeightMeters).toBeGreaterThan(50);
-    for (const geometry of geometries) {
-      geometry.dispose();
     }
   });
 });

@@ -102,7 +102,12 @@ export function buildGroundGeometry(): THREE.BufferGeometry {
         terrainHeightMeters(x + 2.5, z) - terrainHeightMeters(x - 2.5, z),
         terrainHeightMeters(x, z + 2.5) - terrainHeightMeters(x, z - 2.5),
       ) / 5;
-    vertexColour.lerp(new THREE.Color(0x5a5346), Math.min(0.42, slope * 1.15));
+    // Slopes shed soil and show the stone underneath. Section 8 calls that
+    // stone 青灰或暖灰石材, and in a bright morning key exposed rock reads
+    // *lighter* than the vegetated flat ground around it. The previous dark
+    // olive-grey pulled every incline toward mud, which is most of why the
+    // map read as 灰蒙 regardless of its district palette.
+    vertexColour.lerp(new THREE.Color(0x8f8677), Math.min(0.36, slope * 1.05));
     // Bare rock on ground that stands above its surroundings and dark silt in
     // hollows, both judged against the local landform rather than against
     // absolute height, which stopped meaning anything once districts began
@@ -111,11 +116,18 @@ export function buildGroundGeometry(): THREE.BufferGeometry {
     if (relief > 2.6) {
       vertexColour.lerp(new THREE.Color(0x8a8678), Math.min(1, (relief - 2.6) / 7));
     } else if (relief < -1.4) {
-      vertexColour.lerp(new THREE.Color(0x3d5346), Math.min(0.34, (-relief - 1.4) / 9));
+      // Silt in a hollow is darker and cooler than the ground around it, but
+      // it is still ground a player has to read routes across, so it settles
+      // on a slate green rather than the near-black it used to reach.
+      vertexColour.lerp(new THREE.Color(0x4e6a5c), Math.min(0.3, (-relief - 1.4) / 9));
     }
     if (climate.wet > 0.02) {
-      vertexColour.lerp(new THREE.Color(0x3a4a40), climate.wet * 0.34);
-      vertexColour.multiplyScalar(1 - climate.wet * 0.16);
+      // Wet ground darkens, but it also saturates and reflects; it does not
+      // turn to slurry. 蛛丝峡 and 迷魂滩 were taking a 34% pull toward
+      // near-black green *and* a 16% multiply, which stacked into the flat
+      // grey-green that section 13 rules out for the two rain districts.
+      vertexColour.lerp(new THREE.Color(0x465a55), climate.wet * 0.22);
+      vertexColour.multiplyScalar(1 - climate.wet * 0.1);
     }
     if (climate.frost > 0.02) {
       vertexColour.lerp(new THREE.Color(0xd5e0e6), climate.frost * 0.48);

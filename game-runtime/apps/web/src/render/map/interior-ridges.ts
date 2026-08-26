@@ -43,8 +43,11 @@ const SLOPE_STEPS = 5;
 /** World metres per texture tile on a slope. */
 const TEXTURE_METERS = 13;
 
-const SLOPE_LOW = new THREE.Color(0x5d6349);
-const SLOPE_HIGH = new THREE.Color(0xa9a48f);
+// Same rule as the boundary escarpment: the low end of a ridge is shaded
+// stone under an open sky, so it stays a readable cool-warm grey rather than
+// sinking toward the dark olive it used to reach.
+const SLOPE_LOW = new THREE.Color(0x77806a);
+const SLOPE_HIGH = new THREE.Color(0xb3ae99);
 const SNOW = new THREE.Color(0xdde6ea);
 
 export function buildInteriorRidges(

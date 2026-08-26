@@ -161,6 +161,18 @@ export function buildFlora(
   };
 }
 
+/**
+ * The tree layout for a given map seed, without building any geometry.
+ *
+ * `buildFlora` draws from one seeded stream and `sampleTreePoints` is its
+ * first consumer, so repeating those two lines here reproduces exactly the
+ * trees the map ships — which is what lets a DOM-free test assert forest
+ * coverage and grove density without a WebGL context.
+ */
+export function sampleFloraTreePoints(seed: number): MapPointMm[] {
+  return sampleTreePoints(createRandomStream(seed ^ TREE_SEED_SALT));
+}
+
 function sampleTreePoints(nextRandom: () => number): MapPointMm[] {
   const dense = sampleClusteredOpenGround(
     DENSE_TREE_COUNT,
@@ -242,9 +254,7 @@ function expandClusteredPoints(
   for (const anchor of anchors) {
     const count =
       minClusterCount +
-      Math.floor(
-        nextRandom() * (Math.max(minClusterCount, maxClusterCount) - minClusterCount + 1),
-      );
+      Math.floor(nextRandom() * (Math.max(minClusterCount, maxClusterCount) - minClusterCount + 1));
     let added = 0;
     for (
       let attempt = 0;

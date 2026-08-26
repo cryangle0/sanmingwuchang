@@ -47,26 +47,10 @@ export function buildWaterGeometry(): THREE.BufferGeometry | null {
   if (levels.size === 0) {
     return null;
   }
-  const flooded = expandToPartialCells(
-    levels,
-    bounds.minX,
-    bounds.minZ,
-    columns,
-    rows,
-  );
+  const flooded = expandToPartialCells(levels, bounds.minX, bounds.minZ, columns, rows);
   const boundaryCells = new Set<number>();
   for (const [cell, level] of flooded) {
-    if (
-      isWaterBoundaryCell(
-        cell,
-        level,
-        flooded,
-        bounds.minX,
-        bounds.minZ,
-        columns,
-        rows,
-      )
-    ) {
+    if (isWaterBoundaryCell(cell, level, flooded, bounds.minX, bounds.minZ, columns, rows)) {
       boundaryCells.add(cell);
     }
   }
@@ -243,11 +227,7 @@ function clipTriangleToWater(
 
 function pushDistinctPoint(points: WaterPoint[], point: WaterPoint): void {
   const previous = points[points.length - 1];
-  if (
-    previous &&
-    Math.abs(previous.x - point.x) < 1e-6 &&
-    Math.abs(previous.z - point.z) < 1e-6
-  ) {
+  if (previous && Math.abs(previous.x - point.x) < 1e-6 && Math.abs(previous.z - point.z) < 1e-6) {
     return;
   }
   points.push(point);
@@ -294,15 +274,7 @@ function isWaterBoundaryCell(
   columns: number,
   rows: number,
 ): boolean {
-  if (
-    waterlineCrossesCell(
-      cell,
-      level + PARTIAL_CELL_MARGIN_METERS,
-      minX,
-      minZ,
-      columns,
-    )
-  ) {
+  if (waterlineCrossesCell(cell, level + PARTIAL_CELL_MARGIN_METERS, minX, minZ, columns)) {
     return true;
   }
   const column = cell % columns;
@@ -391,10 +363,7 @@ function waterlineCrossesCell(
 ): boolean {
   const column = cell % columns;
   const row = (cell - column) / columns;
-  const heights = cellCornerHeights(
-    minX + column * CELL_METERS,
-    minZ + row * CELL_METERS,
-  );
+  const heights = cellCornerHeights(minX + column * CELL_METERS, minZ + row * CELL_METERS);
   const minimum = Math.min(...heights);
   const maximum = Math.max(...heights);
   return minimum <= level && maximum > level;
