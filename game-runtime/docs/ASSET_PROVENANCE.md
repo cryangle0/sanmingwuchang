@@ -169,14 +169,19 @@ the same 2.2-metre presentation height used by the H009 gameplay definition.
 The project owner's `素材` directory also supplies purchased and authorized
 four-action FBX exports for:
 
+- `H002` 红孩儿（火娃模型）
 - `H004` 蝎子精
+- `H008` 太上老君
 - `H010` 二郎神
 - `H011` 哪吒
 - `H012` 六耳猕猴
 - `H014` 白骨精
+- `H016` 白龙马（小白龙模型）
 - `H018` 牛魔王
 - `H019` 独角兕大王
 - `H023` 黄袍怪
+- `H031` 托塔李天王
+- `H033` 沙和尚
 - `H034` 黑熊精
 - `H038` 赛太岁
 
@@ -190,16 +195,21 @@ result uses Meshopt compression.
 
 The optimized derivatives are delivered as:
 
+- `models/characters/H002/model.glb`
 - `models/characters/H004/model.glb`
+- `models/characters/H008/model.glb`
 - `models/characters/H010/model.glb`
 - `models/characters/H011/model.glb`
 - `models/characters/H012/model.glb`
 - `models/characters/H014/model.glb`
+- `models/characters/H016/model.glb`
 - `models/characters/H018/model.glb`
 - `models/characters/H019/model.glb`
 - `models/characters/H023/model.glb`
+- `models/characters/H031/model.glb`
+- `models/characters/H033/model.glb`
 - `models/characters/H034/model.glb`
 - `models/characters/H038/model.glb`
 
 The original FBX files remain outside the Web bundle. Runtime presentation
-normalizes all ten models to their existing 2.2-metre catalog height.
+normalizes all fifteen models to their existing 2.2-metre catalog height.

@@ -56,7 +56,11 @@ function monster(
 
 export const WEB_HERO_MODELS: readonly WebModelDefinition[] = [
   hero('H001', '铁山公主'),
-  hero('H002', '红孩儿'),
+  hero('H002', '红孩儿', 2.2, {
+    assetBase: 'web',
+    format: 'glb',
+    assetPath: 'models/characters/H002/model.glb',
+  }),
   hero('H003', '蜘蛛精'),
   hero('H004', '蝎子精', 2.2, {
     assetBase: 'web',
@@ -98,7 +102,11 @@ export const WEB_HERO_MODELS: readonly WebModelDefinition[] = [
     assetPath: 'models/characters/H014/model.glb',
   }),
   hero('H015', '猪八戒'),
-  hero('H016', '白龙马'),
+  hero('H016', '白龙马', 2.2, {
+    assetBase: 'web',
+    format: 'glb',
+    assetPath: 'models/characters/H016/model.glb',
+  }),
   hero('H017', '青狮精'),
   hero('H018', '牛魔王', 2.2, {
     assetBase: 'web',

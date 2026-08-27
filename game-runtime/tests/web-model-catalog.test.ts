@@ -18,8 +18,9 @@ describe('web model catalog', () => {
     }
   });
 
-  it('delivers the fourteen animated heroes as versioned Web GLBs while retaining FBX models', () => {
+  it('delivers the sixteen animated heroes as versioned Web GLBs while retaining FBX models', () => {
     for (const id of [
+      'H002',
       'H004',
       'H008',
       'H009',
@@ -27,6 +28,7 @@ describe('web model catalog', () => {
       'H011',
       'H012',
       'H014',
+      'H016',
       'H018',
       'H019',
       'H023',

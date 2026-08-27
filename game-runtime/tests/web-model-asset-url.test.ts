@@ -18,6 +18,7 @@ describe('web character model asset URLs', () => {
   it('resolves animated heroes from the versioned Web asset base', () => {
     vi.stubEnv('VITE_ASSET_VERSION', '20260811120000');
     for (const id of [
+      'H002',
       'H004',
       'H008',
       'H009',
@@ -25,6 +26,7 @@ describe('web character model asset URLs', () => {
       'H011',
       'H012',
       'H014',
+      'H016',
       'H018',
       'H019',
       'H023',

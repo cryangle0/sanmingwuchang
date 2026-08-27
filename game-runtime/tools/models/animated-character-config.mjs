@@ -5,6 +5,19 @@ const sourceRoot = resolve(repositoryRoot, '..', '素材');
 
 export const ANIMATED_CHARACTER_CONFIGS = [
   {
+    modelId: 'H002',
+    displayName: '红孩儿',
+    sourceDirectory: process.env.JWGB_H002_ANIMATION_SOURCE?.trim() || join(sourceRoot, '火娃_FBX'),
+    targetHeight: 2.2,
+    expectedBones: 33,
+    clipPatterns: {
+      Idle: null,
+      Move: null,
+      Attack: null,
+      Spell: null,
+    },
+  },
+  {
     modelId: 'H004',
     displayName: '蝎子精',
     sourceDirectory:
@@ -87,6 +100,20 @@ export const ANIMATED_CHARACTER_CONFIGS = [
       Move: 'preset:biped:run',
       Attack: 'preset:biped:box_02_retimed_retimed',
       Spell: 'preset:biped:angry_01_retimed_retimed',
+    },
+  },
+  {
+    modelId: 'H016',
+    displayName: '白龙马',
+    sourceDirectory:
+      process.env.JWGB_H016_ANIMATION_SOURCE?.trim() || join(sourceRoot, '小白龙_FBX'),
+    targetHeight: 2.2,
+    expectedBones: 33,
+    clipPatterns: {
+      Idle: null,
+      Move: null,
+      Attack: null,
+      Spell: null,
     },
   },
   {
