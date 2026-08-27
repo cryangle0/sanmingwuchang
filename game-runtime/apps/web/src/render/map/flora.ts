@@ -37,12 +37,12 @@ import {
 const MM = 1_000;
 
 const TREE_SEED_SALT = 0x9e3779b9;
-const TREE_COUNT = 720;
-const DENSE_TREE_COUNT = 500;
+const TREE_COUNT = 960;
+const DENSE_TREE_COUNT = 660;
 const SPARSE_TREE_COUNT = TREE_COUNT - DENSE_TREE_COUNT;
-const BAMBOO_CLUSTERS = 112;
+const BAMBOO_CLUSTERS = 144;
 const BOULDER_COUNT = 196;
-const MODEL_DRESSING_MAX = 360;
+const MODEL_DRESSING_MAX = 480;
 
 export interface FloraController {
   setGraphicsTier(tier: 'balanced' | 'reduced'): void;
@@ -181,27 +181,27 @@ export function sampleFloraTreePoints(seed: number): MapPointMm[] {
 function sampleTreePoints(nextRandom: () => number): MapPointMm[] {
   const dense = sampleClusteredOpenGround(
     DENSE_TREE_COUNT,
-    34,
+    62,
     nextRandom,
-    9_000,
-    4_500,
-    2.2,
-    22,
-    12,
-    20,
-    3.2,
+    8_000,
+    3_800,
+    2,
+    18,
+    8,
+    16,
+    3.6,
   );
   const sparse = sampleClusteredOpenGround(
     SPARSE_TREE_COUNT,
-    58,
+    86,
     nextRandom,
-    5_500,
-    3_500,
-    1.4,
-    10,
+    5_000,
+    2_800,
+    1.2,
+    8,
     2,
     5,
-    3.8,
+    3.2,
   );
   return [...dense, ...sparse];
 }

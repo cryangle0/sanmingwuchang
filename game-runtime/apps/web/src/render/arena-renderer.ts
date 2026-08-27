@@ -521,6 +521,10 @@ export class ArenaRenderer {
     return { mode: this.cameraViewMode, label: view.label };
   }
 
+  getCameraYaw(): number {
+    return this.cameraOrbitYaw;
+  }
+
   cycleCameraView(direction = 1): CameraViewState {
     const currentIndex = CAMERA_VIEW_ORDER.indexOf(this.cameraViewMode);
     const step = direction < 0 ? -1 : 1;

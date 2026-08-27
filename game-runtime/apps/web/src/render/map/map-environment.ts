@@ -129,6 +129,36 @@ export function buildMapEnvironment(
   });
   const floraOcclusion = buildFlora(flora, materials, track, surfaceSeed, renderer, graphicsTier);
   buildScatter(scatter, materials, track, surfaceSeed);
+  const scatterMeshes: readonly {
+    readonly mesh: THREE.InstancedMesh;
+    readonly fullCount: number;
+  }[] = (() => {
+    const meshes: { readonly mesh: THREE.InstancedMesh; readonly fullCount: number }[] = [];
+    scatter.traverse((object) => {
+      if (object instanceof THREE.InstancedMesh) {
+        meshes.push({ mesh: object, fullCount: object.count });
+      }
+    });
+    return meshes;
+  })();
+  const setScatterGraphicsTier = (tier: 'balanced' | 'reduced'): void => {
+    // Keep a bounded low-cost ground cover pass in the performance tier. The
+    // previous all-or-nothing switch made the map read as an empty test field
+    // on the devices most likely to need the reduced tier.
+    scatter.visible = true;
+    for (const { mesh, fullCount } of scatterMeshes) {
+      const ratio =
+        tier === 'balanced'
+          ? 1
+          : mesh.name.includes('grass')
+            ? 0.24
+            : mesh.name.includes('bloom')
+              ? 0.18
+              : 0.28;
+      mesh.count = Math.max(1, Math.floor(fullCount * ratio));
+    }
+  };
+  setScatterGraphicsTier(graphicsTier);
   buildBoundaryCliffs(beyond, materials, track);
   // Interior barriers become ranges in the walls layer, keeping their footprint.
   buildInteriorRidges(walls, materials, track);
@@ -148,7 +178,7 @@ export function buildMapEnvironment(
     setGraphicsTier(tier): void {
       const reduced = tier === 'reduced';
       materials.setGraphicsTier(tier);
-      scatter.visible = !reduced;
+      setScatterGraphicsTier(tier);
       floraOcclusion.setEnabled(!reduced);
       floraOcclusion.setGraphicsTier(tier);
       importedAssetLayer.setGraphicsTier(tier);

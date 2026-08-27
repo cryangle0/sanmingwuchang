@@ -522,7 +522,7 @@ function buildDragonPalaces(bags: GeometryBags, roofOccluders: MapRoofOccluderSo
   for (const record of MAP_DRAGONS) {
     const site = siteTowardOrigin(record.position.x / MM, record.position.z / MM);
     addCylinder(bags.stone, site, 0, 0.08, 0, 9.2, 9.45, 0.16, 24);
-    addCylinder(bags.water, site, 0, 0.18, 0, 7.9, 8.05, 0.2, 24);
+    addCylinder(bags.water, site, 0, 0.18, 0, 7.9, 8.05, 0.2, 64);
     addHorizontalRing(bags.stone, site.x, 0.31, site.z, 6.95, 7.55, 32);
     addHorizontalTorus(bags.gold, site.x, 0.34, site.z, 2.15, 0.09, 28);
     addHorizontalRing(bags.stone, site.x, 0.06, site.z, 10.2, 11.4, 28);

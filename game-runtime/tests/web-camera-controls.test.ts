@@ -7,6 +7,7 @@ import {
   CAMERA_MIN_ZOOM_SCALE,
   cameraOffsetFromOrbit,
   cameraOrbitFromOffset,
+  cameraRelativeMovement,
   dragCameraPan,
   hasCameraDragStarted,
   moveCameraPan,
@@ -69,5 +70,19 @@ describe('web camera controls', () => {
 
     const clamped = moveCameraPan({ x: 0, z: 0 }, 1, 1, 0, 10_000);
     expect(Math.hypot(clamped.x, clamped.z)).toBeCloseTo(CAMERA_MAX_PAN_METERS, 10);
+  });
+
+  it('maps player movement to the camera heading while preserving the input contract', () => {
+    const quarterTurn = Math.PI / 2;
+    expect(cameraRelativeMovement(0, -1_000, quarterTurn).x).toBeCloseTo(-1_000, 0);
+    expect(cameraRelativeMovement(0, -1_000, quarterTurn).z).toBeCloseTo(0, 0);
+    expect(cameraRelativeMovement(1_000, 0, quarterTurn).x).toBeCloseTo(0, 0);
+    expect(cameraRelativeMovement(1_000, 0, quarterTurn).z).toBeCloseTo(-1_000, 0);
+
+    const diagonal = cameraRelativeMovement(1_000, -1_000, Math.PI / 4);
+    expect(Math.abs(diagonal.x)).toBeLessThanOrEqual(1_000);
+    expect(Math.abs(diagonal.z)).toBeLessThanOrEqual(1_000);
+    expect(diagonal.x).toBeCloseTo(0, 0);
+    expect(diagonal.z).toBeLessThan(0);
   });
 });

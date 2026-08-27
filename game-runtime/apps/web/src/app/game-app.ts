@@ -680,6 +680,7 @@ export class GameApp {
 
     let frame: HostFrame | undefined;
     for (let tick = 0; tick < count; tick += 1) {
+      this.input.setCameraYaw(this.renderer.getCameraYaw());
       frame = this.host.update(TICK_DURATION_MS, this.input);
     }
     if (!frame?.snapshot) {
@@ -776,6 +777,7 @@ export class GameApp {
       this.nextRenderTime = now + TARGET_RENDER_INTERVAL_MS;
     }
     if (!this.paused) {
+      this.input.setCameraYaw(this.renderer.getCameraYaw());
       this.renderFrame(this.host.update(deltaMs, this.input), now);
     }
     this.animationFrame = requestAnimationFrame(this.frame);

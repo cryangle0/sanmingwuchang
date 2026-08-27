@@ -10,7 +10,12 @@ const MIN_POND_CELLS = 10;
 const POND_DEPTH_METERS = 2.6;
 const DEEP_METERS = 2.2;
 const FOAM_METERS = 0.42;
-const SHORE_SUBDIVISIONS = 8;
+/**
+ * Every water cell uses the same tessellation. Refining only the shoreline
+ * cells leaves T-junctions where a fine cell meets a coarse cell, which shows
+ * up as long straight seams when the transparent surface moves over terrain.
+ */
+const WATER_SUBDIVISIONS = 8;
 const PARTIAL_CELL_MARGIN_METERS = 0.025;
 const PARTIAL_CELL_EXPANSION_STEPS = 1;
 const WATER_SHALLOW = new THREE.Color(0x2f9ca2);
@@ -48,12 +53,6 @@ export function buildWaterGeometry(): THREE.BufferGeometry | null {
     return null;
   }
   const flooded = expandToPartialCells(levels, bounds.minX, bounds.minZ, columns, rows);
-  const boundaryCells = new Set<number>();
-  for (const [cell, level] of flooded) {
-    if (isWaterBoundaryCell(cell, level, flooded, bounds.minX, bounds.minZ, columns, rows)) {
-      boundaryCells.add(cell);
-    }
-  }
 
   const positions: number[] = [];
   const uvs: number[] = [];
@@ -123,21 +122,10 @@ export function buildWaterGeometry(): THREE.BufferGeometry | null {
     if (!ringContains(MAP_BOUNDARY, { x: centreX * MM, z: centreZ * MM })) {
       continue;
     }
-    const x1 = x0 + CELL_METERS;
-    const z1 = z0 + CELL_METERS;
     const waterLevel = level + PARTIAL_CELL_MARGIN_METERS;
-    if (!isNearWaterBoundary(cell, level, flooded, boundaryCells, columns, rows)) {
-      const first = terrainPoint(x0, z0);
-      const second = terrainPoint(x0, z1);
-      const third = terrainPoint(x1, z1);
-      const fourth = terrainPoint(x1, z0);
-      addClippedTriangle(first, second, third, waterLevel);
-      addClippedTriangle(first, third, fourth, waterLevel);
-      continue;
-    }
-    const subCell = CELL_METERS / SHORE_SUBDIVISIONS;
-    for (let subRow = 0; subRow < SHORE_SUBDIVISIONS; subRow += 1) {
-      for (let subColumn = 0; subColumn < SHORE_SUBDIVISIONS; subColumn += 1) {
+    const subCell = CELL_METERS / WATER_SUBDIVISIONS;
+    for (let subRow = 0; subRow < WATER_SUBDIVISIONS; subRow += 1) {
+      for (let subColumn = 0; subColumn < WATER_SUBDIVISIONS; subColumn += 1) {
         const subX0 = x0 + subColumn * subCell;
         const subZ0 = z0 + subRow * subCell;
         const subX1 = subX0 + subCell;
@@ -233,62 +221,6 @@ function pushDistinctPoint(points: WaterPoint[], point: WaterPoint): void {
   points.push(point);
 }
 
-function isNearWaterBoundary(
-  cell: number,
-  level: number,
-  flooded: ReadonlyMap<number, number>,
-  boundaryCells: ReadonlySet<number>,
-  columns: number,
-  rows: number,
-): boolean {
-  const column = cell % columns;
-  const row = (cell - column) / columns;
-  const neighbours = [
-    column > 0 ? cell - 1 : -1,
-    row + 1 < rows ? cell + columns : -1,
-    column + 1 < columns ? cell + 1 : -1,
-    row > 0 ? cell - columns : -1,
-  ];
-  return boundaryCells.has(cell)
-    ? true
-    : boundaryCells.has(cell) ||
-        neighbours.some((neighbour) => {
-          if (neighbour < 0) {
-            return false;
-          }
-          const neighbourLevel = flooded.get(neighbour);
-          return (
-            neighbourLevel !== undefined &&
-            Math.abs(neighbourLevel - level) <= 1e-6 &&
-            boundaryCells.has(neighbour)
-          );
-        });
-}
-
-function isWaterBoundaryCell(
-  cell: number,
-  level: number,
-  flooded: ReadonlyMap<number, number>,
-  minX: number,
-  minZ: number,
-  columns: number,
-  rows: number,
-): boolean {
-  if (waterlineCrossesCell(cell, level + PARTIAL_CELL_MARGIN_METERS, minX, minZ, columns)) {
-    return true;
-  }
-  const column = cell % columns;
-  return cellNeighbours(cell, column, (cell - column) / columns, columns, rows).some(
-    (neighbour) => {
-      if (neighbour < 0) {
-        return true;
-      }
-      const neighbourLevel = flooded.get(neighbour);
-      return neighbourLevel === undefined || Math.abs(neighbourLevel - level) > 1e-6;
-    },
-  );
-}
-
 function expandToPartialCells(
   levels: ReadonlyMap<number, number>,
   minX: number,
@@ -352,21 +284,6 @@ function canExpandIntoCell(
   return ringContains(MAP_BOUNDARY, { x: centreX * MM, z: centreZ * MM })
     ? cellCornerHeights(x, z).some((height) => height <= level)
     : false;
-}
-
-function waterlineCrossesCell(
-  cell: number,
-  level: number,
-  minX: number,
-  minZ: number,
-  columns: number,
-): boolean {
-  const column = cell % columns;
-  const row = (cell - column) / columns;
-  const heights = cellCornerHeights(minX + column * CELL_METERS, minZ + row * CELL_METERS);
-  const minimum = Math.min(...heights);
-  const maximum = Math.max(...heights);
-  return minimum <= level && maximum > level;
 }
 
 function cellCornerHeights(x: number, z: number): number[] {

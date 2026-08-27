@@ -19,7 +19,7 @@ describe('web flora sampling', () => {
       { point: points[0], nearby: 0 },
     );
 
-    expect(points).toHaveLength(720);
-    expect(densestTree.nearby).toBeGreaterThanOrEqual(18);
+    expect(points).toHaveLength(960);
+    expect(densestTree.nearby).toBeGreaterThanOrEqual(22);
   });
 });

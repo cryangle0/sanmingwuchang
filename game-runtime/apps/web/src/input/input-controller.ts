@@ -1,4 +1,5 @@
 import { createPlayerIntent, type EntityId, type PlayerIntent } from '@jwgb/core';
+import { cameraRelativeMovement } from '../render/camera-controls';
 import { isMovementCode, WEB_CONTROL_BINDINGS } from './control-bindings';
 
 export interface InputDiagnostics {
@@ -11,6 +12,7 @@ export interface InputDiagnostics {
   readonly interactQueued: boolean;
   readonly aim: readonly [number, number];
   readonly joystick: readonly [number, number, boolean];
+  readonly cameraYaw: number;
 }
 
 export class InputController {
@@ -30,6 +32,7 @@ export class InputController {
   private pointerAimX = 0;
   private pointerAimZ = -1_000;
   private pointerAimActive = false;
+  private cameraYaw = 0;
 
   constructor() {
     window.addEventListener('keydown', this.handleKeyDown);
@@ -104,6 +107,12 @@ export class InputController {
     this.pointerAimActive = true;
   }
 
+  setCameraYaw(yaw: number): void {
+    if (Number.isFinite(yaw)) {
+      this.cameraYaw = yaw;
+    }
+  }
+
   setEnabled(enabled: boolean): void {
     if (this.enabled === enabled) {
       return;
@@ -125,6 +134,7 @@ export class InputController {
       interactQueued: this.interactQueued,
       aim: [this.lastAimX, this.lastAimZ],
       joystick: [this.joystickX, this.joystickZ, this.joystickActive],
+      cameraYaw: this.cameraYaw,
     };
   }
 
@@ -142,8 +152,11 @@ export class InputController {
     const keyboardZ =
       (this.keys.has('KeyS') || this.keys.has('ArrowDown') ? 1 : 0) -
       (this.keys.has('KeyW') || this.keys.has('ArrowUp') ? 1 : 0);
-    const moveX = this.joystickActive ? this.joystickX : keyboardX * 1_000;
-    const moveZ = this.joystickActive ? this.joystickZ : keyboardZ * 1_000;
+    const screenX = this.joystickActive ? this.joystickX : keyboardX * 1_000;
+    const screenZ = this.joystickActive ? this.joystickZ : keyboardZ * 1_000;
+    const movement = cameraRelativeMovement(screenX, screenZ, this.cameraYaw);
+    const moveX = movement.x;
+    const moveZ = movement.z;
     if (this.pointerAimActive) {
       this.lastAimX = this.pointerAimX;
       this.lastAimZ = this.pointerAimZ;

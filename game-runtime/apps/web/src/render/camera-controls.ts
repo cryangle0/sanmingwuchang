@@ -21,6 +21,7 @@ const CAMERA_ROTATION_RADIANS_PER_PIXEL = 0.0045;
 const CAMERA_TILT_RADIANS_PER_WHEEL_PIXEL = 0.0008;
 const CAMERA_ZOOM_RESPONSE_PER_PIXEL = 0.0015;
 const CAMERA_KEY_ZOOM_FACTOR = 1.12;
+const MOVEMENT_AXIS_SCALE = 1_000;
 
 function clamp(value: number, minimum: number, maximum: number): number {
   return Math.min(maximum, Math.max(minimum, value));
@@ -157,4 +158,29 @@ export function moveCameraPan(
     x: pan.x + (screenX * Math.cos(yaw) - screenY * Math.sin(yaw)) * step,
     z: pan.z + (-screenX * Math.sin(yaw) - screenY * Math.cos(yaw)) * step,
   });
+}
+
+/**
+ * Converts screen-relative movement into the world axes used by the sim.
+ * Positive screen Z is backward (S), matching the existing input contract;
+ * at yaw 0 this therefore preserves the original world X/Z directions.
+ */
+export function cameraRelativeMovement(
+  screenX: number,
+  screenZ: number,
+  yaw: number,
+): { readonly x: number; readonly z: number } {
+  const safeYaw = Number.isFinite(yaw) ? yaw : 0;
+  let worldX = screenX * Math.cos(safeYaw) + screenZ * Math.sin(safeYaw);
+  let worldZ = -screenX * Math.sin(safeYaw) + screenZ * Math.cos(safeYaw);
+  const largestAxis = Math.max(1, Math.abs(worldX), Math.abs(worldZ));
+  if (largestAxis > MOVEMENT_AXIS_SCALE) {
+    const factor = MOVEMENT_AXIS_SCALE / largestAxis;
+    worldX *= factor;
+    worldZ *= factor;
+  }
+  return {
+    x: Math.max(-MOVEMENT_AXIS_SCALE, Math.min(MOVEMENT_AXIS_SCALE, Math.round(worldX))),
+    z: Math.max(-MOVEMENT_AXIS_SCALE, Math.min(MOVEMENT_AXIS_SCALE, Math.round(worldZ))),
+  };
 }
