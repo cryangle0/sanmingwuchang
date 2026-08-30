@@ -1174,7 +1174,7 @@ export class ArenaRenderer {
         visible: false,
         tileSizeMeters: 25,
         renderBatchSizeMeters: 50,
-        maxGrassDistanceMeters: 150,
+        maxGrassDistanceMeters: 180,
         influenceResolution: 256,
         grassInstances: 0,
         visibleGrassInstances: 0,

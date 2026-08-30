@@ -1,6 +1,8 @@
 import {
   denCentreMm,
   MAP_COURTS,
+  MAP_DRAGONS,
+  MAP_ELITES,
   MAP_HIGHLANDS,
   MAP_NESTS,
   MAP_ROCKS,
@@ -27,6 +29,25 @@ function highlandCentroid(index: number): { x: number; z: number } {
     x: Math.trunc(sum.x / highland.vertices.length),
     z: Math.trunc(sum.z / highland.vertices.length),
   };
+}
+
+function footprintHeightSpanMm(
+  center: { readonly x: number; readonly z: number },
+  radiusMm: number,
+): number {
+  let minimum = Number.POSITIVE_INFINITY;
+  let maximum = Number.NEGATIVE_INFINITY;
+  for (let localX = -radiusMm; localX <= radiusMm; localX += 1_000) {
+    for (let localZ = -radiusMm; localZ <= radiusMm; localZ += 1_000) {
+      if (localX * localX + localZ * localZ > radiusMm * radiusMm) {
+        continue;
+      }
+      const height = terrainHeightMm(center.x + localX, center.z + localZ);
+      minimum = Math.min(minimum, height);
+      maximum = Math.max(maximum, height);
+    }
+  }
+  return maximum - minimum;
 }
 
 describe('authoritative terrain height', () => {
@@ -60,6 +81,15 @@ describe('authoritative terrain height', () => {
     const center = terrainHeightMm(spawn.position.x, spawn.position.z);
     const neighbour = terrainHeightMm(spawn.position.x + 3_000, spawn.position.z);
     expect(Math.abs(center - neighbour)).toBeLessThan(140);
+  });
+
+  it('keeps every boss compound on one post-road building floor', () => {
+    for (const dragon of MAP_DRAGONS) {
+      expect(footprintHeightSpanMm(dragon.position, 16_000), dragon.id).toBeLessThanOrEqual(80);
+    }
+    for (const elite of MAP_ELITES) {
+      expect(footprintHeightSpanMm(elite.position, 11_000), elite.id).toBeLessThanOrEqual(80);
+    }
   });
 
   it('drapes roads over local relief instead of cutting a trench', () => {

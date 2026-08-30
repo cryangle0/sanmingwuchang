@@ -42,7 +42,7 @@ function isGrassworksReady(vegetation, expectedDistance) {
       vegetation.renderBatchSizeMeters === 50 &&
       vegetation.maxGrassDistanceMeters === expectedDistance &&
       vegetation.influenceResolution === 256 &&
-      vegetation.grassInstances > 100_000 &&
+      vegetation.grassInstances > 250_000 &&
       vegetation.visibleGrassInstances > 0 &&
       vegetation.grassTiles > vegetation.grassRenderBatches &&
       vegetation.grassRenderBatches === vegetation.grassChunks &&
@@ -88,7 +88,7 @@ async function waitForRuntime(page, expectedDistance) {
           vegetation.loadedAssets.length === assets.length &&
           assets.every((asset) => vegetation.loadedAssets.includes(asset)) &&
           vegetation.maxGrassDistanceMeters === distance &&
-          vegetation.grassInstances > 100_000 &&
+          vegetation.grassInstances > 250_000 &&
           vegetation.visibleGrassInstances > 0 &&
           vegetation.treeInstances > 0 &&
           vegetation.visibleTreeInstances > 0 &&
@@ -201,7 +201,7 @@ for (const region of regions) {
   url.searchParams.set('hero', 'H009');
   url.searchParams.set('spawn', region.spawn);
   await page.goto(url.toString(), { waitUntil: 'domcontentloaded', timeout: 30_000 });
-  await waitForRuntime(page, 150);
+  await waitForRuntime(page, 180);
   const runtime = await readRuntime(page);
   const screenshotPath = join(outputDirectory, `${region.id}.png`);
   await page.screenshot({ path: screenshotPath, fullPage: false });
@@ -244,7 +244,7 @@ await mobilePage.goto(mobileUrl.toString(), {
   waitUntil: 'domcontentloaded',
   timeout: 30_000,
 });
-await waitForRuntime(mobilePage, 96);
+await waitForRuntime(mobilePage, 108);
 const mobileRuntime = await readRuntime(mobilePage);
 const mobileScreenshotPath = join(outputDirectory, 'mobile-mihun.png');
 await mobilePage.screenshot({ path: mobileScreenshotPath, fullPage: false });
@@ -277,12 +277,12 @@ const failed =
   captures.length !== regions.length ||
   captures.some(
     (capture) =>
-      !isGrassworksReady(capture.runtime.vegetation, 150) ||
+      !isGrassworksReady(capture.runtime.vegetation, 180) ||
       !isLegacyLayerDisabled(capture.runtime.globalScenes) ||
       (capture.runtime.performance?.sampledFrames ?? 0) < performanceSampleFrames ||
       pixelCoverage(capture.runtime.pixels) < 0.2,
   ) ||
-  !isGrassworksReady(mobileRuntime.vegetation, 96) ||
+  !isGrassworksReady(mobileRuntime.vegetation, 108) ||
   !isLegacyLayerDisabled(mobileRuntime.globalScenes) ||
   (mobileRuntime.performance?.sampledFrames ?? 0) < performanceSampleFrames ||
   mobileRuntime.performance?.graphicsTier !== 'reduced' ||

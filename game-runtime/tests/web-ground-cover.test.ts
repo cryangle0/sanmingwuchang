@@ -31,10 +31,15 @@ describe('Grassworks ground cover lattice', () => {
   const points = grassPoints();
 
   it('places enough clumps to read as cover rather than as scatter', () => {
-    // A 500,000 m2 playfield at the runtime spacing is dense before
-    // roads, walls, courts and ponds take their share.
-    expect(GRASSWORKS_SOURCE_PROFILE.runtimeSpacingMeters).toBe(1.58);
-    expect(points.length).toBeGreaterThan(100_000);
+    // The runtime lattice crosses the old invisible road ribbons and carries
+    // enough overlapping clumps to cover the 500,000 m2 playfield.
+    expect(GRASSWORKS_SOURCE_PROFILE.runtimeSpacingMeters).toBe(1.25);
+    expect(GRASSWORKS_SOURCE_PROFILE.runtimeRoadVergeMm).toBe(-1);
+    expect(GRASSWORKS_SOURCE_PROFILE.runtimeJitter).toBeLessThanOrEqual(0.55);
+    expect(GRASSWORKS_SOURCE_PROFILE.runtimeClumpWidthMeters.min).toBeGreaterThan(
+      GRASSWORKS_SOURCE_PROFILE.runtimeSpacingMeters,
+    );
+    expect(points.length).toBeGreaterThan(250_000);
   });
 
   it('leaves no bare patch large enough to read as an empty field', () => {

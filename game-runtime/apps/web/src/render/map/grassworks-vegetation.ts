@@ -31,7 +31,19 @@ const TREE_COUNT = 960;
 const DENSE_TREE_COUNT = 660;
 const TREE_SEED_SALT = 0x9e3779b9;
 const GRASS_SEED_SALT = 0x4f1bbcdc;
-const GRASS_SPACING_METERS = 1.58;
+const GRASS_SPACING_METERS = 1.25;
+const GRASS_JITTER = 0.55;
+const GRASS_ROAD_VERGE_MM = -1;
+const GRASS_WIDTH_MIN = 1.9;
+const GRASS_WIDTH_MAX = 2.5;
+const GRASS_ATLAS_SIZE = 1_024;
+// Texture.flipY maps UV y=0 to the source image's lower half.
+const GRASS_ATLAS_RECTS = [
+  { x: 157, y: 0, width: 238, height: 512 },
+  { x: 688, y: 0, width: 161, height: 512 },
+  { x: 142, y: 512, width: 186, height: 512 },
+  { x: 620, y: 512, width: 284, height: 512 },
+] as const;
 const GRASS_LOGICAL_TILE_SIZE = 25;
 const GRASS_RENDER_BATCH_SIZE = GRASS_LOGICAL_TILE_SIZE * 2;
 const TREE_CHUNK_SIZE = 56;
@@ -41,9 +53,8 @@ const INFLUENCE_UPDATE_INTERVAL = 2;
 const INFLUENCE_RESOLUTION = 256;
 const INFLUENCE_RADIUS_METERS = 5.8;
 const INFLUENCE_RECOVERY_PER_UPDATE = 7;
-const BALANCED_GRASS_DISTANCE = 150;
-const REDUCED_GRASS_DISTANCE = 96;
-const REDUCED_GRASS_DENSITY_SCALE = 0.62;
+const BALANCED_GRASS_DISTANCE = 180;
+const REDUCED_GRASS_DISTANCE = 108;
 const BALANCED_TREE_HIGH_DISTANCE = 30;
 const BALANCED_TREE_LOW_DISTANCE = 192;
 const REDUCED_TREE_LOW_DISTANCE = 138;
@@ -65,9 +76,9 @@ interface GrassworksGrassLodDefinition {
 
 const GRASS_LODS: readonly GrassworksGrassLodDefinition[] = [
   { id: 'high', detail: 5, density: 4, distanceRatio: 0.3 },
-  { id: 'medium', detail: 2, density: 3, distanceRatio: 0.7 },
-  { id: 'low', detail: 1, density: 2, distanceRatio: 0.9 },
-  { id: 'veryLow', detail: 1, density: 1, distanceRatio: 1 },
+  { id: 'medium', detail: 3, density: 4, distanceRatio: 0.7 },
+  { id: 'low', detail: 2, density: 4, distanceRatio: 0.9 },
+  { id: 'veryLow', detail: 2, density: 4, distanceRatio: 1 },
 ] as const;
 
 /**
@@ -92,6 +103,15 @@ export const GRASSWORKS_SOURCE_PROFILE = {
     { id: 'veryLow', detail: 1, density: 1, distanceRatio: 0.9 },
   ],
   runtimeSpacingMeters: GRASS_SPACING_METERS,
+  runtimeMaxDistanceMeters: BALANCED_GRASS_DISTANCE,
+  runtimeReducedMaxDistanceMeters: REDUCED_GRASS_DISTANCE,
+  runtimeJitter: GRASS_JITTER,
+  runtimeRoadVergeMm: GRASS_ROAD_VERGE_MM,
+  runtimeClumpWidthMeters: {
+    min: GRASS_WIDTH_MIN,
+    max: GRASS_WIDTH_MAX,
+  },
+  runtimeLods: GRASS_LODS,
 } as const;
 
 export const GRASSWORKS_VEGETATION_ASSET_PATHS = [TREE_ASSET_PATH, GRASS_ATLAS_PATH] as const;
@@ -137,8 +157,7 @@ interface GrassPoint {
   readonly width: number;
   readonly height: number;
   readonly phase: number;
-  readonly atlasX: number;
-  readonly atlasY: number;
+  readonly atlasRect: (typeof GRASS_ATLAS_RECTS)[number];
   readonly colour: THREE.Color;
   readonly order: number;
 }
@@ -278,7 +297,8 @@ function isWaterPoint(point: MapPointMm): boolean {
 
 export function sampleGrassworksGrassPoints(seed: number): readonly MapPointMm[] {
   return sampleGroundLattice(GRASS_SPACING_METERS, createRandomStream(seed ^ GRASS_SEED_SALT), {
-    roadVergeMm: 240,
+    roadVergeMm: GRASS_ROAD_VERGE_MM,
+    jitter: GRASS_JITTER,
     reject: isWaterPoint,
   });
 }
@@ -605,7 +625,7 @@ function createGrassMaterial(
           'attribute vec3 grassworksOffset;',
           'attribute vec4 grassworksParams;',
           'attribute vec3 grassworksTint;',
-          'attribute vec2 grassworksAtlasOffset;',
+          'attribute vec4 grassworksAtlasRect;',
           'uniform float uGrassworksTime;',
           'uniform vec3 uGrassworksFocus;',
           'uniform sampler2D uGrassworksInfluence;',
@@ -618,7 +638,7 @@ function createGrassMaterial(
         [
           '#include <uv_vertex>',
           '#ifdef USE_MAP',
-          'vMapUv = grassworksAtlasOffset + vec2(0.006) + vMapUv * 0.488;',
+          'vMapUv = grassworksAtlasRect.xy + vMapUv * grassworksAtlasRect.zw;',
           '#endif',
         ].join('\n'),
       )
@@ -695,7 +715,7 @@ function createGrassMaterial(
         ].join('\n'),
       );
   };
-  material.customProgramCacheKey = () => 'jwgb-grassworks-grass-atlas-influence-v3';
+  material.customProgramCacheKey = () => 'jwgb-grassworks-grass-atlas-influence-v4';
   return material;
 }
 
@@ -744,16 +764,16 @@ function buildGrassChunks(
       .lerp(grassTintWhite, 0.12)
       .multiplyScalar(0.88 + hashAt(x, z, 7) * 0.18);
     const atlasIndex = Math.min(3, Math.floor(hashAt(x, z, 29) * 4));
+    const atlasRect = GRASS_ATLAS_RECTS[atlasIndex] ?? GRASS_ATLAS_RECTS[0];
     const grassPoint: GrassPoint = {
       x,
       y: dressingSurfaceMeters(point) + 0.014,
       z,
       yaw: hashAt(x, z, 11) * Math.PI * 2,
-      width: 0.78 + hashAt(x, z, 13) * 0.42,
-      height: 0.7 + hashAt(x, z, 17) * 0.72,
+      width: GRASS_WIDTH_MIN + hashAt(x, z, 13) * (GRASS_WIDTH_MAX - GRASS_WIDTH_MIN),
+      height: 0.62 + hashAt(x, z, 17) * 0.58,
       phase: hashAt(x, z, 19) * Math.PI * 2,
-      atlasX: (atlasIndex % 2) * 0.5,
-      atlasY: Math.floor(atlasIndex / 2) * 0.5,
+      atlasRect,
       colour,
       order: hashAt(x, z, 23),
     };
@@ -790,7 +810,7 @@ function buildGrassChunks(
     const offsets = new Float32Array(points.length * 3);
     const params = new Float32Array(points.length * 4);
     const tints = new Float32Array(points.length * 3);
-    const atlasOffsets = new Float32Array(points.length * 2);
+    const atlasRects = new Float32Array(points.length * 4);
     let minX = Number.POSITIVE_INFINITY;
     let maxX = Number.NEGATIVE_INFINITY;
     let minY = Number.POSITIVE_INFINITY;
@@ -801,7 +821,15 @@ function buildGrassChunks(
       offsets.set([point.x, point.y, point.z], index * 3);
       params.set([point.yaw, point.width, point.height, point.phase], index * 4);
       tints.set(point.colour.toArray(), index * 3);
-      atlasOffsets.set([point.atlasX, point.atlasY], index * 2);
+      atlasRects.set(
+        [
+          point.atlasRect.x / GRASS_ATLAS_SIZE,
+          point.atlasRect.y / GRASS_ATLAS_SIZE,
+          point.atlasRect.width / GRASS_ATLAS_SIZE,
+          point.atlasRect.height / GRASS_ATLAS_SIZE,
+        ],
+        index * 4,
+      );
       minX = Math.min(minX, point.x);
       maxX = Math.max(maxX, point.x);
       minY = Math.min(minY, point.y);
@@ -812,10 +840,7 @@ function buildGrassChunks(
     geometry.setAttribute('grassworksOffset', new THREE.InstancedBufferAttribute(offsets, 3));
     geometry.setAttribute('grassworksParams', new THREE.InstancedBufferAttribute(params, 4));
     geometry.setAttribute('grassworksTint', new THREE.InstancedBufferAttribute(tints, 3));
-    geometry.setAttribute(
-      'grassworksAtlasOffset',
-      new THREE.InstancedBufferAttribute(atlasOffsets, 2),
-    );
+    geometry.setAttribute('grassworksAtlasRect', new THREE.InstancedBufferAttribute(atlasRects, 4));
     geometry.instanceCount = points.length;
     geometry.setDrawRange(0, (GRASS_LODS[0]?.detail ?? 5) * GRASS_VERTICES_PER_DETAIL);
     geometry.boundingBox = new THREE.Box3(
@@ -1282,9 +1307,7 @@ export function buildGrassworksVegetationLayer(
         chunk.detail = 0;
         continue;
       }
-      const tierDensity = tier === 'balanced' ? 1 : REDUCED_GRASS_DENSITY_SCALE;
-      const densityRatio = (lod.density / (GRASS_LODS[0]?.density ?? 4)) * tierDensity;
-      const visibleCount = Math.max(1, Math.floor(chunk.fullCount * densityRatio));
+      const visibleCount = chunk.fullCount;
       chunk.mesh.visible = true;
       chunk.mesh.geometry.instanceCount = visibleCount;
       chunk.mesh.geometry.setDrawRange(0, lod.detail * GRASS_VERTICES_PER_DETAIL);

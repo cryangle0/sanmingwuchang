@@ -32,7 +32,7 @@ import type { MapPointMm } from './map-geometry-types';
  * cross-language mismatch is attributable to terrain rather than geometry.
  * The compiled map JSON is untouched, so `map:authority` stays independent.
  */
-export const TERRAIN_PROFILE_VERSION = 3;
+export const TERRAIN_PROFILE_VERSION = 4;
 
 /**
  * Peak-to-trough of the wilderness noise before stamps, millimetres.
@@ -157,6 +157,8 @@ interface StampIndex {
   readonly shopPads: readonly CircleStamp[];
   /** Spawn fairness, laid after roads because it is a guarantee, not dressing. */
   readonly spawnPads: readonly CircleStamp[];
+  /** Boss compounds, laid after roads so every building part shares one floor. */
+  readonly arenaStamps: readonly CircleStamp[];
   readonly features: readonly CircleStamp[];
   readonly bowls: readonly CircleStamp[];
 }
@@ -230,6 +232,7 @@ export function terrainDebugProfile(
   hills: number;
   road: number;
   pads: number;
+  arenas: number;
   highlands: number;
   courts: number;
   features: number;
@@ -244,13 +247,15 @@ export function terrainDebugProfile(
   const bowls = applyCircleStamps(features, xMm, zMm, index.bowls);
   const road = applyRoadStamps(bowls, xMm, zMm, index);
   const pads = applyCircleStamps(road, xMm, zMm, index.spawnPads);
-  const highlands = applyPolyStamps(pads, xMm, zMm, index.highlands);
+  const arenas = applyCircleStamps(pads, xMm, zMm, index.arenaStamps);
+  const highlands = applyPolyStamps(arenas, xMm, zMm, index.highlands);
   const courts = applyPolyStamps(highlands, xMm, zMm, index.courts);
   return {
     base,
     hills,
     road,
     pads,
+    arenas,
     highlands,
     courts,
     features,
@@ -363,6 +368,9 @@ function continuousHeightMm(xMm: number, zMm: number): number {
   // starts a height advantage. Its skirt is sized to the correction it needs,
   // so on flat starts it barely touches the road at all.
   height = applyCircleStamps(height, xMm, zMm, index.spawnPads);
+  // Dragon palaces and elite arenas are multi-part compounds. Their floor
+  // outranks roads so every sub-building lands on one stable elevation.
+  height = applyCircleStamps(height, xMm, zMm, index.arenaStamps);
   height = applyPolyStamps(height, xMm, zMm, index.highlands);
   height = applyPolyStamps(height, xMm, zMm, index.courts);
   return height;
@@ -672,14 +680,17 @@ function stampIndex(): StampIndex {
     })),
     shopPads,
     spawnPads,
+    arenaStamps: [],
     features: [],
     bowls: [],
   };
   const features: CircleStamp[] = [];
   const bowls: CircleStamp[] = [];
+  const arenaStamps: CircleStamp[] = [];
 
   /** Level a disc onto the surrounding hillside, optionally lifting or sinking it. */
   const terraceAt = (
+    target: CircleStamp[],
     x: number,
     z: number,
     radiusMm: number,
@@ -687,7 +698,7 @@ function stampIndex(): StampIndex {
     liftMm = 0,
   ): number => {
     const groundMm = heightBeforeFeatures(x, z, draft);
-    features.push({ x, z, radiusMm, edgeMm: bandLimitEdge(edgeMm), targetMm: groundMm + liftMm });
+    target.push({ x, z, radiusMm, edgeMm: bandLimitEdge(edgeMm), targetMm: groundMm + liftMm });
     return groundMm;
   };
 
@@ -701,6 +712,7 @@ function stampIndex(): StampIndex {
    * — dramatic to look at, still climbable, no authored ramp required.
    */
   const denAt = (
+    target: CircleStamp[],
     x: number,
     z: number,
     groundMm: number,
@@ -713,7 +725,7 @@ function stampIndex(): StampIndex {
     }
     const wallMm = bandLimitEdge(0);
     if (bermMm !== 0) {
-      bowls.push({
+      target.push({
         x,
         z,
         radiusMm: floorRadiusMm + wallMm + 3_000,
@@ -721,7 +733,7 @@ function stampIndex(): StampIndex {
         targetMm: groundMm + bermMm,
       });
     }
-    bowls.push({
+    target.push({
       x,
       z,
       radiusMm: floorRadiusMm,
@@ -733,7 +745,14 @@ function stampIndex(): StampIndex {
   // 24 伏石圈 read as raised daises rather than discs pressed into the ground:
   // a flat lifted pad for the stones, ringed by a shallow worn trench.
   for (const rock of MAP_ROCKS) {
-    const groundMm = terraceAt(rock.position.x, rock.position.z, 7_000, 8_000, ROCK_PAD_LIFT_MM);
+    const groundMm = terraceAt(
+      features,
+      rock.position.x,
+      rock.position.z,
+      7_000,
+      8_000,
+      ROCK_PAD_LIFT_MM,
+    );
     bowls.push({
       x: rock.position.x,
       z: rock.position.z,
@@ -757,8 +776,15 @@ function stampIndex(): StampIndex {
     const mid = nest.band === '中';
     const floorRadiusMm = inner ? 8_000 : mid ? 7_000 : 6_000;
     const centre = denCentreMm(nest.base, floorRadiusMm);
-    const groundMm = terraceAt(centre.x, centre.z, inner ? 12_000 : mid ? 10_500 : 9_000, 8_000);
+    const groundMm = terraceAt(
+      features,
+      centre.x,
+      centre.z,
+      inner ? 12_000 : mid ? 10_500 : 9_000,
+      8_000,
+    );
     denAt(
+      bowls,
       centre.x,
       centre.z,
       groundMm,
@@ -769,21 +795,35 @@ function stampIndex(): StampIndex {
   }
   for (const pig of MAP_PIGS) {
     const centre = denCentreMm(pig.position, 6_500);
-    const groundMm = terraceAt(centre.x, centre.z, 12_000, 8_000);
-    denAt(centre.x, centre.z, groundMm, 6_500, -2_200, 700);
+    const groundMm = terraceAt(features, centre.x, centre.z, 12_000, 8_000);
+    denAt(bowls, centre.x, centre.z, groundMm, 6_500, -2_200, 700);
   }
 
   // Boss sites stop being flat discs and become arenas: a sunken floor walled
   // by its own rim, which is what makes them legible from outside.
   for (const dragon of MAP_DRAGONS) {
-    const groundMm = terraceAt(dragon.position.x, dragon.position.z, 14_500, 8_000);
-    denAt(dragon.position.x, dragon.position.z, groundMm, 16_000, -5_000, 2_000);
+    const groundMm = terraceAt(arenaStamps, dragon.position.x, dragon.position.z, 14_500, 8_000);
+    denAt(arenaStamps, dragon.position.x, dragon.position.z, groundMm, 16_000, -5_000, 2_000);
+    arenaStamps.push({
+      x: dragon.position.x,
+      z: dragon.position.z,
+      radiusMm: 22_000,
+      edgeMm: bandLimitEdge(0),
+      targetMm: groundMm - 5_000,
+    });
   }
   for (const elite of MAP_ELITES) {
-    const groundMm = terraceAt(elite.position.x, elite.position.z, 12_500, 8_000);
-    denAt(elite.position.x, elite.position.z, groundMm, 13_000, -3_500, 1_500);
+    const groundMm = terraceAt(arenaStamps, elite.position.x, elite.position.z, 12_500, 8_000);
+    denAt(arenaStamps, elite.position.x, elite.position.z, groundMm, 13_000, -3_500, 1_500);
+    arenaStamps.push({
+      x: elite.position.x,
+      z: elite.position.z,
+      radiusMm: 17_000,
+      edgeMm: bandLimitEdge(0),
+      targetMm: groundMm - 3_500,
+    });
   }
-  stamps = { ...draft, features, bowls };
+  stamps = { ...draft, arenaStamps, features, bowls };
   return stamps;
 }
 

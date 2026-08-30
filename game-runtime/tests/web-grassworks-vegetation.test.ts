@@ -74,7 +74,7 @@ describe('web Grassworks vegetation', () => {
     const first = sampleGrassworksGrassPoints(0x08b3d5a4);
     const second = sampleGrassworksGrassPoints(0x08b3d5a4);
     expect(second).toEqual(first);
-    expect(first.length).toBeGreaterThan(100_000);
+    expect(first.length).toBeGreaterThan(250_000);
   });
 
   it('preserves the source profile in the WebGL adaptation', () => {
@@ -85,12 +85,22 @@ describe('web Grassworks vegetation', () => {
       atlasColumns: 2,
       atlasRows: 2,
       influenceResolution: 256,
+      runtimeSpacingMeters: 1.25,
+      runtimeMaxDistanceMeters: 180,
+      runtimeReducedMaxDistanceMeters: 108,
+      runtimeRoadVergeMm: -1,
     });
     expect(GRASSWORKS_SOURCE_PROFILE.sourceLods).toEqual([
       { id: 'high', detail: 5, density: 4, distanceRatio: 0.3 },
       { id: 'medium', detail: 2, density: 3, distanceRatio: 0.7 },
       { id: 'low', detail: 1, density: 2, distanceRatio: 0.9 },
       { id: 'veryLow', detail: 1, density: 1, distanceRatio: 0.9 },
+    ]);
+    expect(GRASSWORKS_SOURCE_PROFILE.runtimeLods).toEqual([
+      { id: 'high', detail: 5, density: 4, distanceRatio: 0.3 },
+      { id: 'medium', detail: 3, density: 4, distanceRatio: 0.7 },
+      { id: 'low', detail: 2, density: 4, distanceRatio: 0.9 },
+      { id: 'veryLow', detail: 2, density: 4, distanceRatio: 1 },
     ]);
   });
 
@@ -109,7 +119,7 @@ describe('web Grassworks vegetation', () => {
       failedAssets: [],
       tileSizeMeters: 25,
       renderBatchSizeMeters: 50,
-      maxGrassDistanceMeters: 150,
+      maxGrassDistanceMeters: 180,
       influenceResolution: 256,
       grassInstances: 0,
       grassTiles: 0,
@@ -123,7 +133,7 @@ describe('web Grassworks vegetation', () => {
     expect(parent.children).toContain(layer.group);
 
     layer.setGraphicsTier('reduced');
-    expect(layer.diagnostics().maxGrassDistanceMeters).toBe(96);
+    expect(layer.diagnostics().maxGrassDistanceMeters).toBe(108);
     layer.update(new THREE.Vector3(10, 20, 10), new THREE.Vector3());
     layer.dispose();
 

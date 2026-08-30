@@ -18,7 +18,7 @@ namespace Jwgb.Sim.Deterministic
         /// geometry hash so a cross-language mismatch is attributable to
         /// terrain rather than to the compiled map.
         /// </summary>
-        public const int ProfileVersion = 3;
+        public const int ProfileVersion = 4;
 
         /// <summary>
         /// Peak-to-trough of the wilderness noise before stamps.
@@ -155,6 +155,10 @@ namespace Jwgb.Sim.Deterministic
             // Spawn fairness outranks the corridor: a road may not hand one of
             // the 30 starts a height advantage.
             height = ApplyCircleStamps(height, xMm, zMm, index.SpawnPads);
+            // Boss compounds are built from several independently positioned
+            // parts. Their common floor outranks roads so the corridor grade
+            // cannot tear one compound into different elevations.
+            height = ApplyCircleStamps(height, xMm, zMm, index.ArenaStamps);
             height = ApplyPolyStamps(height, xMm, zMm, index.Highlands);
             height = ApplyPolyStamps(height, xMm, zMm, index.Courts);
             return height;
@@ -606,10 +610,12 @@ namespace Jwgb.Sim.Deterministic
                 shopPads,
                 spawnPads,
                 Array.Empty<CircleStamp>(),
+                Array.Empty<CircleStamp>(),
                 Array.Empty<CircleStamp>());
 
             var features = new List<CircleStamp>();
             var bowls = new List<CircleStamp>();
+            var arenaStamps = new List<CircleStamp>();
 
             // 24 伏石圈 read as raised daises rather than discs pressed into the
             // ground: a flat lifted pad for the stones, ringed by a worn trench.
@@ -670,8 +676,14 @@ namespace Jwgb.Sim.Deterministic
                 var dragon = MapGeometryCatalog.Dragons[index];
                 var x = (int)dragon.Position.X;
                 var z = (int)dragon.Position.Z;
-                var groundMm = TerraceAt(draft, features, x, z, 14_500, 8_000, 0);
-                DenAt(draft, bowls, x, z, groundMm, 16_000, -5_000, 2_000);
+                var groundMm = TerraceAt(draft, arenaStamps, x, z, 14_500, 8_000, 0);
+                DenAt(draft, arenaStamps, x, z, groundMm, 16_000, -5_000, 2_000);
+                arenaStamps.Add(new CircleStamp(
+                    x,
+                    z,
+                    22_000,
+                    BandLimitEdge(0),
+                    groundMm - 5_000));
             }
 
             for (var index = 0; index < MapGeometryCatalog.Elites.Length; index += 1)
@@ -679,8 +691,14 @@ namespace Jwgb.Sim.Deterministic
                 var elite = MapGeometryCatalog.Elites[index];
                 var x = (int)elite.Position.X;
                 var z = (int)elite.Position.Z;
-                var groundMm = TerraceAt(draft, features, x, z, 12_500, 8_000, 0);
-                DenAt(draft, bowls, x, z, groundMm, 13_000, -3_500, 1_500);
+                var groundMm = TerraceAt(draft, arenaStamps, x, z, 12_500, 8_000, 0);
+                DenAt(draft, arenaStamps, x, z, groundMm, 13_000, -3_500, 1_500);
+                arenaStamps.Add(new CircleStamp(
+                    x,
+                    z,
+                    17_000,
+                    BandLimitEdge(0),
+                    groundMm - 3_500));
             }
 
             stamps = new StampIndex(
@@ -691,6 +709,7 @@ namespace Jwgb.Sim.Deterministic
                 highlands,
                 shopPads,
                 spawnPads,
+                arenaStamps.ToArray(),
                 features.ToArray(),
                 bowls.ToArray());
             return stamps;
@@ -1199,6 +1218,7 @@ namespace Jwgb.Sim.Deterministic
                 PolyStamp[] highlands,
                 CircleStamp[] shopPads,
                 CircleStamp[] spawnPads,
+                CircleStamp[] arenaStamps,
                 CircleStamp[] features,
                 CircleStamp[] bowls)
             {
@@ -1209,6 +1229,7 @@ namespace Jwgb.Sim.Deterministic
                 Highlands = highlands;
                 ShopPads = shopPads;
                 SpawnPads = spawnPads;
+                ArenaStamps = arenaStamps;
                 Features = features;
                 Bowls = bowls;
             }
@@ -1228,6 +1249,9 @@ namespace Jwgb.Sim.Deterministic
 
             /// <summary>Spawn fairness, laid after roads because it is a guarantee, not dressing.</summary>
             public CircleStamp[] SpawnPads { get; }
+
+            /// <summary>Boss compounds, laid after roads so every part shares one floor.</summary>
+            public CircleStamp[] ArenaStamps { get; }
 
             public CircleStamp[] Features { get; }
 
