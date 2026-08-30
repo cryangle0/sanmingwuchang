@@ -14,6 +14,7 @@ import { buildBoundaryCliffs } from './boundary-cliffs';
 import { buildRegionDressing } from './dressing/region-dressing';
 import { buildFlora } from './flora';
 import type { FloraModelLayerDiagnostics } from './flora-models';
+import { buildGlobalSceneLayer, type GlobalSceneLayerDiagnostics } from './global-scene-layer';
 import { buildGroundGeometry } from './ground';
 import { buildMapLandmarks } from './landmarks';
 import { buildMapAssetLayer, type MapAssetLayerDiagnostics } from './map-asset-layer';
@@ -36,6 +37,7 @@ export interface MapEnvironment {
   getOcclusionDiagnostics(): MapOcclusionDiagnostics;
   getFloraModelDiagnostics(): FloraModelLayerDiagnostics;
   getMapAssetDiagnostics(): MapAssetLayerDiagnostics;
+  getGlobalSceneDiagnostics(): GlobalSceneLayerDiagnostics;
   dispose(): void;
 }
 
@@ -93,6 +95,7 @@ export function buildMapEnvironment(
   const scatter = layer('map-scatter');
   const beyond = layer('map-beyond');
   const importedAssets = layer('map-imported-assets-host');
+  const globalScenes = layer('map-global-scenes-host');
 
   buildGround(
     (geometry, material, options) => addMesh(ground, geometry, material, options),
@@ -160,6 +163,11 @@ export function buildMapEnvironment(
     seed: surfaceSeed,
     ...(proceduralRockMarkers ? { fallbackRockGroup: proceduralRockMarkers } : {}),
   });
+  const globalSceneLayer = buildGlobalSceneLayer(globalScenes, {
+    renderer,
+    graphicsTier,
+    seed: surfaceSeed,
+  });
   const occlusion = new MapOcclusionController(roofBatches);
 
   return {
@@ -171,11 +179,13 @@ export function buildMapEnvironment(
       floraOcclusion.setEnabled(!reduced);
       floraOcclusion.setGraphicsTier(tier);
       importedAssetLayer.setGraphicsTier(tier);
+      globalSceneLayer.setGraphicsTier(tier);
     },
     updateOcclusion(cameraPosition, focusPosition): void {
       occlusion.update(cameraPosition, focusPosition);
       floraOcclusion.update(cameraPosition, focusPosition);
       importedAssetLayer.update(cameraPosition, focusPosition);
+      globalSceneLayer.update(cameraPosition, focusPosition);
     },
     getOcclusionDiagnostics(): MapOcclusionDiagnostics {
       const roofDiagnostics = occlusion.diagnostics();
@@ -204,10 +214,14 @@ export function buildMapEnvironment(
     getMapAssetDiagnostics(): MapAssetLayerDiagnostics {
       return importedAssetLayer.diagnostics();
     },
+    getGlobalSceneDiagnostics(): GlobalSceneLayerDiagnostics {
+      return globalSceneLayer.diagnostics();
+    },
     dispose(): void {
       occlusion.dispose();
       floraOcclusion.dispose();
       importedAssetLayer.dispose();
+      globalSceneLayer.dispose();
       for (const geometry of geometries) {
         geometry.dispose();
       }

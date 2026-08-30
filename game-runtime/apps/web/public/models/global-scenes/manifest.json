@@ -1,0 +1,791 @@
+{
+  "schema": "jwgb.global-scene-manifest.v1",
+  "generatedAt": "2026-08-30T08:05:40.492Z",
+  "sources": [
+    "an-overgrown-japanese-style-location.zip",
+    "a-forest-3-with-a-road-at-night-for-game.zip",
+    "landscape-forest-mountains.zip"
+  ],
+  "assets": [
+    {
+      "id": "overgrown-grove",
+      "path": "models/global-scenes/overgrown-grove.glb",
+      "source": "an-overgrown-japanese-style-location.zip",
+      "role": "grove",
+      "targetHeight": 12,
+      "bytes": 562352,
+      "nodes": [
+        "node_0005",
+        "node_0006",
+        "Cube",
+        "Cube001",
+        "Cube002",
+        "Cube003"
+      ],
+      "metrics": {
+        "before": {
+          "meshes": 836,
+          "triangles": 35836,
+          "nativeBounds": [
+            -3048.634,
+            -805.051,
+            -3048.637,
+            3048.635,
+            3048.637,
+            3048.634
+          ]
+        },
+        "filtered": {
+          "meshes": 6,
+          "triangles": 5543,
+          "nativeBounds": [
+            -111.922,
+            1.211,
+            273.357,
+            111.922,
+            216.738,
+            445.379
+          ]
+        },
+        "after": {
+          "meshes": 6,
+          "triangles": 5543,
+          "nativeBounds": [
+            -6.232,
+            0,
+            -4.789,
+            6.232,
+            12,
+            4.789
+          ]
+        },
+        "materials": 3,
+        "normalized": {
+          "nativeHeight": 215.52713651804712,
+          "targetHeight": 12,
+          "scale": 0.05567744365682315,
+          "bounds": [
+            -6.232,
+            0,
+            -4.789,
+            6.232,
+            12,
+            4.789
+          ]
+        }
+      },
+      "optimized": {
+        "vertices": 16629,
+        "triangles": 5543,
+        "meshes": 3,
+        "materials": 3,
+        "drawCalls": 3
+      }
+    },
+    {
+      "id": "overgrown-card-a",
+      "path": "models/global-scenes/overgrown-card-a.glb",
+      "source": "an-overgrown-japanese-style-location.zip",
+      "role": "foliage",
+      "targetHeight": 7.5,
+      "bytes": 58700,
+      "nodes": [
+        "Plane|Plane001|Dupli|369"
+      ],
+      "metrics": {
+        "before": {
+          "meshes": 836,
+          "triangles": 35836,
+          "nativeBounds": [
+            -3048.634,
+            -805.051,
+            -3048.637,
+            3048.635,
+            3048.637,
+            3048.634
+          ]
+        },
+        "filtered": {
+          "meshes": 1,
+          "triangles": 4,
+          "nativeBounds": [
+            -102.528,
+            -6.809,
+            225.06,
+            -49.961,
+            31.72,
+            277.627
+          ]
+        },
+        "after": {
+          "meshes": 1,
+          "triangles": 4,
+          "nativeBounds": [
+            -5.116,
+            0,
+            -5.116,
+            5.116,
+            7.5,
+            5.116
+          ]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 38.52906243644769,
+          "targetHeight": 7.5,
+          "scale": 0.19465825342547544,
+          "bounds": [
+            -5.116,
+            0,
+            -5.116,
+            5.116,
+            7.5,
+            5.116
+          ]
+        }
+      },
+      "optimized": {
+        "vertices": 12,
+        "triangles": 4,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      }
+    },
+    {
+      "id": "overgrown-card-b",
+      "path": "models/global-scenes/overgrown-card-b.glb",
+      "source": "an-overgrown-japanese-style-location.zip",
+      "role": "foliage",
+      "targetHeight": 10,
+      "bytes": 58732,
+      "nodes": [
+        "Plane|Plane002|Dupli|711"
+      ],
+      "metrics": {
+        "before": {
+          "meshes": 836,
+          "triangles": 35836,
+          "nativeBounds": [
+            -3048.634,
+            -805.051,
+            -3048.637,
+            3048.635,
+            3048.637,
+            3048.634
+          ]
+        },
+        "filtered": {
+          "meshes": 1,
+          "triangles": 4,
+          "nativeBounds": [
+            -731.839,
+            24.765,
+            -522.297,
+            -578.404,
+            213.386,
+            -348.326
+          ]
+        },
+        "after": {
+          "meshes": 1,
+          "triangles": 4,
+          "nativeBounds": [
+            -4.067,
+            0,
+            -4.612,
+            4.067,
+            10,
+            4.612
+          ]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 188.62041619274856,
+          "targetHeight": 10,
+          "scale": 0.05301653024549124,
+          "bounds": [
+            -4.067,
+            0,
+            -4.612,
+            4.067,
+            10,
+            4.612
+          ]
+        }
+      },
+      "optimized": {
+        "vertices": 12,
+        "triangles": 4,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      }
+    },
+    {
+      "id": "forest-road-tree-a",
+      "path": "models/global-scenes/forest-road-tree-a.glb",
+      "source": "a-forest-3-with-a-road-at-night-for-game.zip",
+      "role": "tree",
+      "targetHeight": 9.4,
+      "bytes": 185560,
+      "nodes": [
+        "Cylinder060"
+      ],
+      "metrics": {
+        "before": {
+          "meshes": 1395,
+          "triangles": 151954,
+          "nativeBounds": [
+            -1434.909,
+            -31.165,
+            -441.294,
+            488.705,
+            253.86,
+            541.007
+          ]
+        },
+        "filtered": {
+          "meshes": 1,
+          "triangles": 348,
+          "nativeBounds": [
+            153.41,
+            6.969,
+            234.576,
+            211.641,
+            160.469,
+            292.807
+          ]
+        },
+        "after": {
+          "meshes": 1,
+          "triangles": 348,
+          "nativeBounds": [
+            -1.783,
+            0,
+            -1.783,
+            1.783,
+            9.4,
+            1.783
+          ]
+        },
+        "materials": 2,
+        "normalized": {
+          "nativeHeight": 153.49931452425054,
+          "targetHeight": 9.4,
+          "scale": 0.06123805848341391,
+          "bounds": [
+            -1.783,
+            0,
+            -1.783,
+            1.783,
+            9.4,
+            1.783
+          ]
+        }
+      },
+      "optimized": {
+        "vertices": 1044,
+        "triangles": 348,
+        "meshes": 1,
+        "materials": 2,
+        "drawCalls": 2
+      }
+    },
+    {
+      "id": "forest-road-tree-b",
+      "path": "models/global-scenes/forest-road-tree-b.glb",
+      "source": "a-forest-3-with-a-road-at-night-for-game.zip",
+      "role": "tree",
+      "targetHeight": 7.2,
+      "bytes": 113272,
+      "nodes": [
+        "Plane061"
+      ],
+      "metrics": {
+        "before": {
+          "meshes": 1395,
+          "triangles": 151954,
+          "nativeBounds": [
+            -1434.909,
+            -31.165,
+            -441.294,
+            488.705,
+            253.86,
+            541.007
+          ]
+        },
+        "filtered": {
+          "meshes": 1,
+          "triangles": 248,
+          "nativeBounds": [
+            -95.559,
+            66.213,
+            -395.737,
+            -61.723,
+            117.388,
+            -361.901
+          ]
+        },
+        "after": {
+          "meshes": 1,
+          "triangles": 248,
+          "nativeBounds": [
+            -2.38,
+            0,
+            -2.38,
+            2.38,
+            7.2,
+            2.38
+          ]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 51.17513809841989,
+          "targetHeight": 7.2,
+          "scale": 0.14069331842647848,
+          "bounds": [
+            -2.38,
+            0,
+            -2.38,
+            2.38,
+            7.2,
+            2.38
+          ]
+        }
+      },
+      "optimized": {
+        "vertices": 744,
+        "triangles": 248,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      }
+    },
+    {
+      "id": "forest-road-understory",
+      "path": "models/global-scenes/forest-road-understory.glb",
+      "source": "a-forest-3-with-a-road-at-night-for-game.zip",
+      "role": "foliage",
+      "targetHeight": 2.2,
+      "bytes": 105800,
+      "nodes": [
+        "Plane599"
+      ],
+      "metrics": {
+        "before": {
+          "meshes": 1395,
+          "triangles": 151954,
+          "nativeBounds": [
+            -1434.909,
+            -31.165,
+            -441.294,
+            488.705,
+            253.86,
+            541.007
+          ]
+        },
+        "filtered": {
+          "meshes": 1,
+          "triangles": 24,
+          "nativeBounds": [
+            76.877,
+            -4.838,
+            -98.155,
+            101.216,
+            25.316,
+            -73.814
+          ]
+        },
+        "after": {
+          "meshes": 1,
+          "triangles": 24,
+          "nativeBounds": [
+            -0.888,
+            0,
+            -0.888,
+            0.888,
+            2.2,
+            0.888
+          ]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 30.153751783429698,
+          "targetHeight": 2.2,
+          "scale": 0.07295941200951848,
+          "bounds": [
+            -0.888,
+            0,
+            -0.888,
+            0.888,
+            2.2,
+            0.888
+          ]
+        }
+      },
+      "optimized": {
+        "vertices": 72,
+        "triangles": 24,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      }
+    },
+    {
+      "id": "forest-mountains-card-a",
+      "path": "models/global-scenes/forest-mountains-card-a.glb",
+      "source": "landscape-forest-mountains.zip",
+      "role": "tree",
+      "targetHeight": 8.4,
+      "bytes": 63316,
+      "nodes": [
+        "Plane2373"
+      ],
+      "metrics": {
+        "before": {
+          "meshes": 3687,
+          "triangles": 18600,
+          "nativeBounds": [
+            -5329.913,
+            -633.202,
+            -5625.649,
+            5329.913,
+            4320.531,
+            5076.52
+          ]
+        },
+        "filtered": {
+          "meshes": 1,
+          "triangles": 4,
+          "nativeBounds": [
+            -958.358,
+            14.721,
+            620.63,
+            -855.816,
+            93.81,
+            723.172
+          ]
+        },
+        "after": {
+          "meshes": 1,
+          "triangles": 4,
+          "nativeBounds": [
+            -5.446,
+            0,
+            -5.446,
+            5.446,
+            8.4,
+            5.446
+          ]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 79.08851463150177,
+          "targetHeight": 8.4,
+          "scale": 0.10621011203887491,
+          "bounds": [
+            -5.446,
+            0,
+            -5.446,
+            5.446,
+            8.4,
+            5.446
+          ]
+        }
+      },
+      "optimized": {
+        "vertices": 12,
+        "triangles": 4,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      }
+    },
+    {
+      "id": "forest-mountains-card-b",
+      "path": "models/global-scenes/forest-mountains-card-b.glb",
+      "source": "landscape-forest-mountains.zip",
+      "role": "tree",
+      "targetHeight": 7.4,
+      "bytes": 82948,
+      "nodes": [
+        "Plane728"
+      ],
+      "metrics": {
+        "before": {
+          "meshes": 3687,
+          "triangles": 18600,
+          "nativeBounds": [
+            -5329.913,
+            -633.202,
+            -5625.649,
+            5329.913,
+            4320.531,
+            5076.52
+          ]
+        },
+        "filtered": {
+          "meshes": 1,
+          "triangles": 4,
+          "nativeBounds": [
+            -70.337,
+            9.81,
+            511.739,
+            15.203,
+            62.877,
+            597.28
+          ]
+        },
+        "after": {
+          "meshes": 1,
+          "triangles": 4,
+          "nativeBounds": [
+            -5.964,
+            0,
+            -5.964,
+            5.964,
+            7.4,
+            5.964
+          ]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 53.066490635940696,
+          "targetHeight": 7.4,
+          "scale": 0.13944769875150087,
+          "bounds": [
+            -5.964,
+            0,
+            -5.964,
+            5.964,
+            7.4,
+            5.964
+          ]
+        }
+      },
+      "optimized": {
+        "vertices": 12,
+        "triangles": 4,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      }
+    },
+    {
+      "id": "forest-mountains-card-c",
+      "path": "models/global-scenes/forest-mountains-card-c.glb",
+      "source": "landscape-forest-mountains.zip",
+      "role": "tree",
+      "targetHeight": 10,
+      "bytes": 53324,
+      "nodes": [
+        "Plane3463"
+      ],
+      "metrics": {
+        "before": {
+          "meshes": 3687,
+          "triangles": 18600,
+          "nativeBounds": [
+            -5329.913,
+            -633.202,
+            -5625.649,
+            5329.913,
+            4320.531,
+            5076.52
+          ]
+        },
+        "filtered": {
+          "meshes": 1,
+          "triangles": 4,
+          "nativeBounds": [
+            261.15,
+            101.197,
+            -90.65,
+            398.838,
+            250.8,
+            47.038
+          ]
+        },
+        "after": {
+          "meshes": 1,
+          "triangles": 4,
+          "nativeBounds": [
+            -4.602,
+            0,
+            -4.602,
+            4.602,
+            10,
+            4.602
+          ]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 149.6027670745766,
+          "targetHeight": 10,
+          "scale": 0.06684368341272073,
+          "bounds": [
+            -4.602,
+            0,
+            -4.602,
+            4.602,
+            10,
+            4.602
+          ]
+        }
+      },
+      "optimized": {
+        "vertices": 12,
+        "triangles": 4,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      }
+    },
+    {
+      "id": "forest-mountains-ridge-a",
+      "path": "models/global-scenes/forest-mountains-ridge-a.glb",
+      "source": "landscape-forest-mountains.zip",
+      "role": "backdrop",
+      "targetHeight": 36,
+      "bytes": 92536,
+      "nodes": [
+        "Plane007"
+      ],
+      "metrics": {
+        "before": {
+          "meshes": 3687,
+          "triangles": 18600,
+          "nativeBounds": [
+            -5329.913,
+            -633.202,
+            -5625.649,
+            5329.913,
+            4320.531,
+            5076.52
+          ]
+        },
+        "filtered": {
+          "meshes": 1,
+          "triangles": 1350,
+          "nativeBounds": [
+            -1475.958,
+            -54.301,
+            -4304.524,
+            2831.872,
+            1481.718,
+            -965.232
+          ]
+        },
+        "after": {
+          "meshes": 1,
+          "triangles": 1350,
+          "nativeBounds": [
+            -50.482,
+            0,
+            -39.132,
+            50.482,
+            36,
+            39.132
+          ]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 1536.0182477275848,
+          "targetHeight": 36,
+          "scale": 0.02343722156508173,
+          "bounds": [
+            -50.482,
+            0,
+            -39.132,
+            50.482,
+            36,
+            39.132
+          ]
+        }
+      },
+      "optimized": {
+        "vertices": 4050,
+        "triangles": 1350,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      }
+    },
+    {
+      "id": "forest-mountains-ridge-b",
+      "path": "models/global-scenes/forest-mountains-ridge-b.glb",
+      "source": "landscape-forest-mountains.zip",
+      "role": "backdrop",
+      "targetHeight": 42,
+      "bytes": 95904,
+      "nodes": [
+        "Plane009"
+      ],
+      "metrics": {
+        "before": {
+          "meshes": 3687,
+          "triangles": 18600,
+          "nativeBounds": [
+            -5329.913,
+            -633.202,
+            -5625.649,
+            5329.913,
+            4320.531,
+            5076.52
+          ]
+        },
+        "filtered": {
+          "meshes": 1,
+          "triangles": 390,
+          "nativeBounds": [
+            1009.312,
+            218.557,
+            -5625.649,
+            4641.644,
+            2268.115,
+            -2865.795
+          ]
+        },
+        "after": {
+          "meshes": 1,
+          "triangles": 390,
+          "nativeBounds": [
+            -37.217,
+            0,
+            -28.278,
+            37.217,
+            42,
+            28.278
+          ]
+        },
+        "materials": 1,
+        "normalized": {
+          "nativeHeight": 2049.557359670842,
+          "targetHeight": 42,
+          "scale": 0.020492229603539948,
+          "bounds": [
+            -37.217,
+            0,
+            -28.278,
+            37.217,
+            42,
+            28.278
+          ]
+        }
+      },
+      "optimized": {
+        "vertices": 1170,
+        "triangles": 390,
+        "meshes": 1,
+        "materials": 1,
+        "drawCalls": 1
+      }
+    }
+  ],
+  "exclusions": [
+    "source road and terrain base meshes",
+    "source sky and HDRI spheres",
+    "source full-scene ground planes"
+  ]
+}

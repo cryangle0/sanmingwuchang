@@ -94,6 +94,7 @@ declare global {
       getOcclusionDiagnostics: () => ReturnType<ArenaRenderer['getOcclusionDiagnostics']>;
       getFloraModelDiagnostics: () => ReturnType<ArenaRenderer['getFloraModelDiagnostics']>;
       getMapAssetDiagnostics: () => ReturnType<ArenaRenderer['getMapAssetDiagnostics']>;
+      getGlobalSceneDiagnostics: () => ReturnType<ArenaRenderer['getGlobalSceneDiagnostics']>;
       getCameraDiagnostics: () => ReturnType<ArenaRenderer['getCameraDiagnostics']>;
       getCombatRangePreviewDiagnostics: () => ReturnType<
         ArenaRenderer['getCombatRangePreviewDiagnostics']
@@ -275,6 +276,7 @@ export class GameApp {
       getOcclusionDiagnostics: () => this.renderer.getOcclusionDiagnostics(),
       getFloraModelDiagnostics: () => this.renderer.getFloraModelDiagnostics(),
       getMapAssetDiagnostics: () => this.renderer.getMapAssetDiagnostics(),
+      getGlobalSceneDiagnostics: () => this.renderer.getGlobalSceneDiagnostics(),
       getCameraDiagnostics: () => this.renderer.getCameraDiagnostics(),
       getCombatRangePreviewDiagnostics: () => this.renderer.getCombatRangePreviewDiagnostics(),
       getCombatEffectDiagnostics: () => this.renderer.getCombatEffectDiagnostics(),

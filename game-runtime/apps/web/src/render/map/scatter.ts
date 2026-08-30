@@ -18,7 +18,7 @@ const MM = 1_000;
  * hides it wholesale, so the cost is vertex throughput on the balanced tier
  * only.
  */
-const GRASS_SPACING_METERS = 1.35;
+const GRASS_SPACING_METERS = 1.45;
 const GROUND_COVER_SPACING_METERS = 4.5;
 const PEBBLE_SPACING_METERS = 11;
 const BLOOM_SPACING_METERS = 4.5;
@@ -226,40 +226,55 @@ function placeBloomInstances(
 
 function buildGrassTuftGeometry(): THREE.BufferGeometry {
   const positions: number[] = [];
-  // Nine blades, wider and taller than the thinned version.
-  //
-  // Cutting to five bought triangles but cost the thing the layer exists for:
-  // at the gameplay camera a five-blade clump reads as a few filaments on bare
-  // earth, not as grass. Nine wider blades give each clump enough mass to
-  // close over the ground, and the lattice spacing below carries coverage.
+  /**
+   * Seven blades, each a tapered strip rather than a triangle.
+   *
+   * The previous blade was one triangle — a base edge meeting a single apex —
+   * which is a needle however it is coloured or scaled. A blade keeps a
+   * finite width at the tip and bends over as it rises, so the silhouette
+   * reads as a leaf. Two triangles per blade buys that, and the blade count
+   * comes down from nine to seven to keep the clump near its old cost.
+   */
   const blades = [
-    { angle: 0.32, x: 0.1, z: -0.18, height: 0.92, width: 0.135, lean: -0.17 },
-    { angle: 1.02, x: -0.2, z: -0.06, height: 0.78, width: 0.14, lean: -0.15 },
-    { angle: 1.72, x: 0.16, z: 0.16, height: 0.99, width: 0.13, lean: 0.16 },
-    { angle: 2.38, x: -0.08, z: 0.2, height: 0.72, width: 0.145, lean: 0.13 },
-    { angle: 2.98, x: -0.05, z: -0.04, height: 1.06, width: 0.135, lean: -0.12 },
-    { angle: 3.62, x: 0.22, z: -0.1, height: 0.83, width: 0.14, lean: 0.15 },
-    { angle: 4.26, x: -0.22, z: 0.08, height: 0.9, width: 0.135, lean: -0.14 },
-    { angle: 4.92, x: 0.06, z: 0.22, height: 0.69, width: 0.15, lean: 0.12 },
-    { angle: 5.58, x: -0.14, z: -0.2, height: 0.95, width: 0.135, lean: -0.13 },
+    { angle: 0.32, x: 0.1, z: -0.18, height: 0.92, width: 0.15, lean: 0.3 },
+    { angle: 1.02, x: -0.2, z: -0.06, height: 0.78, width: 0.155, lean: 0.26 },
+    { angle: 1.86, x: 0.16, z: 0.16, height: 0.99, width: 0.145, lean: 0.34 },
+    { angle: 2.72, x: -0.08, z: 0.2, height: 0.72, width: 0.16, lean: 0.24 },
+    { angle: 3.5, x: -0.05, z: -0.04, height: 1.06, width: 0.15, lean: 0.36 },
+    { angle: 4.36, x: 0.22, z: -0.1, height: 0.83, width: 0.155, lean: 0.28 },
+    { angle: 5.24, x: -0.18, z: 0.12, height: 0.95, width: 0.15, lean: 0.32 },
   ] as const;
+  /** Tip width as a share of the base, so the blade narrows without pointing. */
+  const TIP_TAPER = 0.34;
+
   for (const blade of blades) {
     const halfX = Math.cos(blade.angle) * blade.width * 0.5;
     const halfZ = Math.sin(blade.angle) * blade.width * 0.5;
+    // The blade bends away from its own facing, so a clump fans outward
+    // instead of every blade leaning the same way.
     const leanX = -Math.sin(blade.angle) * blade.lean;
     const leanZ = Math.cos(blade.angle) * blade.lean;
-    positions.push(
-      blade.x - halfX,
-      0,
-      blade.z - halfZ,
-      blade.x + halfX,
-      0,
-      blade.z + halfZ,
-      blade.x + leanX,
-      blade.height,
-      blade.z + leanZ,
-    );
+    const tipHalfX = halfX * TIP_TAPER;
+    const tipHalfZ = halfZ * TIP_TAPER;
+    const tipX = blade.x + leanX;
+    const tipZ = blade.z + leanZ;
+    // Tip sits slightly below the nominal height because the blade curves
+    // over rather than standing straight up.
+    const tipY = blade.height * 0.94;
+
+    const baseLeftX = blade.x - halfX;
+    const baseLeftZ = blade.z - halfZ;
+    const baseRightX = blade.x + halfX;
+    const baseRightZ = blade.z + halfZ;
+    const tipLeftX = tipX - tipHalfX;
+    const tipLeftZ = tipZ - tipHalfZ;
+    const tipRightX = tipX + tipHalfX;
+    const tipRightZ = tipZ + tipHalfZ;
+
+    positions.push(baseLeftX, 0, baseLeftZ, baseRightX, 0, baseRightZ, tipRightX, tipY, tipRightZ);
+    positions.push(baseLeftX, 0, baseLeftZ, tipRightX, tipY, tipRightZ, tipLeftX, tipY, tipLeftZ);
   }
+
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geometry.computeVertexNormals();

@@ -34,6 +34,7 @@ import { type CameraFollowState, updateCameraFollowState } from './camera-follow
 import { CombatEffectsLayer, effectColorForElement } from './combat-effects';
 import { activePresentationRange, type CombatRangePreviewMode } from './combat-range-preview';
 import { createMapAtmosphere, type MapAtmosphere } from './map/atmosphere';
+import type { GlobalSceneLayerDiagnostics } from './map/global-scene-layer';
 import { standingSurfaceMeters } from './map/ground';
 import type { MapAssetLayerDiagnostics } from './map/map-asset-layer';
 import { buildMapEnvironment, type MapEnvironment } from './map/map-environment';
@@ -1186,6 +1187,33 @@ export class ArenaRenderer {
         rockInstances: 0,
         visibleRockInstances: 0,
         instancedBatches: 0,
+        triangles: 0,
+        drawCalls: 0,
+        visible: false,
+      }
+    );
+  }
+
+  getGlobalSceneDiagnostics(): GlobalSceneLayerDiagnostics {
+    return (
+      this.mapEnvironment?.getGlobalSceneDiagnostics() ?? {
+        status: 'disabled',
+        loadedAssets: [],
+        failedAssets: [],
+        placements: 0,
+        visiblePlacements: 0,
+        placementsBySource: {
+          overgrown: 0,
+          'forest-road-night': 0,
+          'forest-mountains': 0,
+        },
+        visiblePlacementsBySource: {
+          overgrown: 0,
+          'forest-road-night': 0,
+          'forest-mountains': 0,
+        },
+        instancedBatches: 0,
+        visibleInstancedBatches: 0,
         triangles: 0,
         drawCalls: 0,
         visible: false,
@@ -2392,7 +2420,10 @@ export class ArenaRenderer {
     }
     const floraStatus = this.mapEnvironment.getFloraModelDiagnostics().status;
     const mapAssetStatus = this.mapEnvironment.getMapAssetDiagnostics().status;
-    return floraStatus !== 'loading' && mapAssetStatus !== 'loading';
+    const globalSceneStatus = this.mapEnvironment.getGlobalSceneDiagnostics().status;
+    return (
+      floraStatus !== 'loading' && mapAssetStatus !== 'loading' && globalSceneStatus !== 'loading'
+    );
   }
 
   private resetAdaptiveQualitySampling(): void {

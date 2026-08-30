@@ -207,6 +207,7 @@ const readSummary = async () =>
       models: debug?.getModelDiagnostics?.() ?? null,
       flora: debug?.getFloraModelDiagnostics?.() ?? null,
       mapAssets: debug?.getMapAssetDiagnostics?.() ?? null,
+      globalScenes: debug?.getGlobalSceneDiagnostics?.() ?? null,
       camera: debug?.getCameraDiagnostics?.() ?? null,
       occlusion: debug?.getOcclusionDiagnostics?.() ?? null,
       combatEffects: debug?.getCombatEffectDiagnostics?.() ?? null,
@@ -323,6 +324,24 @@ await page.waitForFunction(
   undefined,
   { timeout: 180_000 },
 );
+await page.waitForFunction(
+  () => {
+    const scenes = window.__JWGB_DEBUG__?.getGlobalSceneDiagnostics?.();
+    return Boolean(
+      scenes?.status === 'ready' &&
+        scenes.failedAssets.length === 0 &&
+        scenes.loadedAssets.length === 11 &&
+        scenes.placements === 79 &&
+        scenes.placementsBySource.overgrown === 21 &&
+        scenes.placementsBySource['forest-road-night'] === 21 &&
+        scenes.placementsBySource['forest-mountains'] === 37 &&
+        scenes.instancedBatches > 0 &&
+        scenes.visible === true,
+    );
+  },
+  undefined,
+  { timeout: 180_000 },
+);
 await mkdir(outputDirectory, { recursive: true });
 const cameraViews = [];
 await page.waitForFunction(
@@ -338,11 +357,11 @@ await page.waitForFunction(
     return (
       Math.abs(camera.target[0] - local.position.x / 1_000) < 0.025 &&
       Math.abs(camera.target[2] - local.position.z / 1_000) < 0.025 &&
-      camera.offset.every(
-        (value, index) => Math.abs(value - camera.targetOffset[index]) < 0.025,
-      ) &&
+      camera.offset.every((value, index) => Math.abs(value - camera.targetOffset[index]) < 0.025) &&
       Math.abs(camera.zoom - 1.12) < 0.025 &&
-      camera.presetOffset.every((value, index) => Math.abs(value - [12, 10.6, 12][index]) < 0.001) &&
+      camera.presetOffset.every(
+        (value, index) => Math.abs(value - [12, 10.6, 12][index]) < 0.001,
+      ) &&
       camera.controlsCustomized === false
     );
   },
@@ -1160,6 +1179,7 @@ await mobilePage.waitForFunction(
 await mobilePage.waitForFunction(
   () => {
     const flora = window.__JWGB_DEBUG__?.getFloraModelDiagnostics?.();
+    const globalScenes = window.__JWGB_DEBUG__?.getGlobalSceneDiagnostics?.();
     const performance = window.__JWGB_DEBUG__?.getRenderPerformanceDiagnostics?.();
     return Boolean(
       flora?.status === 'ready' &&
@@ -1169,6 +1189,12 @@ await mobilePage.waitForFunction(
         flora.dressingInstances > 0 &&
         flora.instancedBatches > 0 &&
         flora.visible === true &&
+        globalScenes?.status === 'ready' &&
+        globalScenes.failedAssets.length === 0 &&
+        globalScenes.placements === 29 &&
+        globalScenes.placementsBySource.overgrown === 7 &&
+        globalScenes.placementsBySource['forest-road-night'] === 7 &&
+        globalScenes.placementsBySource['forest-mountains'] === 15 &&
         performance?.graphicsTier === 'reduced',
     );
   },
@@ -1178,6 +1204,7 @@ await mobilePage.waitForFunction(
 const mobileRuntime = await mobilePage.evaluate(() => ({
   performance: window.__JWGB_DEBUG__?.getRenderPerformanceDiagnostics?.() ?? null,
   flora: window.__JWGB_DEBUG__?.getFloraModelDiagnostics?.() ?? null,
+  globalScenes: window.__JWGB_DEBUG__?.getGlobalSceneDiagnostics?.() ?? null,
 }));
 await mobilePage.waitForTimeout(500);
 const mobileLayout = await mobilePage.evaluate(() => ({
@@ -1283,6 +1310,17 @@ const mapAssetLayerReady = Boolean(
     final.mapAssets.instancedBatches > 0 &&
     final.mapAssets.visible === true,
 );
+const globalSceneLayerReady = Boolean(
+  final.globalScenes?.status === 'ready' &&
+    final.globalScenes.failedAssets.length === 0 &&
+    final.globalScenes.loadedAssets.length === 11 &&
+    final.globalScenes.placements === 79 &&
+    final.globalScenes.placementsBySource.overgrown === 21 &&
+    final.globalScenes.placementsBySource['forest-road-night'] === 21 &&
+    final.globalScenes.placementsBySource['forest-mountains'] === 37 &&
+    final.globalScenes.instancedBatches > 0 &&
+    final.globalScenes.visible === true,
+);
 const result = {
   schema: 'jwgb.web-local-map-verification.v1',
   verifiedAt: new Date().toISOString(),
@@ -1324,6 +1362,7 @@ const result = {
     floraModelReady,
     requiredFloraAssetsLoaded,
     mapAssetLayerReady,
+    globalSceneLayerReady,
     requestedHero:
       expectedHeroId === null ||
       (initial.local?.heroId === expectedHeroId &&
@@ -1367,7 +1406,13 @@ const result = {
       mobileRuntime.performance?.graphicsTier === 'reduced' &&
       mobileRuntime.flora?.failedAssets.length === 0 &&
       mobileRuntime.flora.loadedAssets.length === REDUCED_FLORA_ASSETS.length &&
-      REDUCED_FLORA_ASSETS.every((asset) => mobileRuntime.flora.loadedAssets.includes(asset)),
+      REDUCED_FLORA_ASSETS.every((asset) => mobileRuntime.flora.loadedAssets.includes(asset)) &&
+      mobileRuntime.globalScenes?.status === 'ready' &&
+      mobileRuntime.globalScenes.failedAssets.length === 0 &&
+      mobileRuntime.globalScenes.placements === 29 &&
+      mobileRuntime.globalScenes.placementsBySource.overgrown === 7 &&
+      mobileRuntime.globalScenes.placementsBySource['forest-road-night'] === 7 &&
+      mobileRuntime.globalScenes.placementsBySource['forest-mountains'] === 15,
     mobileWorldMap:
       mobileMapClosed &&
       insideViewport(mobileWorldMapLayout.panel, mobileWorldMapLayout.viewport) &&
@@ -1384,6 +1429,7 @@ const result = {
   standardLocalModel,
   flora: final.flora,
   mapAssets: final.mapAssets,
+  globalScenes: final.globalScenes,
   screenshots: {
     standard: standardScreenshotPath,
     close: closeScreenshotPath,
@@ -1442,6 +1488,7 @@ const failure =
   !result.checks.floraModelReady ||
   !result.checks.requiredFloraAssetsLoaded ||
   !result.checks.mapAssetLayerReady ||
+  !result.checks.globalSceneLayerReady ||
   !result.checks.requestedHero ||
   !result.checks.localizedTreeOcclusion ||
   !result.checks.mobileLayout ||
@@ -1480,6 +1527,7 @@ console.log(
     `${final.flora?.treeInstances ?? 0} trees/${final.flora?.rockInstances ?? 0} rocks/` +
     `${final.flora?.dressingInstances ?? 0} dressing instances, ` +
     `${final.flora?.drawCalls ?? 0} visible flora draw calls, ` +
+    `${final.globalScenes?.placements ?? 0} global scene instances, ` +
     `${performance.averageFps.toFixed(1)} FPS, ` +
     `pixels ${(pixelCoverage * 100).toFixed(1)}%`,
 );

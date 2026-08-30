@@ -20,7 +20,8 @@ import { waterSurfaceAt } from '../apps/web/src/render/map/water';
  */
 
 const MM = 1_000;
-const GRASS_SPACING_METERS = 1.6;
+/** Mirrors GRASS_SPACING_METERS in scatter.ts. */
+const GRASS_SPACING_METERS = 1.45;
 
 function grassPoints(): readonly { readonly x: number; readonly z: number }[] {
   return sampleGroundLattice(GRASS_SPACING_METERS, createRandomStream(0xdc80a9ec), {
@@ -33,9 +34,9 @@ describe('ground cover lattice', () => {
   const points = grassPoints();
 
   it('places enough clumps to read as cover rather than as scatter', () => {
-    // A 500,000 m2 playfield at 1.6 m spacing is ~195,000 lattice cells before
+    // A 500,000 m2 playfield at 1.45 m spacing is ~238,000 lattice cells before
     // roads, walls, courts and ponds take their share.
-    expect(points.length).toBeGreaterThan(80_000);
+    expect(points.length).toBeGreaterThan(120_000);
   });
 
   it('leaves no bare patch large enough to read as an empty field', () => {

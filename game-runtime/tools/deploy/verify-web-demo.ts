@@ -298,6 +298,18 @@ async function main(): Promise<void> {
     ['free ruin pagoda', 'models/map-assets/free-pagoda-ruin.glb'],
     ['free stone cart', 'models/map-assets/free-stone-cart.glb'],
     ['free stone lion', 'models/map-assets/free-stone-lion.glb'],
+    ['global scene manifest', 'models/global-scenes/manifest.json'],
+    ['overgrown grove', 'models/global-scenes/overgrown-grove.glb'],
+    ['overgrown card A', 'models/global-scenes/overgrown-card-a.glb'],
+    ['overgrown card B', 'models/global-scenes/overgrown-card-b.glb'],
+    ['forest road tree A', 'models/global-scenes/forest-road-tree-a.glb'],
+    ['forest road tree B', 'models/global-scenes/forest-road-tree-b.glb'],
+    ['forest road understory', 'models/global-scenes/forest-road-understory.glb'],
+    ['forest mountains card A', 'models/global-scenes/forest-mountains-card-a.glb'],
+    ['forest mountains card B', 'models/global-scenes/forest-mountains-card-b.glb'],
+    ['forest mountains card C', 'models/global-scenes/forest-mountains-card-c.glb'],
+    ['forest mountains ridge A', 'models/global-scenes/forest-mountains-ridge-a.glb'],
+    ['forest mountains ridge B', 'models/global-scenes/forest-mountains-ridge-b.glb'],
   ] as const;
   for (const [name, path] of packagedMapAssets) {
     await assertHttp(name, new URL(path, cdnBase).toString(), 'HEAD');

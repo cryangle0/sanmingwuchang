@@ -90,6 +90,7 @@ async function loadInputTextures(files) {
 }
 
 function assignInputTextures(root, loadedTextures) {
+  const matchableTextures = loadedTextures.filter(({ key }) => key.length > 0);
   const assigned = [];
   const unmatched = new Set();
   root.traverse((object) => {
@@ -108,7 +109,7 @@ function assignInputTextures(root, loadedTextures) {
         normalizedTextureKey(sourceMap?.sourceFile),
       ].filter(Boolean);
       const matched =
-        loadedTextures.find(({ key }) =>
+        matchableTextures.find(({ key }) =>
           candidateKeys.some(
             (candidate) => candidate === key || candidate.includes(key) || key.includes(candidate),
           ),
@@ -328,6 +329,30 @@ function filterScene(root, filter) {
   root.updateMatrixWorld(true);
 }
 
+function selectSceneNodes(root, names) {
+  if (!names || names.length === 0) {
+    return root;
+  }
+  const selectedNames = new Set(names);
+  const selected = new THREE.Group();
+  selected.name = `${root.name || 'scene'}-selection`;
+  root.updateMatrixWorld(true);
+  root.traverse((object) => {
+    if (!(object instanceof THREE.Mesh) || !selectedNames.has(object.name)) {
+      return;
+    }
+    const mesh = new THREE.Mesh(object.geometry, object.material);
+    mesh.name = object.name;
+    mesh.matrixAutoUpdate = false;
+    mesh.matrix.copy(object.matrixWorld);
+    mesh.castShadow = object.castShadow;
+    mesh.receiveShadow = object.receiveShadow;
+    selected.add(mesh);
+  });
+  selected.updateMatrixWorld(true);
+  return selected;
+}
+
 function normalizeFloor(root, targetHeight) {
   root.updateMatrixWorld(true);
   const bounds = new THREE.Box3().setFromObject(root);
@@ -391,7 +416,15 @@ function arrayBufferToBase64(bytes) {
 async function parseFbx(input) {
   const manager = new THREE.LoadingManager();
   const textures = textureUrlMap(input.textures);
-  manager.setURLModifier((url) => textures.get(fileNameFromUrl(url)) ?? PLACEHOLDER_TEXTURE);
+  const requestedTextureUrls = [];
+  manager.setURLModifier((url) => {
+    requestedTextureUrls.push(String(url));
+    if (/^(?:blob:|data:)/i.test(String(url))) {
+      return url;
+    }
+    const resolved = textures.get(fileNameFromUrl(url));
+    return resolved ?? PLACEHOLDER_TEXTURE;
+  });
   const loader = new FBXLoader(manager);
   let resolveLoaded;
   const loaded = new Promise((resolve) => {
@@ -402,6 +435,7 @@ async function parseFbx(input) {
   await Promise.race([loaded, new Promise((resolve) => setTimeout(resolve, 5_000))]);
   const inputTextures = await loadInputTextures(input.textures);
   root.userData.inputTextureDiagnostics = assignInputTextures(root, inputTextures);
+  root.userData.requestedTextureUrls = requestedTextureUrls;
   return root;
 }
 
@@ -508,6 +542,7 @@ function sceneMetrics(root, includeDetails = false) {
   let meshes = 0;
   let triangles = 0;
   const details = [];
+  const materialDetails = new Map();
   root.traverse((object) => {
     if (!(object instanceof THREE.Mesh)) {
       return;
@@ -517,6 +552,29 @@ function sceneMetrics(root, includeDetails = false) {
     triangles += (object.geometry.index?.count ?? position?.count ?? 0) / 3;
     if (includeDetails) {
       const meshBounds = new THREE.Box3().setFromObject(object);
+      const materials = Array.isArray(object.material) ? object.material : [object.material];
+      for (const material of materials) {
+        if (!material) {
+          continue;
+        }
+        const map = material.map ?? null;
+        const key = [
+          material.name || 'unnamed-material',
+          map?.name || '',
+          map?.sourceFile || '',
+          material.color?.getHex?.() ?? null,
+          Boolean(material.transparent),
+          material.opacity ?? 1,
+        ].join('|');
+        materialDetails.set(key, {
+          name: material.name || 'unnamed-material',
+          mapName: map?.name || null,
+          mapSourceFile: map?.sourceFile || null,
+          color: material.color?.getHex?.() ?? null,
+          transparent: Boolean(material.transparent),
+          opacity: material.opacity ?? 1,
+        });
+      }
       details.push({
         name: object.name || 'unnamed-mesh',
         triangles: Math.round((object.geometry.index?.count ?? position?.count ?? 0) / 3),
@@ -535,12 +593,15 @@ function sceneMetrics(root, includeDetails = false) {
   };
   if (includeDetails) {
     metrics.meshDetails = details.sort((left, right) => right.triangles - left.triangles);
+    metrics.materialDetails = [...materialDetails.values()].sort((left, right) =>
+      `${left.name}|${left.mapName ?? ''}`.localeCompare(`${right.name}|${right.mapName ?? ''}`),
+    );
   }
   return metrics;
 }
 
 window.convertMapAsset = async (input) => {
-  const root =
+  let root =
     input.type === 'obj'
       ? await parseObj(input)
       : input.type === 'glb'
@@ -549,6 +610,9 @@ window.convertMapAsset = async (input) => {
   const textureImages = await waitForTextureImages(root);
   const includeDetails = Boolean(input.debugNodes);
   const before = sceneMetrics(root, includeDetails);
+  const textureAssignments = root.userData.inputTextureDiagnostics ?? null;
+  const requestedTextureUrls = root.userData.requestedTextureUrls ?? [];
+  root = selectSceneNodes(root, input.selectedNodes);
   filterScene(root, input.nodeFilter);
   const filtered = sceneMetrics(root, includeDetails);
   const parts =
@@ -579,7 +643,8 @@ window.convertMapAsset = async (input) => {
       before,
       filtered,
       parts: exportedParts.length,
-      textureAssignments: root.userData.inputTextureDiagnostics ?? null,
+      textureAssignments,
+      requestedTextureUrls,
       textureImages,
     },
   };
