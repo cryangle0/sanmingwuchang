@@ -52,6 +52,7 @@ namespace Jwgb.Sim.Deterministic
             {
                 var piece = pieces[pieceIndex];
                 if (!WallTraversal.Blocks(
+                    piece.WallClass,
                     piece.HeightMm,
                     piece.BlinkPassable,
                     piece.FlightPassable,

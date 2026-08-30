@@ -130,6 +130,9 @@ describe('district dressing', () => {
       const point = { x: Math.round(site.x * 1_000), z: Math.round(site.z * 1_000) };
       expect(ringContains(MAP_BOUNDARY, point), 'inside boundary').toBe(true);
       for (const piece of MAP_WALL_PIECES) {
+        if (piece.wallClass !== 'BOUND') {
+          continue;
+        }
         expect(convexContains(piece.vertices, point), `outside wall ${piece.pieceId}`).toBe(false);
       }
       for (const court of MAP_COURTS) {

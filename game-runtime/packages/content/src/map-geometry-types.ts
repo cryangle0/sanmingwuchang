@@ -28,8 +28,9 @@ export interface MapConvexPieceRecord {
   readonly heightMm: number;
   /**
    * Traversal permissions transcribed from the map source, not inferred from
-   * height. Walking is always blocked; these only relax blink and flight.
-   * Line of sight is blocked by every piece regardless of these flags.
+   * height. BOUND pieces use these to relax blink and flight. VAULT pieces
+   * remain in the compiled geometry as authored hill footprints, but are
+   * represented by the walkable terrain heightfield rather than hard walls.
    */
   readonly blinkPassable: boolean;
   readonly flightPassable: boolean;

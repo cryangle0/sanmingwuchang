@@ -8,7 +8,8 @@ namespace Jwgb.Sim.Deterministic
     /// into every convex piece. They are never inferred from wall height: a
     /// wall is crossable by blink only when the source marked it 可越障级, and
     /// crossable by flight only when the source marked it 可越障级 AND the
-    /// flying actor's own height budget covers it. Walking passes nothing.
+    /// flying actor's own height budget covers it. VAULT records are walkable
+    /// heightfield hills, so only true wall records reach the permission rules.
     /// </summary>
     public readonly struct WallTraversal
     {
@@ -27,7 +28,7 @@ namespace Jwgb.Sim.Deterministic
         public long FlightHeightBudgetMm { get; }
 
         /// <summary>
-        /// Ordinary ground movement and ground line of sight: every wall is
+        /// Ordinary ground movement and ground line of sight: true walls are
         /// solid. This is also <c>default(WallTraversal)</c>, so every optional
         /// traversal parameter on the collision field defaults to walking just
         /// like the TypeScript <c>WALK_TRAVERSAL</c> default.
@@ -53,11 +54,17 @@ namespace Jwgb.Sim.Deterministic
         /// traversal; mirrors wallPieceBlocks in wall-traversal.ts.
         /// </summary>
         public static bool Blocks(
+            string pieceWallClass,
             long pieceHeightMm,
             bool pieceBlinkPassable,
             bool pieceFlightPassable,
             WallTraversal traversal)
         {
+            if (pieceWallClass == "VAULT")
+            {
+                return false;
+            }
+
             if (traversal.BlinkPassable && pieceBlinkPassable)
             {
                 return false;

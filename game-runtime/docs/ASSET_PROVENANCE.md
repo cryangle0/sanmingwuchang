@@ -171,11 +171,14 @@ four-action FBX exports for:
 
 - `H002` 红孩儿（火娃模型）
 - `H004` 蝎子精
+- `H006` 九头虫
+- `H007` 黄风怪
 - `H008` 太上老君
 - `H010` 二郎神
 - `H011` 哪吒
 - `H012` 六耳猕猴
 - `H014` 白骨精
+- `H015` 猪八戒
 - `H016` 白龙马（小白龙模型）
 - `H018` 牛魔王
 - `H019` 独角兕大王
@@ -197,11 +200,14 @@ The optimized derivatives are delivered as:
 
 - `models/characters/H002/model.glb`
 - `models/characters/H004/model.glb`
+- `models/characters/H006/model.glb`
+- `models/characters/H007/model.glb`
 - `models/characters/H008/model.glb`
 - `models/characters/H010/model.glb`
 - `models/characters/H011/model.glb`
 - `models/characters/H012/model.glb`
 - `models/characters/H014/model.glb`
+- `models/characters/H015/model.glb`
 - `models/characters/H016/model.glb`
 - `models/characters/H018/model.glb`
 - `models/characters/H019/model.glb`
@@ -212,4 +218,18 @@ The optimized derivatives are delivered as:
 - `models/characters/H038/model.glb`
 
 The original FBX files remain outside the Web bundle. Runtime presentation
-normalizes all fifteen models to their existing 2.2-metre catalog height.
+normalizes each model to its catalog height: 2.4 metres for H006 and H007,
+and 2.2 metres for the other delivered animated heroes in this section.
+
+The 2026-08-30 delivery adds the following source-specific files and validated
+skeletal layouts:
+
+| Model | Source animation directory | Move source file | Bones | Web output |
+| --- | --- | --- | ---: | --- |
+| H006 九头虫 | `素材/九头虫_FBX` | `02_飞行移动_fly.fbx` | 108 | `models/characters/H006/model.glb` |
+| H007 黄风怪 | `素材/黄风怪_FBX` | `02_飞行_fly.fbx` | 41 | `models/characters/H007/model.glb` |
+| H015 猪八戒 | `素材/猪八戒_FBX` | `02_跑步_run.fbx` | 33 | `models/characters/H015/model.glb` |
+
+Each of these three deliveries contains four exported clips named
+`Idle`, `Move`, `Attack`, and `Spell`. H006 is fully skinned; H007 retains
+its separate Cloud and Weapon meshes; H015 retains its separate Weapon mesh.

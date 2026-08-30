@@ -22,6 +22,7 @@ import {
   MAP_ROUTE_NODES,
   MAP_SHOPS,
   MAP_SPAWN_POINTS,
+  MAP_WALL_PIECES,
 } from './map-geometry.generated';
 import type { MapPointMm } from './map-geometry-types';
 
@@ -31,7 +32,7 @@ import type { MapPointMm } from './map-geometry-types';
  * cross-language mismatch is attributable to terrain rather than geometry.
  * The compiled map JSON is untouched, so `map:authority` stays independent.
  */
-export const TERRAIN_PROFILE_VERSION = 2;
+export const TERRAIN_PROFILE_VERSION = 3;
 
 /**
  * Peak-to-trough of the wilderness noise before stamps, millimetres.
@@ -88,6 +89,15 @@ const PAD_EDGE_MM = 8_000;
 const SHOP_RADIUS_MM = 8_000;
 const MAX_STAMP_SEGMENT_MM = 30_000;
 const ROAD_GRID_MM = 16_000;
+/**
+ * Interior VAULT polygons are broad, walkable hills, not vertical wall
+ * volumes. A wide shoulder and a bounded relief keep every approach gentle
+ * enough to climb while still preserving the authored district silhouettes.
+ */
+const INTERIOR_HILL_MIN_RELIEF_MM = 3_200;
+const INTERIOR_HILL_MAX_RELIEF_MM = 8_500;
+const INTERIOR_HILL_BASE_SHOULDER_MM = 24_000;
+const INTERIOR_HILL_RELIEF_PER_WIDTH_PER_MILLE = 120;
 /** Steepest grade a road may hold, in per mille of run. */
 const ROAD_MAX_GRADE_PER_MILLE = 120;
 /** Relaxation sweeps over the route graph. Fixed so the result is reproducible. */
@@ -126,7 +136,19 @@ interface CircleStamp {
   readonly targetMm: number;
 }
 
+interface HillStamp {
+  readonly centerX: number;
+  readonly centerZ: number;
+  /** Unit axis scaled by 1,000. */
+  readonly axisXPerMille: number;
+  readonly axisZPerMille: number;
+  readonly radiusAlongMm: number;
+  readonly radiusAcrossMm: number;
+  readonly reliefMm: number;
+}
+
 interface StampIndex {
+  readonly hills: readonly HillStamp[];
   readonly roads: readonly SegmentStamp[];
   readonly roadCells: ReadonlyMap<number, readonly number[]>;
   readonly courts: readonly PolyStamp[];
@@ -205,6 +227,7 @@ export function terrainDebugProfile(
   zMm: number,
 ): {
   base: number;
+  hills: number;
   road: number;
   pads: number;
   highlands: number;
@@ -215,7 +238,8 @@ export function terrainDebugProfile(
 } {
   const index = stampIndex();
   const base = baseHeightMm(xMm, zMm);
-  const shops = applyCircleStamps(base, xMm, zMm, index.shopPads);
+  const hills = applyHillStamps(base, xMm, zMm, index.hills);
+  const shops = applyCircleStamps(hills, xMm, zMm, index.shopPads);
   const features = applyCircleStamps(shops, xMm, zMm, index.features);
   const bowls = applyCircleStamps(features, xMm, zMm, index.bowls);
   const road = applyRoadStamps(bowls, xMm, zMm, index);
@@ -224,6 +248,7 @@ export function terrainDebugProfile(
   const courts = applyPolyStamps(highlands, xMm, zMm, index.courts);
   return {
     base,
+    hills,
     road,
     pads,
     highlands,
@@ -386,10 +411,21 @@ export function terrainBlocksLineOfSight(
  * Sweeps run in compiled edge order for a fixed count, so the result is a
  * pure function of the map and ports to C# unchanged.
  */
-function relaxRouteNodeHeights(nodes: ReadonlyMap<string, MapPointMm>): Map<string, number> {
+function relaxRouteNodeHeights(
+  nodes: ReadonlyMap<string, MapPointMm>,
+  hills: readonly HillStamp[],
+): Map<string, number> {
   const heights = new Map<string, number>();
   for (const node of MAP_ROUTE_NODES) {
-    heights.set(node.id, baseHeightMm(node.position.x, node.position.z));
+    heights.set(
+      node.id,
+      applyHillStamps(
+        baseHeightMm(node.position.x, node.position.z),
+        node.position.x,
+        node.position.z,
+        hills,
+      ),
+    );
   }
   for (let sweep = 0; sweep < ROAD_RELAX_SWEEPS; sweep += 1) {
     let adjusted = false;
@@ -427,7 +463,7 @@ function relaxRouteNodeHeights(nodes: ReadonlyMap<string, MapPointMm>): Map<stri
 /** Worst grade left on any route edge after relaxation, in per mille. */
 export function routeGradeExtremePerMille(): number {
   const nodes = new Map(MAP_ROUTE_NODES.map((node) => [node.id, node.position]));
-  const heights = relaxRouteNodeHeights(nodes);
+  const heights = relaxRouteNodeHeights(nodes, buildInteriorHillStamps());
   let worst = 0;
   for (const edge of MAP_ROUTE_EDGES) {
     const heightA = heights.get(edge.a);
@@ -440,12 +476,102 @@ export function routeGradeExtremePerMille(): number {
   return worst;
 }
 
+function buildInteriorHillStamps(): HillStamp[] {
+  const pointsByWall = new Map<string, MapPointMm[]>();
+  for (const piece of MAP_WALL_PIECES) {
+    if (piece.wallClass !== 'VAULT') {
+      continue;
+    }
+    const points = pointsByWall.get(piece.wallId);
+    if (points) {
+      points.push(...piece.vertices);
+    } else {
+      pointsByWall.set(piece.wallId, [...piece.vertices]);
+    }
+  }
+
+  const hills: HillStamp[] = [];
+  for (const points of pointsByWall.values()) {
+    const first = points[0];
+    if (!first || points.length < 2) {
+      continue;
+    }
+
+    let axisStart = first;
+    let axisEnd = first;
+    let longestSquared = 0;
+    for (let left = 0; left < points.length; left += 1) {
+      const a = points[left] as MapPointMm;
+      for (let right = left + 1; right < points.length; right += 1) {
+        const b = points[right] as MapPointMm;
+        const dx = b.x - a.x;
+        const dz = b.z - a.z;
+        const distanceSquared = dx * dx + dz * dz;
+        if (distanceSquared > longestSquared) {
+          longestSquared = distanceSquared;
+          axisStart = a;
+          axisEnd = b;
+        }
+      }
+    }
+
+    const axisLengthMm = isqrt(longestSquared);
+    if (axisLengthMm <= 0) {
+      continue;
+    }
+    const axisXPerMille = Math.trunc(((axisEnd.x - axisStart.x) * 1_000) / axisLengthMm);
+    const axisZPerMille = Math.trunc(((axisEnd.z - axisStart.z) * 1_000) / axisLengthMm);
+    let minAlongMm = Number.POSITIVE_INFINITY;
+    let maxAlongMm = Number.NEGATIVE_INFINITY;
+    let minAcrossMm = Number.POSITIVE_INFINITY;
+    let maxAcrossMm = Number.NEGATIVE_INFINITY;
+    for (const point of points) {
+      const dx = point.x - axisStart.x;
+      const dz = point.z - axisStart.z;
+      const alongMm = Math.trunc((dx * axisXPerMille + dz * axisZPerMille) / 1_000);
+      const acrossMm = Math.trunc((-dx * axisZPerMille + dz * axisXPerMille) / 1_000);
+      minAlongMm = Math.min(minAlongMm, alongMm);
+      maxAlongMm = Math.max(maxAlongMm, alongMm);
+      minAcrossMm = Math.min(minAcrossMm, acrossMm);
+      maxAcrossMm = Math.max(maxAcrossMm, acrossMm);
+    }
+
+    const centerAlongMm = Math.trunc((minAlongMm + maxAlongMm) / 2);
+    const centerAcrossMm = Math.trunc((minAcrossMm + maxAcrossMm) / 2);
+    const halfAlongMm = Math.max(TERRAIN_LATTICE_MM, Math.trunc((maxAlongMm - minAlongMm) / 2));
+    const halfAcrossMm = Math.max(TERRAIN_LATTICE_MM, Math.trunc((maxAcrossMm - minAcrossMm) / 2));
+    const reliefMm = Math.max(
+      INTERIOR_HILL_MIN_RELIEF_MM,
+      Math.min(
+        INTERIOR_HILL_MAX_RELIEF_MM,
+        Math.trunc((halfAcrossMm * 2 * INTERIOR_HILL_RELIEF_PER_WIDTH_PER_MILLE) / 1_000),
+      ),
+    );
+
+    hills.push({
+      centerX:
+        axisStart.x +
+        Math.trunc((axisXPerMille * centerAlongMm - axisZPerMille * centerAcrossMm) / 1_000),
+      centerZ:
+        axisStart.z +
+        Math.trunc((axisZPerMille * centerAlongMm + axisXPerMille * centerAcrossMm) / 1_000),
+      axisXPerMille,
+      axisZPerMille,
+      radiusAlongMm: halfAlongMm + INTERIOR_HILL_BASE_SHOULDER_MM,
+      radiusAcrossMm: halfAcrossMm + INTERIOR_HILL_BASE_SHOULDER_MM,
+      reliefMm,
+    });
+  }
+  return hills;
+}
+
 function stampIndex(): StampIndex {
   if (stamps) {
     return stamps;
   }
+  const hills = buildInteriorHillStamps();
   const nodes = new Map(MAP_ROUTE_NODES.map((node) => [node.id, node.position]));
-  const nodeHeights = relaxRouteNodeHeights(nodes);
+  const nodeHeights = relaxRouteNodeHeights(nodes, hills);
   const roads: SegmentStamp[] = [];
   for (const edge of MAP_ROUTE_EDGES) {
     const a = nodes.get(edge.a);
@@ -492,11 +618,17 @@ function stampIndex(): StampIndex {
     }
   });
 
-  const spawnMedianMm = medianOf(
-    MAP_SPAWN_POINTS.map((spawn) => baseHeightMm(spawn.position.x, spawn.position.z)),
+  const spawnBases = MAP_SPAWN_POINTS.map((spawn) =>
+    applyHillStamps(
+      baseHeightMm(spawn.position.x, spawn.position.z),
+      spawn.position.x,
+      spawn.position.z,
+      hills,
+    ),
   );
-  const spawnPads = MAP_SPAWN_POINTS.map((spawn) => {
-    const groundMm = baseHeightMm(spawn.position.x, spawn.position.z);
+  const spawnMedianMm = medianOf(spawnBases);
+  const spawnPads = MAP_SPAWN_POINTS.map((spawn, index) => {
+    const groundMm = spawnBases[index] as number;
     // Nobody starts the match looking down on the other 29, so pads are
     // pulled into a narrow band around the median spawn elevation. The
     // approach is only as long as the correction needs at road grade: a
@@ -517,9 +649,15 @@ function stampIndex(): StampIndex {
     z: shop.position.z,
     radiusMm: SHOP_RADIUS_MM,
     edgeMm: bandLimitEdge(PAD_EDGE_MM),
-    targetMm: baseHeightMm(shop.position.x, shop.position.z),
+    targetMm: applyHillStamps(
+      baseHeightMm(shop.position.x, shop.position.z),
+      shop.position.x,
+      shop.position.z,
+      hills,
+    ),
   }));
   const draft: StampIndex = {
+    hills,
     roads,
     roadCells,
     courts: MAP_COURTS.map((court) => ({
@@ -651,6 +789,7 @@ function stampIndex(): StampIndex {
 
 function heightBeforeFeatures(xMm: number, zMm: number, index: StampIndex): number {
   let height = baseHeightMm(xMm, zMm);
+  height = applyHillStamps(height, xMm, zMm, index.hills);
   height = applyCircleStamps(height, xMm, zMm, index.shopPads);
   return height;
 }
@@ -806,6 +945,38 @@ function stampWeight(distanceMm: number, innerMm: number, edgeMm: number): numbe
     return 0;
   }
   return Math.trunc((1_000 * (outer - distanceMm)) / edgeMm);
+}
+
+function applyHillStamps(
+  height: number,
+  xMm: number,
+  zMm: number,
+  hills: readonly HillStamp[],
+): number {
+  let highestRiseMm = 0;
+  for (const hill of hills) {
+    const dx = xMm - hill.centerX;
+    const dz = zMm - hill.centerZ;
+    const alongMm = Math.abs(
+      Math.trunc((dx * hill.axisXPerMille + dz * hill.axisZPerMille) / 1_000),
+    );
+    const acrossMm = Math.abs(
+      Math.trunc((-dx * hill.axisZPerMille + dz * hill.axisXPerMille) / 1_000),
+    );
+    if (alongMm >= hill.radiusAlongMm || acrossMm >= hill.radiusAcrossMm) {
+      continue;
+    }
+    const alongPerMille = Math.trunc((alongMm * 1_000) / hill.radiusAlongMm);
+    const acrossPerMille = Math.trunc((acrossMm * 1_000) / hill.radiusAcrossMm);
+    const radialSquared = alongPerMille * alongPerMille + acrossPerMille * acrossPerMille;
+    if (radialSquared >= 1_000_000) {
+      continue;
+    }
+    const radialPerMille = isqrt(radialSquared);
+    const weightPerMille = 1_000 - smoothstep(radialPerMille, 1_000);
+    highestRiseMm = Math.max(highestRiseMm, Math.trunc((hill.reliefMm * weightPerMille) / 1_000));
+  }
+  return height + highestRiseMm;
 }
 
 function applyPolyStamps(

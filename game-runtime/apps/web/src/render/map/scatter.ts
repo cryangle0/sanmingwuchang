@@ -1,28 +1,27 @@
 import type { MapPointMm } from '@jwgb/content';
 import * as THREE from 'three';
 import { regionAt } from './map-regions';
-import {
-  createRandomStream,
-  dressingSurfaceMeters,
-  isOpenGround,
-  sampleOpenGround,
-} from './map-sampling';
+import { createRandomStream, dressingSurfaceMeters, sampleGroundLattice } from './map-sampling';
+import { waterSurfaceAt } from './water';
 
 const MM = 1_000;
 /**
- * Ground-cover budgets.
+ * Ground cover spacing, in metres between lattice cells.
  *
- * The playfield is roughly 460,000 m2, so the previous 9,600 tufts worked out
- * to one per 48 m2 — sparse enough that open ground read as an empty test
- * field. These targets bring grass to roughly one clump per 12 m2, and the
- * smaller cluster radius keeps the coverage continuous instead of making
- * isolated dots. All passes remain instanced geometry.
+ * These are spacings rather than instance budgets because coverage is what
+ * matters: a budget spread over a 500,000 m2 playfield says nothing about
+ * whether any given square metre has grass on it. At 1.6 m the grass layer
+ * lands roughly 190,000 clumps, which is dense enough that open ground reads
+ * as meadow instead of as a test field.
+ *
+ * The whole layer is five instanced draw calls and the reduced graphics tier
+ * hides it wholesale, so the cost is vertex throughput on the balanced tier
+ * only.
  */
-const GRASS_TUFT_TARGET = 38_000;
-const PEBBLE_TARGET = 1_800;
-const GROUND_COVER_TARGET = 4_200;
-/** Wildflower blooms, clustered into meadow patches rather than spread. */
-const BLOOM_TARGET = 11_000;
+const GRASS_SPACING_METERS = 1.35;
+const GROUND_COVER_SPACING_METERS = 4.5;
+const PEBBLE_SPACING_METERS = 11;
+const BLOOM_SPACING_METERS = 4.5;
 
 interface ScatterMaterials {
   readonly grass: THREE.Material;
@@ -49,14 +48,14 @@ export function buildScatter(
   seed: number,
 ): void {
   const nextRandom = createRandomStream(seed);
+  // Ponds are solved from the same compiled terrain, so this veto is
+  // deterministic and costs one cell lookup per candidate.
+  const inWater = (point: { readonly x: number; readonly z: number }): boolean =>
+    waterSurfaceAt(point.x / MM, point.z / MM) !== null;
 
-  const grassAnchors = sampleOpenGround(3_000, 58_000, nextRandom, { roadVergeMm: 780 });
-  const grassPoints = expandClusters(grassAnchors, GRASS_TUFT_TARGET, nextRandom, {
-    minPerAnchor: 10,
-    maxPerAnchor: 17,
-    minRadiusMeters: 0.2,
-    maxRadiusMeters: 3.8,
+  const grassPoints = sampleGroundLattice(GRASS_SPACING_METERS, nextRandom, {
     roadVergeMm: 500,
+    reject: inWater,
   });
   const grassGeometry = track(buildGrassTuftGeometry());
   const brightGrassCount = Math.ceil(grassPoints.length * 0.58);
@@ -79,13 +78,9 @@ export function buildScatter(
     false,
   );
 
-  const pebbleAnchors = sampleOpenGround(320, 11_000, nextRandom, { roadVergeMm: 750 });
-  const pebblePoints = expandClusters(pebbleAnchors, PEBBLE_TARGET, nextRandom, {
-    minPerAnchor: 4,
-    maxPerAnchor: 8,
-    minRadiusMeters: 0.15,
-    maxRadiusMeters: 2.9,
-    roadVergeMm: 400,
+  const pebblePoints = sampleGroundLattice(PEBBLE_SPACING_METERS, nextRandom, {
+    roadVergeMm: 750,
+    reject: inWater,
   });
   placePebbleInstances(
     group,
@@ -95,13 +90,9 @@ export function buildScatter(
     nextRandom,
   );
 
-  const coverAnchors = sampleOpenGround(900, 24_000, nextRandom, { roadVergeMm: 900 });
-  const coverPoints = expandClusters(coverAnchors, GROUND_COVER_TARGET, nextRandom, {
-    minPerAnchor: 4,
-    maxPerAnchor: 9,
-    minRadiusMeters: 0.3,
-    maxRadiusMeters: 4.6,
-    roadVergeMm: 650,
+  const coverPoints = sampleGroundLattice(GROUND_COVER_SPACING_METERS, nextRandom, {
+    roadVergeMm: 900,
+    reject: inWater,
   });
   const coverGeometry = track(buildGroundCoverGeometry());
   const mossEnd = Math.floor(coverPoints.length * 0.5);
@@ -134,16 +125,11 @@ export function buildScatter(
     'leaves',
   );
 
-  // Wildflowers last: tight clusters so they read as meadows rather than as
-  // confetti, and a wider road verge than the grass so a bloom never sits on
-  // the edge of a route a player is reading.
-  const bloomAnchors = sampleOpenGround(1_500, 42_000, nextRandom, { roadVergeMm: 1_400 });
-  const bloomPoints = expandClusters(bloomAnchors, BLOOM_TARGET, nextRandom, {
-    minPerAnchor: 8,
-    maxPerAnchor: 22,
-    minRadiusMeters: 0.18,
-    maxRadiusMeters: 2.3,
+  // Wildflowers keep a wider verge than the grass so a bloom never sits on the
+  // edge of a route a player is reading.
+  const bloomPoints = sampleGroundLattice(BLOOM_SPACING_METERS, nextRandom, {
     roadVergeMm: 1_100,
+    reject: inWater,
   });
   placeBloomInstances(group, track(buildBloomGeometry()), materials.bloom, bloomPoints, nextRandom);
 }
@@ -216,8 +202,8 @@ function placeBloomInstances(
   const colour = new THREE.Color();
   const pale = new THREE.Color(0xfdf6e4);
   points.forEach((point, index) => {
-    const uniformScale = 0.88 + nextRandom() * 0.34;
-    rotation.set(0, 0, 0);
+    const uniformScale = 0.88 + nextRandom() * 0.46;
+    rotation.set(0, nextRandom() * Math.PI * 2, 0);
     quaternion.setFromEuler(rotation);
     scale.setScalar(uniformScale);
     position.set(point.x / MM, dressingSurfaceMeters(point), point.z / MM);
@@ -238,67 +224,24 @@ function placeBloomInstances(
   group.add(mesh);
 }
 
-function expandClusters(
-  anchors: readonly MapPointMm[],
-  target: number,
-  nextRandom: () => number,
-  options: {
-    readonly minPerAnchor: number;
-    readonly maxPerAnchor: number;
-    readonly minRadiusMeters: number;
-    readonly maxRadiusMeters: number;
-    readonly roadVergeMm: number;
-  },
-): MapPointMm[] {
-  const points: MapPointMm[] = [];
-  for (const anchor of anchors) {
-    const count =
-      options.minPerAnchor +
-      Math.floor(nextRandom() * (options.maxPerAnchor - options.minPerAnchor + 1));
-    for (let index = 0; index < count && points.length < target; index += 1) {
-      const angle = nextRandom() * Math.PI * 2;
-      const radius =
-        options.minRadiusMeters +
-        Math.sqrt(nextRandom()) * (options.maxRadiusMeters - options.minRadiusMeters);
-      const candidate: MapPointMm = {
-        x: Math.round(anchor.x + Math.cos(angle) * radius * MM),
-        z: Math.round(anchor.z + Math.sin(angle) * radius * MM),
-      };
-      if (isOpenGround(candidate, { roadVergeMm: options.roadVergeMm })) {
-        points.push(candidate);
-      }
-    }
-    if (points.length >= target) {
-      return points;
-    }
-  }
-
-  const remaining = target - points.length;
-  if (remaining > 0) {
-    points.push(
-      ...sampleOpenGround(remaining, Math.max(remaining * 12, 2_000), nextRandom, {
-        roadVergeMm: options.roadVergeMm,
-      }),
-    );
-  }
-  return points;
-}
-
 function buildGrassTuftGeometry(): THREE.BufferGeometry {
   const positions: number[] = [];
+  // Nine blades, wider and taller than the thinned version.
+  //
+  // Cutting to five bought triangles but cost the thing the layer exists for:
+  // at the gameplay camera a five-blade clump reads as a few filaments on bare
+  // earth, not as grass. Nine wider blades give each clump enough mass to
+  // close over the ground, and the lattice spacing below carries coverage.
   const blades = [
-    { angle: 0.08, x: -0.22, z: 0.1, height: 0.58, width: 0.095, lean: 0.17 },
-    { angle: 0.62, x: 0.12, z: -0.16, height: 0.76, width: 0.085, lean: -0.15 },
-    { angle: 1.18, x: 0.06, z: 0.2, height: 0.5, width: 0.1, lean: 0.12 },
-    { angle: 1.76, x: -0.12, z: -0.2, height: 0.69, width: 0.09, lean: -0.15 },
-    { angle: 2.34, x: 0.22, z: 0.12, height: 0.5, width: 0.105, lean: 0.12 },
-    { angle: 2.92, x: -0.04, z: -0.05, height: 0.78, width: 0.085, lean: -0.12 },
-    { angle: 3.48, x: 0.18, z: -0.04, height: 0.58, width: 0.09, lean: 0.15 },
-    { angle: 4.02, x: -0.22, z: 0.04, height: 0.67, width: 0.09, lean: -0.1 },
-    { angle: 4.56, x: 0.02, z: 0.22, height: 0.48, width: 0.105, lean: 0.12 },
-    { angle: 4.98, x: -0.14, z: -0.13, height: 0.73, width: 0.085, lean: -0.14 },
-    { angle: 5.4, x: 0.24, z: 0.04, height: 0.54, width: 0.1, lean: 0.13 },
-    { angle: 5.8, x: -0.04, z: 0.2, height: 0.63, width: 0.09, lean: -0.1 },
+    { angle: 0.32, x: 0.1, z: -0.18, height: 0.92, width: 0.135, lean: -0.17 },
+    { angle: 1.02, x: -0.2, z: -0.06, height: 0.78, width: 0.14, lean: -0.15 },
+    { angle: 1.72, x: 0.16, z: 0.16, height: 0.99, width: 0.13, lean: 0.16 },
+    { angle: 2.38, x: -0.08, z: 0.2, height: 0.72, width: 0.145, lean: 0.13 },
+    { angle: 2.98, x: -0.05, z: -0.04, height: 1.06, width: 0.135, lean: -0.12 },
+    { angle: 3.62, x: 0.22, z: -0.1, height: 0.83, width: 0.14, lean: 0.15 },
+    { angle: 4.26, x: -0.22, z: 0.08, height: 0.9, width: 0.135, lean: -0.14 },
+    { angle: 4.92, x: 0.06, z: 0.22, height: 0.69, width: 0.15, lean: 0.12 },
+    { angle: 5.58, x: -0.14, z: -0.2, height: 0.95, width: 0.135, lean: -0.13 },
   ] as const;
   for (const blade of blades) {
     const halfX = Math.cos(blade.angle) * blade.width * 0.5;

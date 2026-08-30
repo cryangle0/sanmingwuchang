@@ -11,6 +11,7 @@ namespace Jwgb.Sim.Deterministic
         {
             public IndexedPiece(
                 string pieceId,
+                string wallClass,
                 long heightMm,
                 bool blinkPassable,
                 bool flightPassable,
@@ -18,6 +19,7 @@ namespace Jwgb.Sim.Deterministic
                 MapPointMmRecord[][] segments)
             {
                 PieceId = pieceId;
+                WallClass = wallClass;
                 HeightMm = heightMm;
                 BlinkPassable = blinkPassable;
                 FlightPassable = flightPassable;
@@ -26,6 +28,7 @@ namespace Jwgb.Sim.Deterministic
             }
 
             public string PieceId { get; }
+            public string WallClass { get; }
             public long HeightMm { get; }
 
             /// <summary>
@@ -80,6 +83,7 @@ namespace Jwgb.Sim.Deterministic
                 var record = wallPieces[index];
                 result[index] = new IndexedPiece(
                     record.PieceId,
+                    record.WallClass,
                     record.HeightMm,
                     record.BlinkPassable,
                     record.FlightPassable,

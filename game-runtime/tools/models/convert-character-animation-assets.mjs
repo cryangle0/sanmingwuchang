@@ -32,12 +32,25 @@ if (!browserPath) {
   throw new Error('Chrome or Edge executable not found');
 }
 
-const sourceFiles = [
-  ['Idle', '01_待机_idle.fbx'],
-  ['Move', '02_跑步_run.fbx'],
-  ['Attack', '03_攻击_attack.fbx'],
-  ['Spell', '04_施法_cast.fbx'],
-];
+const DEFAULT_SOURCE_FILE_NAMES = {
+  Idle: '01_待机_idle.fbx',
+  Move: '02_跑步_run.fbx',
+  Attack: '03_攻击_attack.fbx',
+  Spell: '04_施法_cast.fbx',
+};
+
+function sourceFilesForConfig(config) {
+  const fileNames = {
+    ...DEFAULT_SOURCE_FILE_NAMES,
+    ...(config.sourceFileNames ?? {}),
+  };
+  return [
+    ['Idle', fileNames.Idle],
+    ['Move', fileNames.Move],
+    ['Attack', fileNames.Attack],
+    ['Spell', fileNames.Spell],
+  ];
+}
 
 function fileSha256(path) {
   return createHash('sha256').update(readFileSync(path)).digest('hex').toUpperCase();
@@ -94,10 +107,7 @@ function meshGroupTriangles(meshes) {
 function tightenMeshGroupToBudget(meshes, budget, error) {
   let currentTriangles = meshGroupTriangles(meshes);
   for (let pass = 0; pass < 4 && currentTriangles > budget; pass += 1) {
-    const ratio = Math.max(
-      0.01,
-      Math.min(0.9, (budget / Math.max(currentTriangles, 1)) * 0.78),
-    );
+    const ratio = Math.max(0.01, Math.min(0.9, (budget / Math.max(currentTriangles, 1)) * 0.78));
     for (const mesh of meshes) {
       for (const primitive of mesh.listPrimitives()) {
         simplifyPrimitive(primitive, {
@@ -156,11 +166,7 @@ async function optimizeGlb(inputPath, outputPath, config) {
       });
     }
   }
-  tightenMeshGroupToBudget(
-    meshes.filter(meshIsSkinned),
-    config.bodyTriangleBudget,
-    0.045,
-  );
+  tightenMeshGroupToBudget(meshes.filter(meshIsSkinned), config.bodyTriangleBudget, 0.045);
   tightenMeshGroupToBudget(
     meshes.filter((mesh) => !meshIsSkinned(mesh)),
     config.weaponTriangleBudget,
@@ -267,7 +273,7 @@ function validateConversion(config, exported, optimized, outputBytes) {
 }
 
 async function convertOne(config, page) {
-  const sources = sourceFiles.map(([name, fileName]) => [
+  const sources = sourceFilesForConfig(config).map(([name, fileName]) => [
     name,
     join(config.sourceDirectory, fileName),
   ]);
@@ -318,6 +324,9 @@ async function convertOne(config, page) {
       })),
       conversion: {
         clipPatterns: config.clipPatterns,
+        sourceFileNames: Object.fromEntries(
+          sources.map(([name, path]) => [name, path.split(/[\\/]/).at(-1)]),
+        ),
         requiresSeparateWeapon: config.requiresSeparateWeapon,
         allowAnimationBoneSetDifferences: config.allowAnimationBoneSetDifferences,
         sourceMetrics: exported.sourceMetrics,

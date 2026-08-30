@@ -169,7 +169,8 @@ const BOUNDS = (() => {
 /**
  * Rejection-samples up to `count` points on open walkable ground: inside the
  * boundary, outside every wall piece and court, and (unless disabled) clear of
- * the road network.
+ * the road network. VAULT footprints are walkable hills, so only BOUND wall
+ * pieces remain keep-out geometry.
  */
 export function sampleOpenGround(
   count: number,
@@ -201,7 +202,9 @@ export function isOpenGround(point: MapPointMm, options: SampleOptions = {}): bo
   const roadVergeMm = options.roadVergeMm ?? 1_500;
   return (
     ringContains(MAP_BOUNDARY, point) &&
-    !MAP_WALL_PIECES.some((piece) => convexContains(piece.vertices, point)) &&
+    !MAP_WALL_PIECES.some(
+      (piece) => piece.wallClass === 'BOUND' && convexContains(piece.vertices, point),
+    ) &&
     !MAP_COURTS.some((court) => convexContains(court.hexVertices, point)) &&
     !isNearLandmark(point) &&
     (roadVergeMm < 0 || !isOnRoad(point, roadVergeMm))
@@ -234,11 +237,60 @@ export function highlandTopMeters(point: MapPointMm): number | null {
  * using its own height field.
  */
 export function dressingSurfaceMeters(point: MapPointMm): number {
+  const terrain = terrainHeightMeters(point.x / MM_PER_METER, point.z / MM_PER_METER);
   const top = highlandTopMeters(point);
-  if (top !== null) {
-    return top;
+  // Whichever surface is actually on top. A plateau usually stands above the
+  // ground carrying it, but the terrain rises through the table in part of at
+  // least one footprint, and there the plateau is the buried one — taking the
+  // plateau unconditionally would plant that dressing inside the hillside.
+  return top === null ? terrain : Math.max(top, terrain);
+}
+
+/**
+ * Even, gap-free ground coverage on a jittered lattice.
+ *
+ * `sampleOpenGround` plus `expandClusters` was the wrong tool for ground
+ * cover: anchors land at random so the result is a scatter of clumps with bare
+ * ground between them, no matter how high the count goes. Walking a lattice
+ * and jittering inside each cell gives coverage with no holes and no visible
+ * rows, which is what "cover the whole surface" actually needs.
+ *
+ * Highland plateaus come along for free — they are inside the boundary and are
+ * not walls, so the lattice covers them and `dressingSurfaceMeters` puts the
+ * dressing on the plateau top rather than on the ground beneath it.
+ *
+ * `reject` is the caller's extra veto — ground cover uses it to skip ponds,
+ * which full coverage would otherwise plant grass in. It is a parameter rather
+ * than a direct water lookup because `water.ts` depends on this module, and
+ * importing it back would close a cycle.
+ */
+export function sampleGroundLattice(
+  spacingMeters: number,
+  nextRandom: () => number,
+  options: SampleOptions & {
+    readonly jitter?: number;
+    readonly reject?: (point: MapPointMm) => boolean;
+  } = {},
+): MapPointMm[] {
+  const spacingMm = Math.max(1, Math.round(spacingMeters * MM));
+  const jitter = options.jitter ?? 0.85;
+  const points: MapPointMm[] = [];
+  for (let z = BOUNDS.minZ; z <= BOUNDS.maxZ; z += spacingMm) {
+    for (let x = BOUNDS.minX; x <= BOUNDS.maxX; x += spacingMm) {
+      const point: MapPointMm = {
+        x: Math.round(x + (nextRandom() - 0.5) * spacingMm * jitter),
+        z: Math.round(z + (nextRandom() - 0.5) * spacingMm * jitter),
+      };
+      if (!isOpenGround(point, options)) {
+        continue;
+      }
+      if (options.reject?.(point)) {
+        continue;
+      }
+      points.push(point);
+    }
   }
-  return terrainHeightMeters(point.x / MM_PER_METER, point.z / MM_PER_METER);
+  return points;
 }
 
 export function toMetersPoint(point: MapPointMm): { x: number; z: number } {

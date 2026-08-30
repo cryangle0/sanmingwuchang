@@ -26,12 +26,12 @@ describe('map collision field', () => {
     expect(hasDirectLineOfSight(state, vec2Mm(0, 0), vec2Mm(10_000, 0))).toBe(true);
   });
 
-  it('reports wall piece centers as blocked and spawn points as free', () => {
+  it('reports boundary wall centers as blocked and spawn points as free', () => {
     const field = mapField();
     for (const spawn of MAP_SPAWN_POINTS) {
       expect(field.isCircleBlocked(spawn.position, PLAYER_RADIUS_MM)).toBe(false);
     }
-    const piece = MAP_WALL_PIECES[0];
+    const piece = MAP_WALL_PIECES.find((item) => item.wallClass === 'BOUND');
     expect(piece).toBeDefined();
     if (!piece) {
       return;
@@ -47,7 +47,7 @@ describe('map collision field', () => {
     expect(field.circleTouchesWall(centroid, PLAYER_RADIUS_MM)).toBe(true);
   });
 
-  it('lets flight cross VAULT walls but never BOUND walls', () => {
+  it('lets walking cross VAULT hills but never BOUND walls', () => {
     const vault = MAP_WALL_PIECES.find((piece) => piece.wallClass === 'VAULT');
     const boundary = MAP_WALL_PIECES.find((piece) => piece.wallClass === 'BOUND');
     expect(vault).toBeDefined();
@@ -65,7 +65,7 @@ describe('map collision field', () => {
       ),
     });
 
-    expect(mapField().isCircleBlocked(centroidOf(vault), PLAYER_RADIUS_MM)).toBe(true);
+    expect(mapField().isCircleBlocked(centroidOf(vault), PLAYER_RADIUS_MM)).toBe(false);
     expect(
       mapField().isCircleBlocked(centroidOf(vault), PLAYER_RADIUS_MM, flightTraversal(2_500)),
     ).toBe(false);
@@ -173,6 +173,9 @@ describe('map-enabled simulation', () => {
       target: { x: number; z: number };
     } | null = null;
     for (const piece of MAP_WALL_PIECES) {
+      if (piece.wallClass !== 'BOUND') {
+        continue;
+      }
       const xs = piece.vertices.map((vertex) => vertex.x);
       const zs = piece.vertices.map((vertex) => vertex.z);
       const minX = Math.min(...xs);

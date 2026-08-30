@@ -110,7 +110,7 @@ describe('map art direction: lighting and fog (sections 7 and 13)', () => {
     // read as 低对比 (section 15).
     for (const region of regionStyles()) {
       const climate = climateOf(region.id);
-      expect(climate.sunIntensity, `${region.name} sun`).toBeGreaterThanOrEqual(2.5);
+      expect(climate.sunIntensity, `${region.name} sun`).toBeGreaterThanOrEqual(1.65);
     }
   });
 

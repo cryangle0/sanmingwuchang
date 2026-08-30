@@ -117,9 +117,10 @@ describe('compiled wall traversal data', () => {
         expect(piece.blinkPassable).toBe(false);
         expect(piece.flightPassable).toBe(false);
       }
-      // The same permissions seen through the single decision point.
-      expect(wallPieceBlocks(piece, WALK_TRAVERSAL)).toBe(true);
-      expect(wallPieceBlocks(piece, BLINK_TRAVERSAL)).toBe(piece.wallClass !== 'VAULT');
+      // VAULT is terrain relief; only BOUND remains collision geometry.
+      const blocks = piece.wallClass === 'BOUND';
+      expect(wallPieceBlocks(piece, WALK_TRAVERSAL)).toBe(blocks);
+      expect(wallPieceBlocks(piece, BLINK_TRAVERSAL)).toBe(blocks);
       classCounts.set(piece.wallClass, (classCounts.get(piece.wallClass) ?? 0) + 1);
     }
     // Both classes must exist or the branches above never ran.
@@ -128,23 +129,24 @@ describe('compiled wall traversal data', () => {
     expect(classCounts.size).toBe(2);
   });
 
-  it('reproduces the retired height rule for flight on the current map', () => {
+  it('treats VAULT as walkable terrain and BOUND as solid for every traversal', () => {
     expect(MAP_WALL_PIECES.length).toBeGreaterThan(0);
     for (const piece of MAP_WALL_PIECES) {
-      expect(wallPieceBlocks(piece, flightTraversal(FLIGHT_BUDGET_MM))).toBe(
-        !(piece.heightMm <= FLIGHT_BUDGET_MM),
-      );
+      const blocks = piece.wallClass === 'BOUND';
+      expect(wallPieceBlocks(piece, WALK_TRAVERSAL)).toBe(blocks);
+      expect(wallPieceBlocks(piece, BLINK_TRAVERSAL)).toBe(blocks);
+      expect(wallPieceBlocks(piece, flightTraversal(FLIGHT_BUDGET_MM))).toBe(blocks);
     }
   });
 });
 
 describe('map collision field traversal', () => {
-  it('hides vault pieces from blink queries while walking still collides', () => {
+  it('hides vault hill footprints from every wall query', () => {
     const field = mapField();
     const vault = MAP_WALL_PIECES.find(
       (piece) =>
         piece.wallClass === 'VAULT' &&
-        field.firstWallPieceAt(centroidOf(piece), PLAYER_RADIUS_MM, BLINK_TRAVERSAL) === null,
+        !field.isCircleBlocked(centroidOf(piece), PLAYER_RADIUS_MM, WALK_TRAVERSAL),
     );
     expect(vault).toBeDefined();
     if (!vault) {
@@ -152,11 +154,10 @@ describe('map collision field traversal', () => {
     }
 
     const centroid = centroidOf(vault);
-    expect(field.firstWallPieceAt(centroid, PLAYER_RADIUS_MM, WALK_TRAVERSAL)).not.toBeNull();
-    expect(field.circleTouchesWall(centroid, PLAYER_RADIUS_MM)).toBe(true);
-    expect(field.isCircleBlocked(centroid, PLAYER_RADIUS_MM)).toBe(true);
-
+    expect(field.firstWallPieceAt(centroid, PLAYER_RADIUS_MM, WALK_TRAVERSAL)).toBeNull();
     expect(field.firstWallPieceAt(centroid, PLAYER_RADIUS_MM, BLINK_TRAVERSAL)).toBeNull();
+    expect(field.circleTouchesWall(centroid, PLAYER_RADIUS_MM)).toBe(false);
+    expect(field.isCircleBlocked(centroid, PLAYER_RADIUS_MM)).toBe(false);
     expect(field.circleTouchesWall(centroid, PLAYER_RADIUS_MM, BLINK_TRAVERSAL)).toBe(false);
     expect(
       field.circleTouchesWall(centroid, PLAYER_RADIUS_MM, flightTraversal(FLIGHT_BUDGET_MM)),
@@ -182,10 +183,8 @@ describe('map collision field traversal', () => {
 });
 
 describe('map blink landing legality', () => {
-  it('walks a blink back out of the vault wall it is allowed to cross', () => {
+  it('allows a blink to land on a walkable vault hill', () => {
     const field = mapField();
-    // A blink whose full 15 m would end inside a vault wall. The wall is
-    // transparent to the sweep, so only the landing check keeps it legal.
     let chosen: { readonly origin: Vec2Mm; readonly target: Vec2Mm } | null = null;
     for (const piece of MAP_WALL_PIECES) {
       if (piece.wallClass !== 'VAULT') {
@@ -194,7 +193,7 @@ describe('map blink landing legality', () => {
       const target = centroidOf(piece);
       const origin = vec2Mm(target.x - BLINK_DISTANCE_MM, target.z);
       if (
-        !field.isCircleBlocked(target, PLAYER_RADIUS_MM) ||
+        field.isCircleBlocked(target, PLAYER_RADIUS_MM) ||
         field.isCircleBlocked(origin, PLAYER_RADIUS_MM)
       ) {
         continue;
@@ -236,8 +235,7 @@ describe('map blink landing legality', () => {
     }
     expect(field.isCircleBlocked(landing, PLAYER_RADIUS_MM)).toBe(false);
     expect(landing.z).toBe(chosen.origin.z);
-    expect(landing.x).toBeGreaterThan(chosen.origin.x);
-    expect(landing.x).toBeLessThan(chosen.target.x);
+    expect(landing.x).toBe(chosen.target.x);
 
     const blink = events.find((event) => event.type === 'blink');
     expect(blink).toBeDefined();
@@ -245,11 +243,8 @@ describe('map blink landing legality', () => {
       return;
     }
     expect(blink.requestedDistanceMm).toBe(BLINK_DISTANCE_MM);
-    expect(blink.actualDistanceMm).toBeLessThan(BLINK_DISTANCE_MM);
-    // No 封界级 wall stopped the sweep, so the shortening came from the landing
-    // check alone: one millimeter further along the ray must be illegal.
+    expect(blink.actualDistanceMm).toBe(BLINK_DISTANCE_MM);
     expect(blink.blockingSolidId).toBeNull();
-    expect(field.isCircleBlocked(vec2Mm(landing.x + 1, landing.z), PLAYER_RADIUS_MM)).toBe(true);
   });
 
   it('never ends a blink inside a wall from any scanned spawn point', () => {

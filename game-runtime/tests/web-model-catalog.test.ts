@@ -18,16 +18,19 @@ describe('web model catalog', () => {
     }
   });
 
-  it('delivers the sixteen animated heroes as versioned Web GLBs while retaining FBX models', () => {
+  it('delivers the nineteen animated heroes as versioned Web GLBs while retaining FBX models', () => {
     for (const id of [
       'H002',
       'H004',
+      'H006',
+      'H007',
       'H008',
       'H009',
       'H010',
       'H011',
       'H012',
       'H014',
+      'H015',
       'H016',
       'H018',
       'H019',
@@ -41,9 +44,11 @@ describe('web model catalog', () => {
         assetBase: 'web',
         format: 'glb',
         assetPath: `models/characters/${id}/model.glb`,
-        height: 2.2,
       });
     }
+    expect(heroModelDefinition('H006')).toMatchObject({ height: 2.4 });
+    expect(heroModelDefinition('H007')).toMatchObject({ height: 2.4 });
+    expect(heroModelDefinition('H015')).toMatchObject({ height: 2.2 });
     expect(heroModelDefinition('H017')).toMatchObject({
       assetBase: 'model-cdn',
       format: 'fbx',

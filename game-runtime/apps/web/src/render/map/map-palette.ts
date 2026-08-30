@@ -21,6 +21,7 @@ import * as THREE from 'three';
 import { webAssetUrl } from '../../runtime/asset-url';
 import { createMapSurfaces, type MapSurfaceSet } from '../shading/map-surfaces';
 import type { PaintedSurface } from '../shading/texture-lab';
+import { applyWaterDepthFade } from '../shading/water-depth';
 import { applyWindSway } from '../shading/wind';
 
 export interface MapMaterialLibrary {
@@ -601,21 +602,26 @@ export function createMapMaterials(
   // Depth and foam arrive as vertex colour from buildWaterGeometry, so the
   // albedo stays white and the surface only supplies its sheen. A flat colour
   // here is what made ponds read as shadowed ground.
+  // Opacity is a per-vertex function of depth, not a constant: see
+  // shading/water-depth.ts. The value here is the ceiling the fade scales.
   const valleyWater = new THREE.MeshPhysicalMaterial({
     color: 0xffffff,
     vertexColors: true,
     roughness: 0.28,
     metalness: 0.0,
     emissive: 0x062b35,
-    emissiveIntensity: 0.18,
+    // The glow has to fall away with the alpha, or the shallows light up as a
+    // bright rim exactly where the water is meant to disappear.
+    emissiveIntensity: 0.05,
     transparent: true,
-    opacity: 0.84,
+    opacity: 1,
     depthWrite: false,
     side: THREE.DoubleSide,
     clearcoat: 0.42,
     clearcoatRoughness: 0.24,
     reflectivity: 0.42,
   });
+  applyWaterDepthFade(valleyWater);
   const eliteArena = new THREE.MeshStandardMaterial({
     color: 0x8f4938,
     roughness: 0.86,

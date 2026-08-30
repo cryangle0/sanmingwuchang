@@ -18,7 +18,7 @@ namespace Jwgb.Sim.Deterministic
         /// geometry hash so a cross-language mismatch is attributable to
         /// terrain rather than to the compiled map.
         /// </summary>
-        public const int ProfileVersion = 2;
+        public const int ProfileVersion = 3;
 
         /// <summary>
         /// Peak-to-trough of the wilderness noise before stamps.
@@ -66,6 +66,10 @@ namespace Jwgb.Sim.Deterministic
         private const int ShopRadiusMm = 8_000;
         private const int MaxStampSegmentMm = 30_000;
         private const int RoadGridMm = 16_000;
+        private const int InteriorHillMinReliefMm = 3_200;
+        private const int InteriorHillMaxReliefMm = 8_500;
+        private const int InteriorHillBaseShoulderMm = 24_000;
+        private const int InteriorHillReliefPerWidthPerMille = 120;
 
         /// <summary>Steepest grade a road may hold, in per mille of run.</summary>
         private const int RoadMaxGradePerMille = 120;
@@ -294,13 +298,18 @@ namespace Jwgb.Sim.Deterministic
         /// count, so the result is a pure function of the map.
         /// </summary>
         private static Dictionary<string, int> RelaxRouteNodeHeights(
-            Dictionary<string, MapPointMmRecord> nodes)
+            Dictionary<string, MapPointMmRecord> nodes,
+            HillStamp[] hills)
         {
             var heights = new Dictionary<string, int>(MapGeometryCatalog.RouteNodes.Length);
             for (var index = 0; index < MapGeometryCatalog.RouteNodes.Length; index += 1)
             {
                 var node = MapGeometryCatalog.RouteNodes[index];
-                heights[node.Id] = BaseHeightMm((int)node.Position.X, (int)node.Position.Z);
+                heights[node.Id] = ApplyHillStamps(
+                    BaseHeightMm((int)node.Position.X, (int)node.Position.Z),
+                    (int)node.Position.X,
+                    (int)node.Position.Z,
+                    hills);
             }
 
             for (var sweep = 0; sweep < RoadRelaxSweeps; sweep += 1)
@@ -350,6 +359,110 @@ namespace Jwgb.Sim.Deterministic
             return heights;
         }
 
+        private static HillStamp[] BuildInteriorHillStamps()
+        {
+            var pointsByWall = new Dictionary<string, List<MapPointMmRecord>>();
+            var wallOrder = new List<string>();
+            for (var index = 0; index < MapGeometryCatalog.WallPieces.Length; index += 1)
+            {
+                var piece = MapGeometryCatalog.WallPieces[index];
+                if (piece.WallClass != "VAULT")
+                {
+                    continue;
+                }
+
+                if (!pointsByWall.TryGetValue(piece.WallId, out var points))
+                {
+                    points = new List<MapPointMmRecord>();
+                    pointsByWall[piece.WallId] = points;
+                    wallOrder.Add(piece.WallId);
+                }
+
+                points.AddRange(piece.Vertices);
+            }
+
+            var hills = new List<HillStamp>(wallOrder.Count);
+            for (var wallIndex = 0; wallIndex < wallOrder.Count; wallIndex += 1)
+            {
+                var points = pointsByWall[wallOrder[wallIndex]];
+                if (points.Count < 2)
+                {
+                    continue;
+                }
+
+                var axisStart = points[0];
+                var axisEnd = points[0];
+                long longestSquared = 0;
+                for (var left = 0; left < points.Count; left += 1)
+                {
+                    var a = points[left];
+                    for (var right = left + 1; right < points.Count; right += 1)
+                    {
+                        var b = points[right];
+                        var dx = b.X - a.X;
+                        var dz = b.Z - a.Z;
+                        var distanceSquared = (dx * dx) + (dz * dz);
+                        if (distanceSquared > longestSquared)
+                        {
+                            longestSquared = distanceSquared;
+                            axisStart = a;
+                            axisEnd = b;
+                        }
+                    }
+                }
+
+                var axisLengthMm = ISqrt(longestSquared);
+                if (axisLengthMm <= 0)
+                {
+                    continue;
+                }
+
+                var axisXPerMille = (int)(((axisEnd.X - axisStart.X) * 1_000) / axisLengthMm);
+                var axisZPerMille = (int)(((axisEnd.Z - axisStart.Z) * 1_000) / axisLengthMm);
+                var minAlongMm = int.MaxValue;
+                var maxAlongMm = int.MinValue;
+                var minAcrossMm = int.MaxValue;
+                var maxAcrossMm = int.MinValue;
+                for (var pointIndex = 0; pointIndex < points.Count; pointIndex += 1)
+                {
+                    var point = points[pointIndex];
+                    var dx = point.X - axisStart.X;
+                    var dz = point.Z - axisStart.Z;
+                    var alongMm = (int)(((dx * axisXPerMille) + (dz * axisZPerMille)) / 1_000);
+                    var acrossMm = (int)(((-dx * axisZPerMille) + (dz * axisXPerMille)) / 1_000);
+                    minAlongMm = Math.Min(minAlongMm, alongMm);
+                    maxAlongMm = Math.Max(maxAlongMm, alongMm);
+                    minAcrossMm = Math.Min(minAcrossMm, acrossMm);
+                    maxAcrossMm = Math.Max(maxAcrossMm, acrossMm);
+                }
+
+                var centerAlongMm = (minAlongMm + maxAlongMm) / 2;
+                var centerAcrossMm = (minAcrossMm + maxAcrossMm) / 2;
+                var halfAlongMm = Math.Max(LatticeMm, (maxAlongMm - minAlongMm) / 2);
+                var halfAcrossMm = Math.Max(LatticeMm, (maxAcrossMm - minAcrossMm) / 2);
+                var reliefMm = Math.Max(
+                    InteriorHillMinReliefMm,
+                    Math.Min(
+                        InteriorHillMaxReliefMm,
+                        (int)(((long)halfAcrossMm * 2 * InteriorHillReliefPerWidthPerMille) / 1_000)));
+
+                hills.Add(new HillStamp(
+                    (int)(axisStart.X +
+                        (((long)axisXPerMille * centerAlongMm -
+                          (long)axisZPerMille * centerAcrossMm) / 1_000)),
+                    (int)(axisStart.Z +
+                        (((long)axisZPerMille * centerAlongMm +
+                          (long)axisXPerMille * centerAcrossMm) / 1_000)),
+                    axisXPerMille,
+                    axisZPerMille,
+                    halfAlongMm + InteriorHillBaseShoulderMm,
+                    halfAcrossMm + InteriorHillBaseShoulderMm,
+                    reliefMm));
+            }
+
+            return hills.ToArray();
+        }
+
         private static StampIndex GetStamps()
         {
             if (stamps != null)
@@ -357,8 +470,9 @@ namespace Jwgb.Sim.Deterministic
                 return stamps;
             }
 
+            var hills = BuildInteriorHillStamps();
             var nodes = RouteNodePositions();
-            var nodeHeights = RelaxRouteNodeHeights(nodes);
+            var nodeHeights = RelaxRouteNodeHeights(nodes, hills);
 
             var roads = new List<SegmentStamp>();
             for (var index = 0; index < MapGeometryCatalog.RouteEdges.Length; index += 1)
@@ -422,7 +536,11 @@ namespace Jwgb.Sim.Deterministic
             for (var index = 0; index < MapGeometryCatalog.SpawnPoints.Length; index += 1)
             {
                 var spawn = MapGeometryCatalog.SpawnPoints[index];
-                spawnBases[index] = BaseHeightMm((int)spawn.Position.X, (int)spawn.Position.Z);
+                spawnBases[index] = ApplyHillStamps(
+                    BaseHeightMm((int)spawn.Position.X, (int)spawn.Position.Z),
+                    (int)spawn.Position.X,
+                    (int)spawn.Position.Z,
+                    hills);
             }
 
             var spawnMedianMm = MedianOf(spawnBases);
@@ -455,7 +573,11 @@ namespace Jwgb.Sim.Deterministic
                     (int)shop.Position.Z,
                     ShopRadiusMm,
                     BandLimitEdge(PadEdgeMm),
-                    BaseHeightMm((int)shop.Position.X, (int)shop.Position.Z));
+                    ApplyHillStamps(
+                        BaseHeightMm((int)shop.Position.X, (int)shop.Position.Z),
+                        (int)shop.Position.X,
+                        (int)shop.Position.Z,
+                        hills));
             }
 
             var courts = new PolyStamp[MapGeometryCatalog.Courts.Length];
@@ -476,6 +598,7 @@ namespace Jwgb.Sim.Deterministic
             }
 
             var draft = new StampIndex(
+                hills,
                 roads,
                 roadCells,
                 courts,
@@ -561,6 +684,7 @@ namespace Jwgb.Sim.Deterministic
             }
 
             stamps = new StampIndex(
+                hills,
                 roads,
                 roadCells,
                 courts,
@@ -624,6 +748,7 @@ namespace Jwgb.Sim.Deterministic
         private static int HeightBeforeFeatures(int xMm, int zMm, StampIndex index)
         {
             var height = BaseHeightMm(xMm, zMm);
+            height = ApplyHillStamps(height, xMm, zMm, index.Hills);
             height = ApplyCircleStamps(height, xMm, zMm, index.ShopPads);
             return height;
         }
@@ -825,6 +950,42 @@ namespace Jwgb.Sim.Deterministic
             }
 
             return (int)((1_000L * (outer - distanceMm)) / edgeMm);
+        }
+
+        private static int ApplyHillStamps(int height, int xMm, int zMm, HillStamp[] hills)
+        {
+            var highestRiseMm = 0;
+            for (var index = 0; index < hills.Length; index += 1)
+            {
+                var hill = hills[index];
+                var dx = (long)xMm - hill.CenterX;
+                var dz = (long)zMm - hill.CenterZ;
+                var alongMm = Math.Abs(
+                    (int)(((dx * hill.AxisXPerMille) + (dz * hill.AxisZPerMille)) / 1_000));
+                var acrossMm = Math.Abs(
+                    (int)(((-dx * hill.AxisZPerMille) + (dz * hill.AxisXPerMille)) / 1_000));
+                if (alongMm >= hill.RadiusAlongMm || acrossMm >= hill.RadiusAcrossMm)
+                {
+                    continue;
+                }
+
+                var alongPerMille = (alongMm * 1_000) / hill.RadiusAlongMm;
+                var acrossPerMille = (acrossMm * 1_000) / hill.RadiusAcrossMm;
+                var radialSquared =
+                    (alongPerMille * alongPerMille) + (acrossPerMille * acrossPerMille);
+                if (radialSquared >= 1_000_000)
+                {
+                    continue;
+                }
+
+                var radialPerMille = ISqrt(radialSquared);
+                var weightPerMille = 1_000 - Smoothstep(radialPerMille, 1_000);
+                highestRiseMm = Math.Max(
+                    highestRiseMm,
+                    (hill.ReliefMm * weightPerMille) / 1_000);
+            }
+
+            return height + highestRiseMm;
         }
 
         private static int ApplyPolyStamps(int height, int xMm, int zMm, PolyStamp[] polys)
@@ -1031,6 +1192,7 @@ namespace Jwgb.Sim.Deterministic
         private sealed class StampIndex
         {
             public StampIndex(
+                HillStamp[] hills,
                 List<SegmentStamp> roads,
                 Dictionary<long, List<int>> roadCells,
                 PolyStamp[] courts,
@@ -1040,6 +1202,7 @@ namespace Jwgb.Sim.Deterministic
                 CircleStamp[] features,
                 CircleStamp[] bowls)
             {
+                Hills = hills;
                 Roads = roads;
                 RoadCells = roadCells;
                 Courts = courts;
@@ -1049,6 +1212,8 @@ namespace Jwgb.Sim.Deterministic
                 Features = features;
                 Bowls = bowls;
             }
+
+            public HillStamp[] Hills { get; }
 
             public List<SegmentStamp> Roads { get; }
 
@@ -1067,6 +1232,41 @@ namespace Jwgb.Sim.Deterministic
             public CircleStamp[] Features { get; }
 
             public CircleStamp[] Bowls { get; }
+        }
+
+        private readonly struct HillStamp
+        {
+            public HillStamp(
+                int centerX,
+                int centerZ,
+                int axisXPerMille,
+                int axisZPerMille,
+                int radiusAlongMm,
+                int radiusAcrossMm,
+                int reliefMm)
+            {
+                CenterX = centerX;
+                CenterZ = centerZ;
+                AxisXPerMille = axisXPerMille;
+                AxisZPerMille = axisZPerMille;
+                RadiusAlongMm = radiusAlongMm;
+                RadiusAcrossMm = radiusAcrossMm;
+                ReliefMm = reliefMm;
+            }
+
+            public int CenterX { get; }
+
+            public int CenterZ { get; }
+
+            public int AxisXPerMille { get; }
+
+            public int AxisZPerMille { get; }
+
+            public int RadiusAlongMm { get; }
+
+            public int RadiusAcrossMm { get; }
+
+            public int ReliefMm { get; }
         }
 
         private readonly struct SegmentStamp

@@ -33,7 +33,7 @@ export interface MapAtmosphereLights {
  * rather than draining it, which section 15 forbids.
  */
 const AERIAL_ANCHOR = 0.16;
-const AERIAL_BASE = 0xa9c6d8;
+const AERIAL_BASE = 0x91adbd;
 /**
  * Base extinction. Districts override this; the value only has to be low
  * enough that foreground and mid-ground stay sharp before a district's own
@@ -47,6 +47,7 @@ export function createMapAtmosphere(
 ): MapAtmosphere {
   const skyTexture = paintSkyTexture();
   scene.background = skyTexture;
+  scene.backgroundIntensity = 0.82;
   const fog = new THREE.FogExp2(AERIAL_BASE, BASE_FOG_DENSITY);
   scene.fog = fog;
   const weather = new MapWeather(scene, lights.graphicsReduced);
@@ -83,10 +84,8 @@ export function createMapAtmosphere(
       lights.hemisphere.groundColor.lerp(hemiGround, 0.05);
       const dim = climate.weather === 'clear' ? 1 : 0.72;
       lights.fill.intensity += (baseFill * dim - lights.fill.intensity) * 0.05;
-      if ('backgroundIntensity' in scene) {
-        const sky = climate.weather === 'clear' ? 1.05 : 0.82;
-        scene.backgroundIntensity += (sky - scene.backgroundIntensity) * 0.04;
-      }
+      const sky = climate.weather === 'clear' ? 0.82 : 0.66;
+      scene.backgroundIntensity += (sky - scene.backgroundIntensity) * 0.04;
       weather.update(focus, dt);
     },
     dispose(): void {
@@ -110,11 +109,11 @@ function paintSkyTexture(): THREE.CanvasTexture {
   // warm gold horizon, so the frame carries a cool/warm split before any
   // district colour lands on it.
   const gradient = context.createLinearGradient(0, 0, 0, size);
-  gradient.addColorStop(0, '#7ea9cc');
-  gradient.addColorStop(0.38, '#a8c8de');
-  gradient.addColorStop(0.68, '#d5e0dd');
-  gradient.addColorStop(0.88, '#e9dcc2');
-  gradient.addColorStop(1, '#cbc4a8');
+  gradient.addColorStop(0, '#587fa3');
+  gradient.addColorStop(0.38, '#7fa7c2');
+  gradient.addColorStop(0.68, '#b6c5c2');
+  gradient.addColorStop(0.88, '#cfbea4');
+  gradient.addColorStop(1, '#aaa78f');
   context.fillStyle = gradient;
   context.fillRect(0, 0, size, size);
 
@@ -144,8 +143,8 @@ function paintSkyTexture(): THREE.CanvasTexture {
     size * 0.18,
     size * 0.24,
   );
-  sun.addColorStop(0, 'rgba(255, 240, 206, 0.62)');
-  sun.addColorStop(0.35, 'rgba(246, 224, 176, 0.2)');
+  sun.addColorStop(0, 'rgba(255, 240, 206, 0.42)');
+  sun.addColorStop(0.35, 'rgba(246, 224, 176, 0.14)');
   sun.addColorStop(1, 'rgba(214, 230, 240, 0)');
   context.fillStyle = sun;
   context.fillRect(0, 0, size, size);

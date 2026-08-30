@@ -32,6 +32,47 @@ export const ANIMATED_CHARACTER_CONFIGS = [
     },
   },
   {
+    modelId: 'H006',
+    displayName: '九头虫',
+    sourceDirectory:
+      process.env.JWGB_H006_ANIMATION_SOURCE?.trim() || join(sourceRoot, '九头虫_FBX'),
+    targetHeight: 2.4,
+    expectedBones: 108,
+    requiresSeparateWeapon: false,
+    sourceFileNames: {
+      Idle: '01_待机_idle.fbx',
+      Move: '02_飞行移动_fly.fbx',
+      Attack: '03_攻击_attack.fbx',
+      Spell: '04_施法_cast.fbx',
+    },
+    clipPatterns: {
+      Idle: null,
+      Move: null,
+      Attack: null,
+      Spell: null,
+    },
+  },
+  {
+    modelId: 'H007',
+    displayName: '黄风怪',
+    sourceDirectory:
+      process.env.JWGB_H007_ANIMATION_SOURCE?.trim() || join(sourceRoot, '黄风怪_FBX'),
+    targetHeight: 2.4,
+    expectedBones: 41,
+    sourceFileNames: {
+      Idle: '01_待机_idle.fbx',
+      Move: '02_飞行_fly.fbx',
+      Attack: '03_攻击_attack.fbx',
+      Spell: '04_施法_cast.fbx',
+    },
+    clipPatterns: {
+      Idle: null,
+      Move: null,
+      Attack: null,
+      Spell: null,
+    },
+  },
+  {
     modelId: 'H008',
     displayName: '太上老君',
     sourceDirectory:
@@ -78,6 +119,20 @@ export const ANIMATED_CHARACTER_CONFIGS = [
     displayName: '六耳猕猴',
     sourceDirectory:
       process.env.JWGB_H012_ANIMATION_SOURCE?.trim() || join(sourceRoot, '六耳猕猴_FBX'),
+    targetHeight: 2.2,
+    expectedBones: 33,
+    clipPatterns: {
+      Idle: null,
+      Move: null,
+      Attack: null,
+      Spell: null,
+    },
+  },
+  {
+    modelId: 'H015',
+    displayName: '猪八戒',
+    sourceDirectory:
+      process.env.JWGB_H015_ANIMATION_SOURCE?.trim() || join(sourceRoot, '猪八戒_FBX'),
     targetHeight: 2.2,
     expectedBones: 33,
     clipPatterns: {

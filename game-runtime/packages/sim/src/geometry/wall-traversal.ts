@@ -5,7 +5,8 @@
  * every convex piece. They are never inferred from wall height: a wall is
  * crossable by blink only when the source marked it 可越障级, and crossable by
  * flight only when the source marked it 可越障级 AND the flying actor's own
- * height budget covers it. Walking passes nothing.
+ * height budget covers it. VAULT records are now walkable heightfield hills,
+ * so only true wall records participate in these permission checks.
  */
 
 export interface WallTraversal {
@@ -15,7 +16,7 @@ export interface WallTraversal {
   readonly flightHeightBudgetMm: number;
 }
 
-/** Ordinary ground movement and ground line of sight: every wall is solid. */
+/** Ordinary ground movement and ground line of sight: true walls are solid. */
 export const WALK_TRAVERSAL: WallTraversal = {
   blinkPassable: false,
   flightHeightBudgetMm: 0,
@@ -40,12 +41,16 @@ export function flightTraversal(heightBudgetMm: number): WallTraversal {
 /** The single place that decides whether one wall piece stops one traversal. */
 export function wallPieceBlocks(
   piece: {
+    readonly wallClass?: string;
     readonly heightMm: number;
     readonly blinkPassable: boolean;
     readonly flightPassable: boolean;
   },
   traversal: WallTraversal,
 ): boolean {
+  if (piece.wallClass === 'VAULT') {
+    return false;
+  }
   if (traversal.blinkPassable && piece.blinkPassable) {
     return false;
   }

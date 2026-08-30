@@ -1,4 +1,4 @@
-import { MAP_ROUTE_NODES, terrainHeightMeters } from '@jwgb/content';
+import { MAP_BOUNDARY, MAP_ROUTE_NODES, terrainHeightMeters } from '@jwgb/content';
 import { describe, expect, it } from 'vitest';
 import {
   buildGroundGeometry,
@@ -57,9 +57,32 @@ describe('web terrain mesh', () => {
     }
     // Basins each carry their own level, so a single global plane is a bug.
     expect(levels.size).toBeGreaterThan(1);
-    // And water must stay a feature, not a flood: the old absolute-level rule
-    // drowned more than half the playfield.
-    expect(covered).toBeLessThan(120_000);
+    // Broad hill shoulders create more curved shoreline vertices without
+    // increasing the flooded area. Keep a render-budget ceiling, then measure
+    // actual top-down area so a future rule cannot drown the playfield.
+    expect(covered).toBeLessThan(150_000);
+    let waterArea = 0;
+    for (let offset = 0; offset < index.count; offset += 3) {
+      const a = index.getX(offset);
+      const b = index.getX(offset + 1);
+      const c = index.getX(offset + 2);
+      waterArea +=
+        Math.abs(
+          (positions.getX(b) - positions.getX(a)) * (positions.getZ(c) - positions.getZ(a)) -
+            (positions.getZ(b) - positions.getZ(a)) * (positions.getX(c) - positions.getX(a)),
+        ) / 2;
+    }
+    let mapAreaMm2 = 0;
+    for (let pointIndex = 0; pointIndex < MAP_BOUNDARY.length; pointIndex += 1) {
+      const a = MAP_BOUNDARY[pointIndex];
+      const b = MAP_BOUNDARY[(pointIndex + 1) % MAP_BOUNDARY.length];
+      if (!a || !b) {
+        continue;
+      }
+      mapAreaMm2 += a.x * b.z - b.x * a.z;
+    }
+    const mapAreaMeters2 = Math.abs(mapAreaMm2) / 2_000_000;
+    expect(waterArea).toBeLessThan(mapAreaMeters2 * 0.25);
 
     const edgeUse = new Map<string, readonly [number, number]>();
     const edgeCounts = new Map<string, number>();
@@ -107,7 +130,10 @@ describe('web terrain mesh', () => {
     );
   });
 
-  it('raises walk height above road overlays', () => {
+  it('no longer lifts walk height over route lanes', () => {
+    // The road ribbons were removed, so there is no overlay to stand on. The
+    // route network still exists as authoritative data and still keeps
+    // dressing off the lanes; it just has no geometry above the ground.
     const node = MAP_ROUTE_NODES[0];
     if (!node) {
       throw new Error('missing route node');
@@ -115,6 +141,6 @@ describe('web terrain mesh', () => {
     const x = node.position.x / 1000;
     const z = node.position.z / 1000;
     expect(isOnRoad({ x: node.position.x, z: node.position.z }, 900)).toBe(true);
-    expect(walkSurfaceMeters(x, z)).toBeGreaterThan(groundSurfaceMeters(x, z) + 0.04);
+    expect(walkSurfaceMeters(x, z)).toBeCloseTo(groundSurfaceMeters(x, z), 6);
   });
 });

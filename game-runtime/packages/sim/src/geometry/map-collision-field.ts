@@ -24,6 +24,7 @@ import { WALK_TRAVERSAL, type WallTraversal, wallPieceBlocks } from './wall-trav
 
 interface IndexedPiece {
   readonly pieceId: string;
+  readonly wallClass: string;
   readonly heightMm: number;
   readonly blinkPassable: boolean;
   readonly flightPassable: boolean;
@@ -98,6 +99,7 @@ export class MapCollisionField {
       }
       return {
         pieceId: piece.pieceId,
+        wallClass: piece.wallClass,
         heightMm: piece.heightMm,
         blinkPassable: piece.blinkPassable,
         flightPassable: piece.flightPassable,

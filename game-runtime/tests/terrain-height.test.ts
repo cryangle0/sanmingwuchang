@@ -7,7 +7,9 @@ import {
   MAP_ROUTE_EDGES,
   MAP_ROUTE_NODES,
   MAP_SPAWN_POINTS,
+  MAP_WALL_PIECES,
   terrainBlocksLineOfSight,
+  terrainDebugProfile,
   terrainHeightMm,
 } from '@jwgb/content';
 import { describe, expect, it } from 'vitest';
@@ -88,6 +90,33 @@ describe('authoritative terrain height', () => {
     const spread = Math.max(...samples) - Math.min(...samples);
     expect(spread).toBeGreaterThan(1_200);
     expect(Math.max(...samples.map((value) => Math.abs(value)))).toBeGreaterThan(1_500);
+  });
+
+  it('turns every authored VAULT range into a low broad terrain hill', () => {
+    const pointsByWall = new Map<string, { x: number; z: number }[]>();
+    for (const piece of MAP_WALL_PIECES) {
+      if (piece.wallClass !== 'VAULT') {
+        continue;
+      }
+      const points = pointsByWall.get(piece.wallId);
+      if (points) {
+        points.push(...piece.vertices);
+      } else {
+        pointsByWall.set(piece.wallId, [...piece.vertices]);
+      }
+    }
+
+    expect(pointsByWall.size).toBeGreaterThan(0);
+    for (const [wallId, points] of pointsByWall) {
+      const center = {
+        x: Math.trunc(points.reduce((sum, point) => sum + point.x, 0) / points.length),
+        z: Math.trunc(points.reduce((sum, point) => sum + point.z, 0) / points.length),
+      };
+      const profile = terrainDebugProfile(center.x, center.z);
+      const riseMm = profile.hills - profile.base;
+      expect(riseMm, wallId).toBeGreaterThanOrEqual(2_500);
+      expect(riseMm, wallId).toBeLessThanOrEqual(8_500);
+    }
   });
 
   it('blocks line of sight that crosses an authored highland', () => {

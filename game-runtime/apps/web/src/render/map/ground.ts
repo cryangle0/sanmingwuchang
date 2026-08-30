@@ -7,9 +7,8 @@ import {
 } from '@jwgb/content';
 import * as THREE from 'three';
 import { regionBlendAt } from './map-regions';
-import { convexContains, isOnRoad, ringContains } from './map-sampling';
+import { convexContains, ringContains } from './map-sampling';
 import { climateSplatAt, localReliefMeters } from './region-climate';
-import { MAX_ROAD_SURFACE_Y } from './roads';
 
 /**
  * The walkable ground plane, built as a regular grid so district palettes can
@@ -88,7 +87,11 @@ export function buildGroundGeometry(): THREE.BufferGeometry {
     const fineField = valueNoise(x / 13, z / 13, 1_391);
     const dryField = broadField * 0.54 + patchField * 0.34 + fineField * 0.12;
     const climate = climateSplatAt(x, z, height);
-    const soilMix = smoothstep(0.5, 0.78, dryField) * (0.22 + climate.soil * 0.5);
+    // Bare earth is a feature of dry districts, not a default: the old floor
+    // of 0.22 pulled a fifth of every dry patch toward soil even where the
+    // district is meant to be growing, which is most of why open ground read
+    // as barren no matter how much grass geometry stood on it.
+    const soilMix = smoothstep(0.5, 0.78, dryField) * (0.12 + climate.soil * 0.42);
     vertexColour.lerp(soilColour, soilMix);
 
     const alternateMix = 0.018 + broadField * 0.045 + patchField * 0.03;
@@ -204,21 +207,21 @@ export function groundSurfaceMeters(xMeters: number, zMeters: number): number {
   return terrainHeightMeters(xMeters, zMeters) + GROUND_FOOTING_BIAS_METERS;
 }
 
-const ROAD_FOOTING_LIFT_METERS = MAX_ROAD_SURFACE_Y + 0.05;
 const COURT_FOOTING_LIFT_METERS = 0.08;
 const SPAWN_PAD_RADIUS_METERS = 1.7;
 const SPAWN_FOOTING_LIFT_METERS = 0.08;
 
 /**
- * Visual walk height: ground triangles plus any overlay (road, court, spawn
- * pad) that would otherwise clip through the character's feet.
+ * Visual walk height: ground triangles plus any overlay (court, spawn pad)
+ * that would otherwise clip through the character's feet.
+ *
+ * Roads are no longer drawn, so there is no road surface to stand on and no
+ * road lift here; the route network still exists as authoritative data and
+ * still keeps dressing off the lanes, it just has no ribbon geometry.
  */
 export function walkSurfaceMeters(xMeters: number, zMeters: number): number {
   const point = { x: Math.round(xMeters * MM), z: Math.round(zMeters * MM) };
   let lift = 0;
-  if (isOnRoad(point, 900)) {
-    lift = Math.max(lift, ROAD_FOOTING_LIFT_METERS);
-  }
   for (const court of MAP_COURTS) {
     if (convexContains(court.hexVertices, point)) {
       lift = Math.max(lift, COURT_FOOTING_LIFT_METERS);

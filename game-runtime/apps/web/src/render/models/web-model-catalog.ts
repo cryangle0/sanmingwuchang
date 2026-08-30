@@ -68,8 +68,16 @@ export const WEB_HERO_MODELS: readonly WebModelDefinition[] = [
     assetPath: 'models/characters/H004/model.glb',
   }),
   hero('H005', '多目怪'),
-  hero('H006', '九头虫', 2.4),
-  hero('H007', '黄风怪', 2.4),
+  hero('H006', '九头虫', 2.4, {
+    assetBase: 'web',
+    format: 'glb',
+    assetPath: 'models/characters/H006/model.glb',
+  }),
+  hero('H007', '黄风怪', 2.4, {
+    assetBase: 'web',
+    format: 'glb',
+    assetPath: 'models/characters/H007/model.glb',
+  }),
   hero('H008', '太上老君', 2.2, {
     assetBase: 'web',
     format: 'glb',
@@ -101,7 +109,11 @@ export const WEB_HERO_MODELS: readonly WebModelDefinition[] = [
     format: 'glb',
     assetPath: 'models/characters/H014/model.glb',
   }),
-  hero('H015', '猪八戒'),
+  hero('H015', '猪八戒', 2.2, {
+    assetBase: 'web',
+    format: 'glb',
+    assetPath: 'models/characters/H015/model.glb',
+  }),
   hero('H016', '白龙马', 2.2, {
     assetBase: 'web',
     format: 'glb',

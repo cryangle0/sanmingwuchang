@@ -396,13 +396,13 @@ export class ArenaRenderer {
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.32;
+    this.renderer.toneMappingExposure = 1.05;
 
     // Placeholder sky until the map environment installs its own gradient.
     // Keeping it in the same 浅青 family as the map sky means the first frames
     // of a match no longer flash a dark ink background before the world lands.
-    this.scene.background = new THREE.Color(0x9dbdd6);
-    this.scene.fog = new THREE.FogExp2(0xa9c6d8, 0.0022);
+    this.scene.background = new THREE.Color(0x7798b3);
+    this.scene.fog = new THREE.FogExp2(0x91adbd, 0.0022);
 
     // Far plane reaches the ridge line beyond the boundary cliffs; the
     // orthographic rig only ever needed 180 m.
@@ -1374,11 +1374,11 @@ export class ArenaRenderer {
     // 青 sky bounce as ambient, and a cool counter-light so nothing falls into
     // black. The sky half of the hemisphere carries the cool, which is what
     // keeps overcast districts from reading as grey.
-    const hemisphere = new THREE.HemisphereLight(0xcfe1f2, 0x6a6350, 2.35);
+    const hemisphere = new THREE.HemisphereLight(0xcfe1f2, 0x5b5748, 1.7);
     this.scene.add(hemisphere);
     this.hemisphere = hemisphere;
 
-    const sun = new THREE.DirectionalLight(0xffe8bc, 3.35);
+    const sun = new THREE.DirectionalLight(0xffe8bc, 2.2);
     sun.position.set(-22, 34, 18);
     sun.castShadow = this.graphicsTier === 'balanced';
     sun.shadow.mapSize.set(1_024, 1_024);
@@ -1397,7 +1397,7 @@ export class ArenaRenderer {
 
     // Cool counter-light from the opposite quadrant lifts the faces the sun
     // misses, so tall walls read as stone instead of dropping to black.
-    const fill = new THREE.DirectionalLight(0x9db8c4, 1.0);
+    const fill = new THREE.DirectionalLight(0x9db8c4, 0.6);
     fill.position.set(24, 16, -20);
     this.scene.add(fill);
     this.fillLight = fill;

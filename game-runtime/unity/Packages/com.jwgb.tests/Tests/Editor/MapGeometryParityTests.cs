@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.IO;
 using Jwgb.Content;
 using Jwgb.Sim.Deterministic;
@@ -151,67 +150,61 @@ namespace Jwgb.Tests
                         $"{piece.PieceId}: unknown wall class {piece.WallClass}");
                 }
 
+                var blocks = piece.WallClass == "BOUND";
                 Assert.That(
                     Blocks(piece, WallTraversal.Walk),
-                    Is.True,
-                    $"{piece.PieceId}: walking never passes a wall");
+                    Is.EqualTo(blocks),
+                    $"{piece.PieceId}: only BOUND remains a hard wall");
                 Assert.That(
                     Blocks(piece, WallTraversal.Blink),
-                    Is.EqualTo(!piece.BlinkPassable),
-                    $"{piece.PieceId}: blink follows the compiled flag");
+                    Is.EqualTo(blocks),
+                    $"{piece.PieceId}: VAULT is walkable terrain");
                 Assert.That(
                     Blocks(piece, WallTraversal.Flight(piece.HeightMm)),
-                    Is.EqualTo(!piece.FlightPassable),
-                    $"{piece.PieceId}: flight needs the flag and the budget");
+                    Is.EqualTo(blocks),
+                    $"{piece.PieceId}: VAULT is walkable terrain");
                 Assert.That(
                     Blocks(piece, WallTraversal.Flight(piece.HeightMm - 1)),
-                    Is.True,
-                    $"{piece.PieceId}: a short budget never clears a wall");
+                    Is.EqualTo(blocks),
+                    $"{piece.PieceId}: VAULT is independent of flight budget");
             }
         }
 
         [Test]
-        public void BlinkTraversalOnlyRelaxesBlinkPassablePieces()
+        public void VaultFootprintsNeverAppearAsWallCollision()
         {
-            var blinkPassableById = new Dictionary<string, bool>();
+            var checkedCount = 0;
             foreach (var piece in MapGeometryCatalog.WallPieces)
             {
-                blinkPassableById[piece.PieceId] = piece.BlinkPassable;
+                if (piece.WallClass != "VAULT")
+                {
+                    continue;
+                }
+
+                long x = 0;
+                long z = 0;
+                foreach (var vertex in piece.Vertices)
+                {
+                    x += vertex.X;
+                    z += vertex.Z;
+                }
+
+                var center = new MapPointMmRecord(
+                    x / piece.Vertices.Length,
+                    z / piece.Vertices.Length);
+                if (!field.IsCircleInsideBoundary(center, 450))
+                {
+                    continue;
+                }
+
+                Assert.That(
+                    field.FirstWallPieceAt(center, 450, WallTraversal.Walk),
+                    Is.Null,
+                    piece.PieceId);
+                checkedCount += 1;
             }
 
-            var relaxedCount = 0;
-            foreach (var query in fixture.blockedQueries)
-            {
-                var point = new MapPointMmRecord(query.x, query.z);
-                var blinkPieceId = field.FirstWallPieceAt(
-                    point,
-                    query.radiusMm,
-                    WallTraversal.Blink);
-                if (blinkPieceId != null)
-                {
-                    Assert.That(
-                        blinkPassableById[blinkPieceId],
-                        Is.False,
-                        $"blinkWallPieceAt({query.x}, {query.z})");
-                }
-
-                if (query.wallPieceId.Length == 0)
-                {
-                    Assert.That(
-                        blinkPieceId,
-                        Is.Null,
-                        $"blink blocks where walking is clear ({query.x}, {query.z})");
-                }
-                else if (blinkPieceId == null)
-                {
-                    relaxedCount += 1;
-                }
-            }
-
-            Assert.That(
-                relaxedCount,
-                Is.GreaterThan(0),
-                "the fixture must sample at least one 可越障级 wall");
+            Assert.That(checkedCount, Is.GreaterThan(0));
         }
 
         [Test]
@@ -231,6 +224,7 @@ namespace Jwgb.Tests
             WallTraversal traversal)
         {
             return WallTraversal.Blocks(
+                piece.WallClass,
                 piece.HeightMm,
                 piece.BlinkPassable,
                 piece.FlightPassable,

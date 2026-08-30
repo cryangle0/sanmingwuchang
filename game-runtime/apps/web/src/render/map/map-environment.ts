@@ -15,7 +15,6 @@ import { buildRegionDressing } from './dressing/region-dressing';
 import { buildFlora } from './flora';
 import type { FloraModelLayerDiagnostics } from './flora-models';
 import { buildGroundGeometry } from './ground';
-import { buildInteriorRidges } from './interior-ridges';
 import { buildMapLandmarks } from './landmarks';
 import { buildMapAssetLayer, type MapAssetLayerDiagnostics } from './map-asset-layer';
 import {
@@ -25,7 +24,6 @@ import {
 } from './map-occlusion';
 import { createMapMaterials } from './map-palette';
 import { PrismGeometryAccumulator } from './prism-geometry';
-import { buildRoadRibbons } from './roads';
 import { buildScatter } from './scatter';
 import { buildWaterGeometry } from './water';
 
@@ -85,8 +83,6 @@ export function buildMapEnvironment(
     return child;
   };
   const ground = layer('map-ground');
-  const roads = layer('map-roads');
-  const walls = layer('map-walls');
   const highlands = layer('map-highlands');
   const courts = layer('map-courts');
   const spawnPads = layer('map-spawn-pads');
@@ -104,10 +100,6 @@ export function buildMapEnvironment(
   );
   buildWater(materials.valleyWater, (geometry, material, options) =>
     addMesh(ground, geometry, material, options),
-  );
-  buildRoadRibbons(
-    (geometry, material, options) => addMesh(roads, geometry, material, options),
-    materials,
   );
   buildHighlands(
     (geometry, material, options) => addMesh(highlands, geometry, material, options),
@@ -160,9 +152,6 @@ export function buildMapEnvironment(
   };
   setScatterGraphicsTier(graphicsTier);
   buildBoundaryCliffs(beyond, materials, track);
-  // Interior barriers become ranges in the walls layer, keeping their footprint.
-  buildInteriorRidges(walls, materials, track);
-
   buildBeyond(beyond, materials, track, surfaceSeed);
   const proceduralRockMarkers = props.getObjectByName('map-procedural-rock-markers');
   const importedAssetLayer = buildMapAssetLayer(importedAssets, {
