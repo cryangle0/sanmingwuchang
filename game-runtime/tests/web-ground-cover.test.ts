@@ -1,11 +1,13 @@
 import { MAP_HIGHLANDS, terrainHeightMeters } from '@jwgb/content';
 import { describe, expect, it } from 'vitest';
 import {
-  createRandomStream,
+  GRASSWORKS_SOURCE_PROFILE,
+  sampleGrassworksGrassPoints,
+} from '../apps/web/src/render/map/grassworks-vegetation';
+import {
   dressingSurfaceMeters,
   highlandTopMeters,
   ringContains,
-  sampleGroundLattice,
 } from '../apps/web/src/render/map/map-sampling';
 import { waterSurfaceAt } from '../apps/web/src/render/map/water';
 
@@ -20,23 +22,19 @@ import { waterSurfaceAt } from '../apps/web/src/render/map/water';
  */
 
 const MM = 1_000;
-/** Mirrors GRASS_SPACING_METERS in scatter.ts. */
-const GRASS_SPACING_METERS = 1.45;
 
 function grassPoints(): readonly { readonly x: number; readonly z: number }[] {
-  return sampleGroundLattice(GRASS_SPACING_METERS, createRandomStream(0xdc80a9ec), {
-    roadVergeMm: 500,
-    reject: (point) => waterSurfaceAt(point.x / MM, point.z / MM) !== null,
-  });
+  return sampleGrassworksGrassPoints(0xdc80a9ec);
 }
 
-describe('ground cover lattice', () => {
+describe('Grassworks ground cover lattice', () => {
   const points = grassPoints();
 
   it('places enough clumps to read as cover rather than as scatter', () => {
-    // A 500,000 m2 playfield at 1.45 m spacing is ~238,000 lattice cells before
+    // A 500,000 m2 playfield at the runtime spacing is dense before
     // roads, walls, courts and ponds take their share.
-    expect(points.length).toBeGreaterThan(120_000);
+    expect(GRASSWORKS_SOURCE_PROFILE.runtimeSpacingMeters).toBe(1.58);
+    expect(points.length).toBeGreaterThan(100_000);
   });
 
   it('leaves no bare patch large enough to read as an empty field', () => {

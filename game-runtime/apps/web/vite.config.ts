@@ -38,7 +38,8 @@ function modelProxyPlugin(): Plugin {
           relativeUrl.startsWith('/characters/') ||
           relativeUrl.startsWith('/foliage/') ||
           relativeUrl.startsWith('/map-assets/') ||
-          relativeUrl.startsWith('/global-scenes/')
+          relativeUrl.startsWith('/global-scenes/') ||
+          relativeUrl.startsWith('/grassworks/')
         ) {
           next();
           return;

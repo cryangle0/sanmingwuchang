@@ -1,0 +1,109 @@
+{
+  "schema": "jwgb.grassworks-vegetation.v1",
+  "generatedAt": "2026-08-30T11:47:28.021Z",
+  "source": {
+    "project": "grassworks-webgpu-demo-webrip-main",
+    "treeFile": "grass-webgpu/Assets/terrain2.glb",
+    "sha256": "54e393724c354a08a93c665fb90f32ca14d4d0932764f9af4e90a6b05a9b68fb",
+    "renderer": "three.js r185 WebGPU/TSL source adapted to the game WebGL renderer",
+    "license": "No license file was present in the user-provided source directory.",
+    "excludedGrassAtlas": {
+      "file": "grass-webgpu/Assets/grass-atlas5.png",
+      "sha256": "81d9368a7785dbbcde6936f5447dc2abee0fbf0f53ccec02bc15777247493d0b",
+      "included": false,
+      "reason": "The supplied image contains visible pngtree watermarks and has no bundled license."
+    }
+  },
+  "runtime": {
+    "treeAsset": "models/grassworks/grassworks-trees.glb",
+    "treeBytes": 3932372,
+    "treeSha256": "b040c16cc70ad9d60217a3014b3fb5cafb2abbbed0fec2d02379f3b4560ddd08",
+    "grassAtlas": "models/grassworks/grass-atlas5.png",
+    "grassAtlasBytes": 521519,
+    "grassAtlasSha256": "a506b7408ec7bc18c7607131f89cc9cb678d532bc9c7b3654d3cd5295058631b",
+    "grassAtlasWidth": 1024,
+    "grassAtlasHeight": 1024,
+    "grassAtlasSource": "assets/terrain/Grass001_Stylized.jpg",
+    "grassAtlasSourceSha256": "af854b34c0748852a6c668cd20521fee9e9a3516358359243d77425a3c722302",
+    "grassAtlasLicense": "Creative Commons CC0 1.0 Universal (ambientCG derivative).",
+    "grassAtlasPolicy": "Four deterministic transparent clump variants; no source watermark pixels.",
+    "lodPolicy": "near high-detail meshes; medium-distance source billboards; chunk culling",
+    "grassPolicy": "chunked instanced blades with GPU vertex wind and interaction bending"
+  },
+  "variants": [
+    {
+      "variant": 1,
+      "highNode": "grassworks-tree-1-high",
+      "lowNode": "grassworks-tree-1-low",
+      "sourceHighTriangles": 12839,
+      "sourceLowTriangles": 4
+    },
+    {
+      "variant": 2,
+      "highNode": "grassworks-tree-2-high",
+      "lowNode": "grassworks-tree-2-low",
+      "sourceHighTriangles": 7073,
+      "sourceLowTriangles": 4
+    },
+    {
+      "variant": 3,
+      "highNode": "grassworks-tree-3-high",
+      "lowNode": "grassworks-tree-3-low",
+      "sourceHighTriangles": 7758,
+      "sourceLowTriangles": 4
+    },
+    {
+      "variant": 4,
+      "highNode": "grassworks-tree-4-high",
+      "lowNode": "grassworks-tree-4-low",
+      "sourceHighTriangles": 19662,
+      "sourceLowTriangles": 4
+    },
+    {
+      "variant": 5,
+      "highNode": "grassworks-tree-5-high",
+      "lowNode": "grassworks-tree-5-low",
+      "sourceHighTriangles": 21043,
+      "sourceLowTriangles": 4
+    },
+    {
+      "variant": 6,
+      "highNode": "grassworks-tree-6-high",
+      "lowNode": "grassworks-tree-6-low",
+      "sourceHighTriangles": 21041,
+      "sourceLowTriangles": 4
+    },
+    {
+      "variant": 7,
+      "highNode": "grassworks-tree-7-high",
+      "lowNode": "grassworks-tree-7-low",
+      "sourceHighTriangles": 21033,
+      "sourceLowTriangles": 4
+    },
+    {
+      "variant": 8,
+      "highNode": "grassworks-tree-8-high",
+      "lowNode": "grassworks-tree-8-low",
+      "sourceHighTriangles": 20164,
+      "sourceLowTriangles": 4
+    },
+    {
+      "variant": 9,
+      "highNode": "grassworks-tree-9-high",
+      "lowNode": "grassworks-tree-9-low",
+      "sourceHighTriangles": 20147,
+      "sourceLowTriangles": 4
+    }
+  ],
+  "optimized": {
+    "meshes": 44,
+    "vertices": 196640,
+    "triangles": 151750,
+    "drawCalls": 49
+  },
+  "exclusions": [
+    "source terrain",
+    "source character and animations",
+    "source fences, stones, lanterns, water, sky, audio, and UI"
+  ]
+}

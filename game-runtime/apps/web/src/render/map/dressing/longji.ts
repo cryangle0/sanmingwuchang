@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { addCone, addCylinder, addDodecahedron, type Site, transformAtSite } from './prop-kit';
+import { addDodecahedron, type Site, transformAtSite } from './prop-kit';
 import type { DressingBags } from './region-dressing';
 
 /**
@@ -7,7 +7,7 @@ import type { DressingBags } from './region-dressing';
  *
  * The district's namesake: colossal dragon spines — rows of bleached rib
  * arches sinking into the earth with a vertebra chain between them — plus
- * reed clusters and mossy pool stones for the "渊" waterline feel.
+ * pool stones for the "渊" waterline feel.
  */
 export function dressLongji(
   bags: DressingBags,
@@ -15,12 +15,10 @@ export function dressLongji(
   nextRandom: () => number,
 ): number {
   sites.forEach((site, index) => {
-    // The first few open sites carry the big skeleton landmarks; the rest are
-    // reeds and pool stones so the fossil rows stay rare enough to be special.
+    // Keep the skeleton landmarks rare; the remaining sites use only stone
+    // props so Grassworks remains the sole vegetation source.
     if (index < 3) {
       addDragonSpine(bags, site, nextRandom);
-    } else if (nextRandom() < 0.58) {
-      addReedCluster(bags, site, nextRandom);
     } else {
       addPoolStones(bags, site, nextRandom);
     }
@@ -76,18 +74,6 @@ function addDragonSpine(bags: DressingBags, site: Site, nextRandom: () => number
     0.62,
     nextRandom() * Math.PI,
   );
-}
-
-function addReedCluster(bags: DressingBags, site: Site, nextRandom: () => number): void {
-  const reeds = 5 + Math.floor(nextRandom() * 5);
-  for (let index = 0; index < reeds; index += 1) {
-    const localX = (nextRandom() - 0.5) * 2.2;
-    const localZ = (nextRandom() - 0.5) * 2.2;
-    const height = 1.3 + nextRandom() * 1.1;
-    addCylinder(bags.straw, site, localX, height / 2, localZ, 0.022, 0.05, height, 4);
-    // Seed head.
-    addCone(bags.straw, site, localX, height + 0.14, localZ, 0.07, 0.3, 4);
-  }
 }
 
 function addPoolStones(bags: DressingBags, site: Site, nextRandom: () => number): void {

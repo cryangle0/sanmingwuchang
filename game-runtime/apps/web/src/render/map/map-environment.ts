@@ -12,9 +12,11 @@ import * as THREE from 'three';
 import { buildBeyond } from './beyond';
 import { buildBoundaryCliffs } from './boundary-cliffs';
 import { buildRegionDressing } from './dressing/region-dressing';
-import { buildFlora } from './flora';
-import type { FloraModelLayerDiagnostics } from './flora-models';
 import { buildGlobalSceneLayer, type GlobalSceneLayerDiagnostics } from './global-scene-layer';
+import {
+  buildGrassworksVegetationLayer,
+  type GrassworksVegetationDiagnostics,
+} from './grassworks-vegetation';
 import { buildGroundGeometry } from './ground';
 import { buildMapLandmarks } from './landmarks';
 import { buildMapAssetLayer, type MapAssetLayerDiagnostics } from './map-asset-layer';
@@ -25,7 +27,6 @@ import {
 } from './map-occlusion';
 import { createMapMaterials } from './map-palette';
 import { PrismGeometryAccumulator } from './prism-geometry';
-import { buildScatter } from './scatter';
 import { buildWaterGeometry } from './water';
 
 const MM = 1_000;
@@ -35,7 +36,7 @@ export interface MapEnvironment {
   setGraphicsTier(tier: 'balanced' | 'reduced'): void;
   updateOcclusion(cameraPosition: THREE.Vector3, focusPosition: THREE.Vector3): void;
   getOcclusionDiagnostics(): MapOcclusionDiagnostics;
-  getFloraModelDiagnostics(): FloraModelLayerDiagnostics;
+  getFloraModelDiagnostics(): GrassworksVegetationDiagnostics;
   getMapAssetDiagnostics(): MapAssetLayerDiagnostics;
   getGlobalSceneDiagnostics(): GlobalSceneLayerDiagnostics;
   dispose(): void;
@@ -91,8 +92,7 @@ export function buildMapEnvironment(
   const props = layer('map-props');
   const landmarks = layer('map-landmarks-layer');
   const dressing = layer('map-dressing-layer');
-  const flora = layer('map-flora');
-  const scatter = layer('map-scatter');
+  const vegetation = layer('map-grassworks-vegetation-host');
   const beyond = layer('map-beyond');
   const importedAssets = layer('map-imported-assets-host');
   const globalScenes = layer('map-global-scenes-host');
@@ -122,38 +122,11 @@ export function buildMapEnvironment(
   buildRegionDressing(dressing, materials, track, surfaceSeed, (batch) => {
     roofBatches.push(batch);
   });
-  const floraOcclusion = buildFlora(flora, materials, track, surfaceSeed, renderer, graphicsTier);
-  buildScatter(scatter, materials, track, surfaceSeed);
-  const scatterMeshes: readonly {
-    readonly mesh: THREE.InstancedMesh;
-    readonly fullCount: number;
-  }[] = (() => {
-    const meshes: { readonly mesh: THREE.InstancedMesh; readonly fullCount: number }[] = [];
-    scatter.traverse((object) => {
-      if (object instanceof THREE.InstancedMesh) {
-        meshes.push({ mesh: object, fullCount: object.count });
-      }
-    });
-    return meshes;
-  })();
-  const setScatterGraphicsTier = (tier: 'balanced' | 'reduced'): void => {
-    // Keep a bounded low-cost ground cover pass in the performance tier. The
-    // previous all-or-nothing switch made the map read as an empty test field
-    // on the devices most likely to need the reduced tier.
-    scatter.visible = true;
-    for (const { mesh, fullCount } of scatterMeshes) {
-      const ratio =
-        tier === 'balanced'
-          ? 1
-          : mesh.name.includes('grass')
-            ? 0.24
-            : mesh.name.includes('bloom')
-              ? 0.18
-              : 0.28;
-      mesh.count = Math.max(1, Math.floor(fullCount * ratio));
-    }
-  };
-  setScatterGraphicsTier(graphicsTier);
+  const grassworksVegetation = buildGrassworksVegetationLayer(vegetation, {
+    renderer,
+    graphicsTier,
+    seed: surfaceSeed,
+  });
   buildBoundaryCliffs(beyond, materials, track);
   buildBeyond(beyond, materials, track, surfaceSeed);
   const proceduralRockMarkers = props.getObjectByName('map-procedural-rock-markers');
@@ -164,7 +137,10 @@ export function buildMapEnvironment(
     ...(proceduralRockMarkers ? { fallbackRockGroup: proceduralRockMarkers } : {}),
   });
   const globalSceneLayer = buildGlobalSceneLayer(globalScenes, {
-    renderer,
+    // The previous three scene packs contained their own trees and foliage.
+    // Keep the diagnostics contract, but prevent that legacy vegetation from
+    // loading now that Grassworks is the sole runtime vegetation source.
+    renderer: null,
     graphicsTier,
     seed: surfaceSeed,
   });
@@ -173,23 +149,20 @@ export function buildMapEnvironment(
   return {
     group,
     setGraphicsTier(tier): void {
-      const reduced = tier === 'reduced';
       materials.setGraphicsTier(tier);
-      setScatterGraphicsTier(tier);
-      floraOcclusion.setEnabled(!reduced);
-      floraOcclusion.setGraphicsTier(tier);
+      grassworksVegetation.setGraphicsTier(tier);
       importedAssetLayer.setGraphicsTier(tier);
       globalSceneLayer.setGraphicsTier(tier);
     },
     updateOcclusion(cameraPosition, focusPosition): void {
       occlusion.update(cameraPosition, focusPosition);
-      floraOcclusion.update(cameraPosition, focusPosition);
+      grassworksVegetation.update(cameraPosition, focusPosition);
       importedAssetLayer.update(cameraPosition, focusPosition);
       globalSceneLayer.update(cameraPosition, focusPosition);
     },
     getOcclusionDiagnostics(): MapOcclusionDiagnostics {
       const roofDiagnostics = occlusion.diagnostics();
-      const floraDiagnostics = floraOcclusion.diagnostics();
+      const floraDiagnostics = grassworksVegetation.occlusionDiagnostics();
       return {
         ...roofDiagnostics,
         active: roofDiagnostics.active || floraDiagnostics.active,
@@ -208,8 +181,8 @@ export function buildMapEnvironment(
         ].sort(),
       };
     },
-    getFloraModelDiagnostics(): FloraModelLayerDiagnostics {
-      return floraOcclusion.modelDiagnostics();
+    getFloraModelDiagnostics(): GrassworksVegetationDiagnostics {
+      return grassworksVegetation.diagnostics();
     },
     getMapAssetDiagnostics(): MapAssetLayerDiagnostics {
       return importedAssetLayer.diagnostics();
@@ -219,7 +192,7 @@ export function buildMapEnvironment(
     },
     dispose(): void {
       occlusion.dispose();
-      floraOcclusion.dispose();
+      grassworksVegetation.dispose();
       importedAssetLayer.dispose();
       globalSceneLayer.dispose();
       for (const geometry of geometries) {

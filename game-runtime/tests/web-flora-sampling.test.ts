@@ -1,12 +1,14 @@
 import { MAP_GEOMETRY_HASH } from '@jwgb/content';
 import { describe, expect, it } from 'vitest';
-import { sampleFloraTreePoints } from '../apps/web/src/render/map/flora';
+import { sampleGrassworksTreePoints } from '../apps/web/src/render/map/grassworks-vegetation';
+import { waterSurfaceAt } from '../apps/web/src/render/map/water';
 
 const surfaceSeed = Number.parseInt(MAP_GEOMETRY_HASH.slice(0, 8), 16) >>> 0 || 1;
 
-describe('web flora sampling', () => {
-  it('builds full forest-scale tree coverage with dense local groves', () => {
-    const points = sampleFloraTreePoints(surfaceSeed);
+describe('web Grassworks tree sampling', () => {
+  it('builds deterministic forest-scale coverage with dense local groves', () => {
+    const points = sampleGrassworksTreePoints(surfaceSeed);
+    expect(sampleGrassworksTreePoints(surfaceSeed)).toEqual(points);
     const densestTree = points.reduce(
       (best, point) => {
         const nearby = points.filter((other) => {
@@ -21,5 +23,8 @@ describe('web flora sampling', () => {
 
     expect(points).toHaveLength(960);
     expect(densestTree.nearby).toBeGreaterThanOrEqual(22);
+    expect(points.every((point) => waterSurfaceAt(point.x / 1_000, point.z / 1_000) === null)).toBe(
+      true,
+    );
   });
 });

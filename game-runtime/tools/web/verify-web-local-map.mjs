@@ -38,20 +38,11 @@ const consoleErrors = [];
 const pageErrors = [];
 const failedRequests = [];
 const badResponses = [];
-const PLAYER_MODEL_VISUAL_SCALE = 1;
+const PLAYER_MODEL_VISUAL_SCALE = 1.5;
 const MONSTER_MODEL_VISUAL_SCALE = 1;
-const REQUIRED_FLORA_ASSETS = [
-  'models/foliage/mission-lush-tree.glb',
-  'models/foliage/burdock-poly.glb',
-  'models/foliage/dead-beech-poly.glb',
-  'models/foliage/dead-cypress-poly.glb',
-];
-const REDUCED_FLORA_ASSETS = [
-  'models/foliage/mission-lush-tree.glb',
-  'models/foliage/burdock-poly.glb',
-  'models/foliage/dead-beech-poly.glb',
-  'models/foliage/dead-cypress-poly.glb',
-  'models/foliage/rock_1.glb',
+const REQUIRED_GRASSWORKS_ASSETS = [
+  'models/grassworks/grass-atlas5.png',
+  'models/grassworks/grassworks-trees.glb',
 ];
 const MODELS_BY_KIND = {
   'ground-melee': ['M001', 'M004', 'M008', 'M010', 'M017', 'M023', 'M024', 'M026', 'M033'],
@@ -299,11 +290,17 @@ await page.waitForFunction(
     const flora = window.__JWGB_DEBUG__?.getFloraModelDiagnostics?.();
     return Boolean(
       flora?.status === 'ready' &&
+        flora.source === 'grassworks' &&
         flora.failedAssets.length === 0 &&
+        flora.loadedAssets.length === 2 &&
+        flora.grassInstances > 100_000 &&
+        flora.visibleGrassInstances > 0 &&
         flora.treeInstances > 0 &&
-        flora.rockInstances > 0 &&
-        flora.dressingInstances > 0 &&
+        flora.visibleTreeInstances > 0 &&
         flora.instancedBatches > 0 &&
+        flora.legacyFloraInstances === 0 &&
+        flora.legacyScatterInstances === 0 &&
+        flora.legacyGlobalSceneVegetationInstances === 0 &&
         flora.visible === true,
     );
   },
@@ -328,15 +325,12 @@ await page.waitForFunction(
   () => {
     const scenes = window.__JWGB_DEBUG__?.getGlobalSceneDiagnostics?.();
     return Boolean(
-      scenes?.status === 'ready' &&
+      scenes?.status === 'disabled' &&
         scenes.failedAssets.length === 0 &&
-        scenes.loadedAssets.length === 11 &&
-        scenes.placements === 79 &&
-        scenes.placementsBySource.overgrown === 21 &&
-        scenes.placementsBySource['forest-road-night'] === 21 &&
-        scenes.placementsBySource['forest-mountains'] === 37 &&
-        scenes.instancedBatches > 0 &&
-        scenes.visible === true,
+        scenes.loadedAssets.length === 0 &&
+        scenes.placements === 0 &&
+        scenes.instancedBatches === 0 &&
+        scenes.visible === false,
     );
   },
   undefined,
@@ -558,7 +552,7 @@ await page.waitForFunction(
       camera &&
         camera.controlsCustomized === false &&
         Math.abs(camera.zoom - camera.targetZoom) < 0.025 &&
-        camera.offset.every((value, index) => Math.abs(value - camera.presetOffset[index]) < 0.025),
+        camera.offset.every((value, index) => Math.abs(value - camera.targetOffset[index]) < 0.025),
     );
   },
   undefined,
@@ -1183,18 +1177,25 @@ await mobilePage.waitForFunction(
     const performance = window.__JWGB_DEBUG__?.getRenderPerformanceDiagnostics?.();
     return Boolean(
       flora?.status === 'ready' &&
+        flora.source === 'grassworks' &&
         flora.failedAssets.length === 0 &&
+        flora.loadedAssets.length === 2 &&
+        flora.maxGrassDistanceMeters === 96 &&
+        flora.grassInstances > 100_000 &&
+        flora.visibleGrassInstances > 0 &&
         flora.treeInstances > 0 &&
-        flora.rockInstances > 0 &&
-        flora.dressingInstances > 0 &&
+        flora.visibleTreeInstances > 0 &&
         flora.instancedBatches > 0 &&
+        flora.legacyFloraInstances === 0 &&
+        flora.legacyScatterInstances === 0 &&
+        flora.legacyGlobalSceneVegetationInstances === 0 &&
         flora.visible === true &&
-        globalScenes?.status === 'ready' &&
+        globalScenes?.status === 'disabled' &&
         globalScenes.failedAssets.length === 0 &&
-        globalScenes.placements === 29 &&
-        globalScenes.placementsBySource.overgrown === 7 &&
-        globalScenes.placementsBySource['forest-road-night'] === 7 &&
-        globalScenes.placementsBySource['forest-mountains'] === 15 &&
+        globalScenes.loadedAssets.length === 0 &&
+        globalScenes.placements === 0 &&
+        globalScenes.instancedBatches === 0 &&
+        globalScenes.visible === false &&
         performance?.graphicsTier === 'reduced',
     );
   },
@@ -1291,17 +1292,23 @@ const pixelCoverage =
   final.pixels && final.pixels.sampledPixels > 0
     ? final.pixels.nonBlackPixels / final.pixels.sampledPixels
     : 0;
-const floraModelReady = Boolean(
+const grassworksVegetationReady = Boolean(
   final.flora?.status === 'ready' &&
+    final.flora.source === 'grassworks' &&
     final.flora.failedAssets.length === 0 &&
+    final.flora.grassInstances > 100_000 &&
+    final.flora.visibleGrassInstances > 0 &&
     final.flora.treeInstances > 0 &&
-    final.flora.rockInstances > 0 &&
-    final.flora.dressingInstances > 0 &&
+    final.flora.visibleTreeInstances > 0 &&
     final.flora.instancedBatches > 0 &&
+    final.flora.legacyFloraInstances === 0 &&
+    final.flora.legacyScatterInstances === 0 &&
+    final.flora.legacyGlobalSceneVegetationInstances === 0 &&
     final.flora.visible === true,
 );
-const requiredFloraAssetsLoaded = REQUIRED_FLORA_ASSETS.every((asset) =>
-  final.flora?.loadedAssets.includes(asset),
+const requiredGrassworksAssetsLoaded = Boolean(
+  final.flora?.loadedAssets.length === REQUIRED_GRASSWORKS_ASSETS.length &&
+    REQUIRED_GRASSWORKS_ASSETS.every((asset) => final.flora?.loadedAssets.includes(asset)),
 );
 const mapAssetLayerReady = Boolean(
   final.mapAssets?.status === 'ready' &&
@@ -1310,16 +1317,13 @@ const mapAssetLayerReady = Boolean(
     final.mapAssets.instancedBatches > 0 &&
     final.mapAssets.visible === true,
 );
-const globalSceneLayerReady = Boolean(
-  final.globalScenes?.status === 'ready' &&
+const legacyGlobalSceneLayerDisabled = Boolean(
+  final.globalScenes?.status === 'disabled' &&
     final.globalScenes.failedAssets.length === 0 &&
-    final.globalScenes.loadedAssets.length === 11 &&
-    final.globalScenes.placements === 79 &&
-    final.globalScenes.placementsBySource.overgrown === 21 &&
-    final.globalScenes.placementsBySource['forest-road-night'] === 21 &&
-    final.globalScenes.placementsBySource['forest-mountains'] === 37 &&
-    final.globalScenes.instancedBatches > 0 &&
-    final.globalScenes.visible === true,
+    final.globalScenes.loadedAssets.length === 0 &&
+    final.globalScenes.placements === 0 &&
+    final.globalScenes.instancedBatches === 0 &&
+    final.globalScenes.visible === false,
 );
 const result = {
   schema: 'jwgb.web-local-map-verification.v1',
@@ -1359,10 +1363,10 @@ const result = {
     mapInteraction: Object.values(mapInteraction).every(Boolean),
     desktopHudLayout: desktopHudLayoutPassed,
     modelIdentity: modelIdentity.passed,
-    floraModelReady,
-    requiredFloraAssetsLoaded,
+    grassworksVegetationReady,
+    requiredGrassworksAssetsLoaded,
     mapAssetLayerReady,
-    globalSceneLayerReady,
+    legacyGlobalSceneLayerDisabled,
     requestedHero:
       expectedHeroId === null ||
       (initial.local?.heroId === expectedHeroId &&
@@ -1404,15 +1408,22 @@ const result = {
       !overlaps(mobileLayout.minimap, mobileLayout.playerStatus),
     mobilePerformanceTier:
       mobileRuntime.performance?.graphicsTier === 'reduced' &&
+      mobileRuntime.flora?.source === 'grassworks' &&
       mobileRuntime.flora?.failedAssets.length === 0 &&
-      mobileRuntime.flora.loadedAssets.length === REDUCED_FLORA_ASSETS.length &&
-      REDUCED_FLORA_ASSETS.every((asset) => mobileRuntime.flora.loadedAssets.includes(asset)) &&
-      mobileRuntime.globalScenes?.status === 'ready' &&
+      mobileRuntime.flora.loadedAssets.length === REQUIRED_GRASSWORKS_ASSETS.length &&
+      REQUIRED_GRASSWORKS_ASSETS.every((asset) =>
+        mobileRuntime.flora.loadedAssets.includes(asset),
+      ) &&
+      mobileRuntime.flora.maxGrassDistanceMeters === 96 &&
+      mobileRuntime.flora.legacyFloraInstances === 0 &&
+      mobileRuntime.flora.legacyScatterInstances === 0 &&
+      mobileRuntime.flora.legacyGlobalSceneVegetationInstances === 0 &&
+      mobileRuntime.globalScenes?.status === 'disabled' &&
       mobileRuntime.globalScenes.failedAssets.length === 0 &&
-      mobileRuntime.globalScenes.placements === 29 &&
-      mobileRuntime.globalScenes.placementsBySource.overgrown === 7 &&
-      mobileRuntime.globalScenes.placementsBySource['forest-road-night'] === 7 &&
-      mobileRuntime.globalScenes.placementsBySource['forest-mountains'] === 15,
+      mobileRuntime.globalScenes.loadedAssets.length === 0 &&
+      mobileRuntime.globalScenes.placements === 0 &&
+      mobileRuntime.globalScenes.instancedBatches === 0 &&
+      mobileRuntime.globalScenes.visible === false,
     mobileWorldMap:
       mobileMapClosed &&
       insideViewport(mobileWorldMapLayout.panel, mobileWorldMapLayout.viewport) &&
@@ -1485,10 +1496,10 @@ const failure =
   !result.checks.mapInteraction ||
   !result.checks.desktopHudLayout ||
   !result.checks.modelIdentity ||
-  !result.checks.floraModelReady ||
-  !result.checks.requiredFloraAssetsLoaded ||
+  !result.checks.grassworksVegetationReady ||
+  !result.checks.requiredGrassworksAssetsLoaded ||
   !result.checks.mapAssetLayerReady ||
-  !result.checks.globalSceneLayerReady ||
+  !result.checks.legacyGlobalSceneLayerDisabled ||
   !result.checks.requestedHero ||
   !result.checks.localizedTreeOcclusion ||
   !result.checks.mobileLayout ||
@@ -1524,10 +1535,9 @@ console.log(
     `${activeAfter.combatEffects?.activeCastEffectsSpawned ?? 0}/` +
     `${combatAfter.combatEffects?.impactEffectsSpawned ?? 0}, ` +
     `${final.models?.visibleLoadedInstances}/${final.models?.visibleInstances} visible 3D models, ` +
-    `${final.flora?.treeInstances ?? 0} trees/${final.flora?.rockInstances ?? 0} rocks/` +
-    `${final.flora?.dressingInstances ?? 0} dressing instances, ` +
-    `${final.flora?.drawCalls ?? 0} visible flora draw calls, ` +
-    `${final.globalScenes?.placements ?? 0} global scene instances, ` +
+    `${final.flora?.grassInstances ?? 0} Grassworks grass/${final.flora?.treeInstances ?? 0} trees, ` +
+    `${final.flora?.drawCalls ?? 0} visible vegetation draw calls, ` +
+    `${final.globalScenes?.placements ?? 0} legacy global scene instances, ` +
     `${performance.averageFps.toFixed(1)} FPS, ` +
     `pixels ${(pixelCoverage * 100).toFixed(1)}%`,
 );

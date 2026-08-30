@@ -1157,6 +1157,7 @@ export class ArenaRenderer {
   getFloraModelDiagnostics(): ReturnType<MapEnvironment['getFloraModelDiagnostics']> {
     return (
       this.mapEnvironment?.getFloraModelDiagnostics() ?? {
+        source: 'grassworks',
         status: 'disabled',
         loadedAssets: [],
         failedAssets: [],
@@ -1171,6 +1172,31 @@ export class ArenaRenderer {
         triangles: 0,
         drawCalls: 0,
         visible: false,
+        tileSizeMeters: 25,
+        renderBatchSizeMeters: 50,
+        maxGrassDistanceMeters: 150,
+        influenceResolution: 256,
+        grassInstances: 0,
+        visibleGrassInstances: 0,
+        visibleGrassInstancesByLod: {
+          high: 0,
+          medium: 0,
+          low: 0,
+          veryLow: 0,
+        },
+        highTreeInstances: 0,
+        lowTreeInstances: 0,
+        visibleHighTreeInstances: 0,
+        visibleLowTreeInstances: 0,
+        grassChunks: 0,
+        grassTiles: 0,
+        grassRenderBatches: 0,
+        visibleGrassChunks: 0,
+        treeChunks: 0,
+        visibleTreeChunks: 0,
+        legacyFloraInstances: 0,
+        legacyScatterInstances: 0,
+        legacyGlobalSceneVegetationInstances: 0,
       }
     );
   }

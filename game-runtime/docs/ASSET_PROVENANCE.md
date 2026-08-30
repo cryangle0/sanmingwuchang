@@ -82,6 +82,26 @@ License: Creative Commons CC0 1.0 Universal.
 These files are redistributed as public-domain assets and are separate from
 the purchased scene-pack derivatives.
 
+## Grassworks WebGL Vegetation Adaptation
+
+The whole-map grass runtime adapts the supplied
+`grassworks-webgpu-demo-webrip-main` demo's 25 m tiles, four grass LOD bands,
+2x2 atlas addressing, wind animation, recoverable 256x256 interaction map,
+and high-detail/billboard tree LOD policy to this project's existing three.js
+r165 WebGL renderer. The source demo targets three.js r185 WebGPU/TSL, so this
+is an equivalent WebGL implementation rather than a direct runtime copy.
+
+The nine tree variants in
+`apps/web/public/models/grassworks/grassworks-trees.glb` are derived from
+`grass-webgpu/Assets/terrain2.glb`. No license file was present in the supplied
+source directory, so commercial redistribution rights for those tree meshes
+are not asserted here.
+
+The supplied `grass-atlas5.png` is excluded because it contains visible
+pngtree watermarks and no bundled license. The runtime
+`apps/web/public/models/grassworks/grass-atlas5.png` is generated instead from
+the existing ambientCG CC0 derivative `Grass001_Stylized.jpg`.
+
 ## Map Foliage Models
 
 The map environment uses optimized static models copied unchanged from the

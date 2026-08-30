@@ -15,6 +15,11 @@ export function tickWind(elapsedSeconds: number): void {
   WIND_TIME.value = elapsedSeconds;
 }
 
+/** Shared render-time uniform for custom vegetation shaders. */
+export function windTimeUniform(): { value: number } {
+  return WIND_TIME;
+}
+
 /**
  * Injects a vertex-stage sway into the material. Strength is baked into the
  * shader as a constant (one program per strength value, cached by key).
