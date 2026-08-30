@@ -4,6 +4,7 @@ import {
   MAP_DRAGONS,
   MAP_ELITES,
   MAP_PIGS,
+  terrainHeightMeters,
 } from '@jwgb/content';
 import * as THREE from 'three';
 import {
@@ -520,7 +521,13 @@ function buildPigDens(bags: GeometryBags, nextRandom: () => number): void {
 function buildDragonPalaces(bags: GeometryBags, roofOccluders: MapRoofOccluderSource[]): number {
   let approachGates = 0;
   for (const record of MAP_DRAGONS) {
-    const site = siteTowardOrigin(record.position.x / MM, record.position.z / MM);
+    const x = record.position.x / MM;
+    const z = record.position.z / MM;
+    const groundY = terrainHeightMeters(x, z);
+    const site: Site = {
+      ...siteTowardOrigin(x, z),
+      groundY,
+    };
     addCylinder(bags.stone, site, 0, 0.08, 0, 9.2, 9.45, 0.16, 24);
     addCylinder(bags.water, site, 0, 0.18, 0, 7.9, 8.05, 0.2, 64);
     addHorizontalRing(bags.stone, site.x, 0.31, site.z, 6.95, 7.55, 32);
@@ -534,6 +541,7 @@ function buildDragonPalaces(bags: GeometryBags, roofOccluders: MapRoofOccluderSo
       const gateSite: Site = {
         ...gatePosition,
         yaw: yawToward(gatePosition.x, gatePosition.z, site.x, site.z),
+        groundY,
       };
       addBox(bags.stone, gateSite, 0, 0.25, 2.25, 3.1, 0.18, 5.7);
       const gateRoofs = createRoofBag();

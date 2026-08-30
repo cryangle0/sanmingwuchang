@@ -21,8 +21,8 @@ describe('web Grassworks tree sampling', () => {
       { point: points[0], nearby: 0 },
     );
 
-    expect(points).toHaveLength(960);
-    expect(densestTree.nearby).toBeGreaterThanOrEqual(22);
+    expect(points).toHaveLength(1_800);
+    expect(densestTree.nearby).toBeGreaterThanOrEqual(80);
     expect(points.every((point) => waterSurfaceAt(point.x / 1_000, point.z / 1_000) === null)).toBe(
       true,
     );

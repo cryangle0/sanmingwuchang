@@ -27,8 +27,7 @@ const SOURCE = 'grassworks' as const;
 const TREE_ASSET_PATH = 'models/grassworks/grassworks-trees.glb';
 const GRASS_ATLAS_PATH = 'models/grassworks/grass-atlas5.png';
 const TREE_VARIANTS = 9;
-const TREE_COUNT = 960;
-const DENSE_TREE_COUNT = 660;
+const TREE_COUNT = 1_800;
 const TREE_SEED_SALT = 0x9e3779b9;
 const GRASS_SEED_SALT = 0x4f1bbcdc;
 const GRASS_SPACING_METERS = 1.25;
@@ -55,7 +54,7 @@ const INFLUENCE_RADIUS_METERS = 5.8;
 const INFLUENCE_RECOVERY_PER_UPDATE = 7;
 const BALANCED_GRASS_DISTANCE = 180;
 const REDUCED_GRASS_DISTANCE = 108;
-const BALANCED_TREE_HIGH_DISTANCE = 30;
+const BALANCED_TREE_HIGH_DISTANCE = 18;
 const BALANCED_TREE_LOW_DISTANCE = 192;
 const REDUCED_TREE_LOW_DISTANCE = 138;
 const REDUCED_TREE_DENSITY = 0.66;
@@ -63,6 +62,36 @@ const TREE_TARGET_HEIGHT_MIN = 7.2;
 const TREE_TARGET_HEIGHT_MAX = 10.4;
 const GRASS_VERTICES_PER_DETAIL = 6;
 const GRASS_TRIANGLES_PER_DETAIL = 2;
+
+export interface GrassworksForestGrove {
+  readonly id: string;
+  readonly centerX: number;
+  readonly centerZ: number;
+  readonly radiusX: number;
+  readonly radiusZ: number;
+  readonly treeCount: number;
+}
+
+export const GRASSWORKS_FOREST_GROVES: readonly GrassworksForestGrove[] = [
+  { id: 'northwest-forest', centerX: -300, centerZ: 150, radiusX: 52, radiusZ: 38, treeCount: 220 },
+  { id: 'north-forest', centerX: -65, centerZ: 205, radiusX: 52, radiusZ: 38, treeCount: 210 },
+  { id: 'east-forest', centerX: 260, centerZ: 235, radiusX: 54, radiusZ: 38, treeCount: 200 },
+  { id: 'west-forest', centerX: -300, centerZ: -115, radiusX: 50, radiusZ: 38, treeCount: 220 },
+  {
+    id: 'southwest-forest',
+    centerX: -190,
+    centerZ: -210,
+    radiusX: 52,
+    radiusZ: 38,
+    treeCount: 230,
+  },
+  { id: 'south-forest', centerX: 70, centerZ: -225, radiusX: 52, radiusZ: 36, treeCount: 220 },
+  { id: 'southeast-forest', centerX: 280, centerZ: -80, radiusX: 50, radiusZ: 38, treeCount: 210 },
+] as const;
+
+const FOREST_TREE_COUNT = GRASSWORKS_FOREST_GROVES.reduce((sum, grove) => sum + grove.treeCount, 0);
+const FOREST_ROAD_VERGE_MM = 2_500;
+const FOREST_MIN_DISTANCE_METERS = 2.55;
 
 export type GrassworksGraphicsTier = 'balanced' | 'reduced';
 export type GrassworksGrassLod = 'high' | 'medium' | 'low' | 'veryLow';
@@ -111,6 +140,9 @@ export const GRASSWORKS_SOURCE_PROFILE = {
     min: GRASS_WIDTH_MIN,
     max: GRASS_WIDTH_MAX,
   },
+  runtimeTreeCount: TREE_COUNT,
+  runtimeForestTreeCount: FOREST_TREE_COUNT,
+  runtimeForestGroves: GRASSWORKS_FOREST_GROVES.length,
   runtimeLods: GRASS_LODS,
 } as const;
 
@@ -305,31 +337,50 @@ export function sampleGrassworksGrassPoints(seed: number): readonly MapPointMm[]
 
 export function sampleGrassworksTreePoints(seed: number): readonly MapPointMm[] {
   const nextRandom = createRandomStream(seed ^ TREE_SEED_SALT);
-  const dense = sampleClusteredOpenGround(
-    DENSE_TREE_COUNT,
-    62,
-    nextRandom,
-    8_000,
-    3_800,
-    2,
-    18,
-    8,
-    16,
-    3.6,
-  );
+  const forest = sampleForestGroves(nextRandom);
   const sparse = sampleClusteredOpenGround(
-    TREE_COUNT - DENSE_TREE_COUNT,
-    86,
+    TREE_COUNT - forest.length,
+    72,
     nextRandom,
     5_000,
     2_800,
-    1.2,
-    8,
     2,
-    5,
+    10,
+    2,
+    6,
     3.2,
+    forest,
   );
-  return [...dense, ...sparse];
+  return [...forest, ...sparse];
+}
+
+function sampleForestGroves(nextRandom: () => number): MapPointMm[] {
+  const points: MapPointMm[] = [];
+  for (const grove of GRASSWORKS_FOREST_GROVES) {
+    let added = 0;
+    for (
+      let attempt = 0;
+      attempt < grove.treeCount * 180 && added < grove.treeCount;
+      attempt += 1
+    ) {
+      const angle = nextRandom() * Math.PI * 2;
+      const radius = Math.sqrt(nextRandom());
+      const candidate: MapPointMm = {
+        x: Math.round((grove.centerX + Math.cos(angle) * radius * grove.radiusX) * MM),
+        z: Math.round((grove.centerZ + Math.sin(angle) * radius * grove.radiusZ) * MM),
+      };
+      if (
+        !isOpenGround(candidate, { roadVergeMm: FOREST_ROAD_VERGE_MM }) ||
+        isWaterPoint(candidate) ||
+        !farEnoughFrom(points, candidate, FOREST_MIN_DISTANCE_METERS)
+      ) {
+        continue;
+      }
+      points.push(candidate);
+      added += 1;
+    }
+  }
+  return points;
 }
 
 function sampleClusteredOpenGround(
@@ -343,6 +394,7 @@ function sampleClusteredOpenGround(
   minClusterCount: number,
   maxClusterCount: number,
   minDistanceMeters: number,
+  occupied: readonly MapPointMm[] = [],
 ): MapPointMm[] {
   const anchors = sampleOpenGround(anchorCount, anchorCount * 18, nextRandom, {
     roadVergeMm: anchorRoadVergeMm,
@@ -367,6 +419,7 @@ function sampleClusteredOpenGround(
       if (
         !isOpenGround(candidate, { roadVergeMm: pointRoadVergeMm }) ||
         isWaterPoint(candidate) ||
+        !farEnoughFrom(occupied, candidate, minDistanceMeters) ||
         !farEnoughFrom(points, candidate, minDistanceMeters)
       ) {
         continue;
@@ -388,7 +441,11 @@ function sampleClusteredOpenGround(
     if (points.length >= count) {
       break;
     }
-    if (isWaterPoint(point) || !farEnoughFrom(points, point, minDistanceMeters)) {
+    if (
+      isWaterPoint(point) ||
+      !farEnoughFrom(occupied, point, minDistanceMeters) ||
+      !farEnoughFrom(points, point, minDistanceMeters)
+    ) {
       continue;
     }
     points.push(point);

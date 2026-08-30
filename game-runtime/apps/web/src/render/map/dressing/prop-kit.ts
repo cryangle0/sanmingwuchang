@@ -16,6 +16,7 @@ export interface Site {
   readonly x: number;
   readonly z: number;
   readonly yaw: number;
+  readonly groundY?: number;
 }
 
 export type GeometryBag = THREE.BufferGeometry[];
@@ -365,12 +366,16 @@ export function transformAtSite(
 ): void {
   const position = offsetFromSite(site, localX, localZ);
   geometry.rotateY(site.yaw + localYaw);
-  geometry.translate(position.x, y + terrainHeightMeters(position.x, position.z), position.z);
+  geometry.translate(
+    position.x,
+    y + (site.groundY ?? terrainHeightMeters(position.x, position.z)),
+    position.z,
+  );
 }
 
 export function shiftedSite(site: Site, localX: number, localZ: number): Site {
   const position = offsetFromSite(site, localX, localZ);
-  return { ...position, yaw: site.yaw };
+  return { ...site, ...position };
 }
 
 export function offsetFromSite(

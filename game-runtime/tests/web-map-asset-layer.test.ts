@@ -6,6 +6,7 @@ import {
   buildMapAssetLayer,
   createMapAssetPlacementPlan,
   MAP_ASSET_CATALOG,
+  mapAssetVertexGroundingOffset,
 } from '../apps/web/src/render/map/map-asset-layer';
 
 const repositoryRoot = resolve(import.meta.dirname, '..');
@@ -97,6 +98,25 @@ describe('web imported map asset layer', () => {
         placement.worldHeight / (catalog?.targetHeight ?? Number.NaN),
       );
     }
+  });
+
+  it('grounds each optimized citadel pavilion at its original source-terrain step', () => {
+    expect(
+      mapAssetVertexGroundingOffset('wuxia-citadel', '3005_Building_05', -30.148, 26.741),
+    ).toBeCloseTo(-0.954);
+    expect(
+      mapAssetVertexGroundingOffset('wuxia-citadel', '3005_Building_05', 21.219, -33.078),
+    ).toBeCloseTo(-12.472);
+    expect(
+      mapAssetVertexGroundingOffset('wuxia-citadel', '3005_Building_05', 25.638, -59.043),
+    ).toBeCloseTo(-7.756);
+    expect(
+      mapAssetVertexGroundingOffset('wuxia-citadel', '3005_Item_15', -30.148, 26.741),
+    ).toBeCloseTo(-4.925);
+    expect(
+      mapAssetVertexGroundingOffset('wuxia-citadel', '3005_Item_15', 11.621, -47.11),
+    ).toBeCloseTo(-19.965);
+    expect(mapAssetVertexGroundingOffset('wuxia-gate-court', '3004_Item_12', 0, 0)).toBe(0);
   });
 
   it('does not require a renderer for the procedural fallback path and disposes cleanly', () => {

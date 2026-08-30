@@ -304,6 +304,38 @@ const REDUCED_ROCK_ASSET_IDS = [
   'stylized-rock-07',
 ] as const;
 const REDUCED_LANDMARK_ASSET_SET = new Set<string>(REDUCED_LANDMARK_ASSET_IDS);
+const CITADEL_ITEM_SOURCE_GROUND_Y = 4.475;
+const CITADEL_PLATEAU_TARGET_Y = -0.45;
+
+interface CitadelGroundSite {
+  readonly x: number;
+  readonly z: number;
+  readonly sourceGroundY: number;
+  readonly targetGroundY?: number;
+}
+
+/**
+ * 45.FBX authored each pavilion on a different source-terrain step. The
+ * converter intentionally removed that terrain, then mesh optimization joined
+ * the pavilions into two large meshes, so node-level grounding cannot fix the
+ * remaining gaps. These anchors preserve each pavilion as a rigid local group
+ * while moving its original footing onto the runtime plateau.
+ */
+const CITADEL_GROUND_SITES: readonly CitadelGroundSite[] = [
+  { x: -26.009, z: -32.384, sourceGroundY: 0.002 },
+  { x: -30.148, z: 26.741, sourceGroundY: 0.504 },
+  { x: -26.859, z: -16.301, sourceGroundY: 4.804 },
+  { x: 30.373, z: 9.084, sourceGroundY: 5.137 },
+  { x: 16.484, z: 45.627, sourceGroundY: 7.293 },
+  // This southern pavilion extends beyond the authored plateau and lands on
+  // the rising terrain below, whose surface is 2.3 local metres above it.
+  { x: 25.638, z: -59.043, sourceGroundY: 10.056, targetGroundY: 2.3 },
+  { x: 29.825, z: -5.996, sourceGroundY: 11.872 },
+  { x: 21.219, z: -33.078, sourceGroundY: 12.022 },
+  { x: 27.018, z: -23.12, sourceGroundY: 14.694 },
+  { x: 11.621, z: -47.11, sourceGroundY: 19.515 },
+  { x: -22.568, z: 46.475, sourceGroundY: 19.502 },
+] as const;
 
 export interface MapAssetPlacement {
   readonly id: string;
@@ -642,6 +674,74 @@ function materializeGeometryAttributes(source: THREE.BufferGeometry): THREE.Buff
   return geometry;
 }
 
+export function mapAssetVertexGroundingOffset(
+  assetId: string,
+  nodeName: string,
+  x: number,
+  z: number,
+): number {
+  if (
+    assetId !== 'wuxia-citadel' ||
+    (nodeName !== '3005_Building_05' && nodeName !== '3005_Item_15') ||
+    !Number.isFinite(x) ||
+    !Number.isFinite(z)
+  ) {
+    return 0;
+  }
+  let nearest = CITADEL_GROUND_SITES[0] as CitadelGroundSite;
+  let nearestDistanceSquared = Number.POSITIVE_INFINITY;
+  for (const site of CITADEL_GROUND_SITES) {
+    const dx = x - site.x;
+    const dz = z - site.z;
+    const distanceSquared = dx * dx + dz * dz;
+    if (distanceSquared < nearestDistanceSquared) {
+      nearest = site;
+      nearestDistanceSquared = distanceSquared;
+    }
+  }
+  const sourceGroundY =
+    nodeName === '3005_Item_15'
+      ? Math.max(CITADEL_ITEM_SOURCE_GROUND_Y, nearest.sourceGroundY)
+      : nearest.sourceGroundY;
+  return (nearest.targetGroundY ?? CITADEL_PLATEAU_TARGET_Y) - sourceGroundY;
+}
+
+function groundMapAssetGeometry(
+  assetId: string,
+  nodeName: string,
+  geometry: THREE.BufferGeometry,
+): void {
+  const position = geometry.getAttribute('position');
+  if (!(position instanceof THREE.BufferAttribute)) {
+    return;
+  }
+  const index = geometry.getIndex();
+  const drawStart = geometry.drawRange.start;
+  const availableCount = index?.count ?? position.count;
+  const drawCount = Number.isFinite(geometry.drawRange.count)
+    ? Math.min(geometry.drawRange.count, availableCount - drawStart)
+    : availableCount - drawStart;
+  let changed = false;
+  for (let cursor = drawStart; cursor + 2 < drawStart + drawCount; cursor += 3) {
+    const first = index?.getX(cursor) ?? cursor;
+    const second = index?.getX(cursor + 1) ?? cursor + 1;
+    const third = index?.getX(cursor + 2) ?? cursor + 2;
+    const centreX = (position.getX(first) + position.getX(second) + position.getX(third)) / 3;
+    const centreZ = (position.getZ(first) + position.getZ(second) + position.getZ(third)) / 3;
+    const offset = mapAssetVertexGroundingOffset(assetId, nodeName, centreX, centreZ);
+    if (offset === 0) {
+      continue;
+    }
+    position.setY(first, position.getY(first) + offset);
+    position.setY(second, position.getY(second) + offset);
+    position.setY(third, position.getY(third) + offset);
+    changed = true;
+  }
+  if (changed) {
+    position.needsUpdate = true;
+  }
+}
+
 function extractTemplate(assetId: string, scene: THREE.Group): AssetTemplate {
   scene.updateMatrixWorld(true);
   const parts: AssetPart[] = [];
@@ -684,6 +784,7 @@ function extractTemplate(assetId: string, scene: THREE.Group): AssetTemplate {
       geometry.clearGroups();
       geometry.setDrawRange(group.start, group.count);
       geometry.applyMatrix4(object.matrixWorld);
+      groundMapAssetGeometry(assetId, object.name, geometry);
       geometry.computeBoundingBox();
       geometry.computeBoundingSphere();
       const position = geometry.getAttribute('position');

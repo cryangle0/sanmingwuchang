@@ -5,9 +5,11 @@ import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import {
   buildGrassworksVegetationLayer,
+  GRASSWORKS_FOREST_GROVES,
   GRASSWORKS_SOURCE_PROFILE,
   GRASSWORKS_VEGETATION_ASSET_PATHS,
   sampleGrassworksGrassPoints,
+  sampleGrassworksTreePoints,
 } from '../apps/web/src/render/map/grassworks-vegetation';
 
 const repositoryRoot = resolve(import.meta.dirname, '..');
@@ -77,6 +79,27 @@ describe('web Grassworks vegetation', () => {
     expect(first.length).toBeGreaterThan(250_000);
   });
 
+  it('builds deterministic, continuous forests instead of isolated tree clumps', () => {
+    const first = sampleGrassworksTreePoints(0x08b3d5a4);
+    const second = sampleGrassworksTreePoints(0x08b3d5a4);
+    expect(second).toEqual(first);
+    expect(first).toHaveLength(1_800);
+    expect(GRASSWORKS_FOREST_GROVES).toHaveLength(7);
+
+    for (const grove of GRASSWORKS_FOREST_GROVES) {
+      const treesInGrove = first.filter((point) => {
+        const dx = point.x / 1_000 - grove.centerX;
+        const dz = point.z / 1_000 - grove.centerZ;
+        return (
+          (dx * dx) / (grove.radiusX * grove.radiusX) +
+            (dz * dz) / (grove.radiusZ * grove.radiusZ) <=
+          1
+        );
+      });
+      expect(treesInGrove.length, grove.id).toBeGreaterThanOrEqual(grove.treeCount);
+    }
+  });
+
   it('preserves the source profile in the WebGL adaptation', () => {
     expect(GRASSWORKS_SOURCE_PROFILE).toMatchObject({
       tileSizeMeters: 25,
@@ -89,6 +112,9 @@ describe('web Grassworks vegetation', () => {
       runtimeMaxDistanceMeters: 180,
       runtimeReducedMaxDistanceMeters: 108,
       runtimeRoadVergeMm: -1,
+      runtimeTreeCount: 1_800,
+      runtimeForestTreeCount: 1_510,
+      runtimeForestGroves: 7,
     });
     expect(GRASSWORKS_SOURCE_PROFILE.sourceLods).toEqual([
       { id: 'high', detail: 5, density: 4, distanceRatio: 0.3 },
