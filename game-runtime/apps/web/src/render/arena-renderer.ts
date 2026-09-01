@@ -7,6 +7,7 @@ import type {
   MonsterSnapshot,
   PlayerSnapshot,
   ProjectileSnapshot,
+  ShopSnapshot,
   SimEvent,
   StaticSolidRect,
   SummonSnapshot,
@@ -34,6 +35,7 @@ import { type CameraFollowState, updateCameraFollowState } from './camera-follow
 import { CombatEffectsLayer, effectColorForElement } from './combat-effects';
 import { activePresentationRange, type CombatRangePreviewMode } from './combat-range-preview';
 import { createMapAtmosphere, type MapAtmosphere } from './map/atmosphere';
+import { AUTUMN_STORM } from './map/autumn-storm';
 import type { GlobalSceneLayerDiagnostics } from './map/global-scene-layer';
 import { standingSurfaceMeters } from './map/ground';
 import type { MapAssetLayerDiagnostics } from './map/map-asset-layer';
@@ -46,13 +48,18 @@ import {
   CharacterModelLibrary,
 } from './models/character-model-library';
 import { collectModelAnimationEventTriggers } from './models/model-animation-events';
-import { heroModelDefinition, monsterModelDefinition } from './models/web-model-catalog';
+import {
+  heroModelDefinition,
+  monsterModelDefinition,
+  shopModelDefinition,
+  type WebShopModelDefinition,
+} from './models/web-model-catalog';
 import {
   characterAnimationIntervalSeconds,
   shouldCastCharacterShadow,
   shouldReduceGraphicsLoad,
 } from './render-performance-policy';
-import { tickWind } from './shading/wind';
+import { setWindCameraPosition, tickWind } from './shading/wind';
 import {
   createSpawnMarkerVisual,
   hasMovedFromSpawn,
@@ -135,6 +142,13 @@ interface AirdropVisual {
   readonly crate: THREE.Group;
 }
 
+interface ShopVisual {
+  readonly shopKind: ShopSnapshot['kind'];
+  readonly modelId: string;
+  readonly group: THREE.Group;
+  readonly model: CharacterModelInstance;
+}
+
 export interface RenderPixelDiagnostics {
   readonly drawingBufferWidth: number;
   readonly drawingBufferHeight: number;
@@ -193,6 +207,20 @@ export interface RenderModelEntityDiagnostics {
   readonly fallbackRenderableMeshes: number;
 }
 
+export interface RenderShopModelDiagnostics {
+  readonly shopId: string;
+  readonly shopKind: ShopSnapshot['kind'];
+  readonly modelId: string;
+  readonly loaded: boolean;
+  readonly loadRequested: boolean;
+  readonly visible: boolean;
+  readonly visualScale: number;
+  readonly instanceUuid: string;
+  readonly animationState: CharacterAnimationState | null;
+  readonly meshNames: readonly string[];
+  readonly fallbackRenderableMeshes: number;
+}
+
 export interface RenderModelDiagnostics extends CharacterModelDiagnostics {
   readonly visibleInstances: number;
   readonly visibleLoadedInstances: number;
@@ -201,6 +229,7 @@ export interface RenderModelDiagnostics extends CharacterModelDiagnostics {
   readonly sceneSprites: number;
   readonly playerModels: readonly RenderModelEntityDiagnostics[];
   readonly monsterModels: readonly RenderModelEntityDiagnostics[];
+  readonly shopModels: readonly RenderShopModelDiagnostics[];
 }
 
 export type CameraViewMode = WebCameraViewMode;
@@ -260,6 +289,9 @@ const ADAPTIVE_GRAPHICS_SETTLE_SECONDS = 2;
 // readability without changing simulation collision or movement scale.
 const PLAYER_MODEL_VISUAL_SCALE = WORLD_SCALE_PROFILE.character.playerModelScale;
 const MONSTER_MODEL_VISUAL_SCALE = WORLD_SCALE_PROFILE.character.monsterModelScale;
+const SHOP_PRESENTATION_YAW = Math.PI / 4;
+const SHOP_NPC_LOCAL_Z = -3.05;
+const SHOP_MODEL_VISUAL_SCALE = 1;
 const CAMERA_VIEW_ORDER: readonly CameraViewMode[] = ['standard', 'close', 'tactical'];
 const CAMERA_VIEWS: Readonly<
   Record<
@@ -293,6 +325,11 @@ const CAMERA_VIEWS: Readonly<
 const CAMERA_FOV_DEGREES = 30;
 /** Portrait sees very little ahead at a shallow pitch, so it looks down more. */
 const PORTRAIT_MIN_PITCH_DEGREES = 38;
+/** Keep the perspective camera above the rendered terrain and its footprint. */
+const CAMERA_GROUND_CLEARANCE_METERS = 1.55;
+const CAMERA_TARGET_CLEARANCE_METERS = 0.7;
+const CAMERA_GROUND_SAMPLE_STEP_METERS = 2.5;
+const CAMERA_GROUND_MAX_SAMPLE_COUNT = 24;
 const DEFAULT_CAMERA_ORBIT = cameraOrbitFromOffset(CAMERA_VIEWS.standard.offset);
 
 function worldMeters(millimeters: number): number {
@@ -307,6 +344,7 @@ export class ArenaRenderer {
   private readonly windWallVisuals = new Map<EntityId, WindWallVisual>();
   private readonly projectileVisuals = new Map<EntityId, ProjectileVisual>();
   private readonly monsterVisuals = new Map<EntityId, MonsterVisual>();
+  private readonly shopVisuals = new Map<string, ShopVisual>();
   private readonly lootVisuals = new Map<EntityId, LootVisual>();
   private readonly summonVisuals = new Map<EntityId, SummonVisual>();
   private readonly afterimageVisuals = new Map<EntityId, AfterimageVisual>();
@@ -397,13 +435,10 @@ export class ArenaRenderer {
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.05;
+    this.renderer.toneMappingExposure = AUTUMN_STORM.exposure;
 
-    // Placeholder sky until the map environment installs its own gradient.
-    // Keeping it in the same 浅青 family as the map sky means the first frames
-    // of a match no longer flash a dark ink background before the world lands.
-    this.scene.background = new THREE.Color(0x7798b3);
-    this.scene.fog = new THREE.FogExp2(0x91adbd, 0.0022);
+    this.scene.background = new THREE.Color(AUTUMN_STORM.fogColor);
+    this.scene.fog = new THREE.FogExp2(AUTUMN_STORM.fogColor, AUTUMN_STORM.fogDensity);
 
     // Far plane reaches the ridge line beyond the boundary cliffs; the
     // orthographic rig only ever needed 180 m.
@@ -419,7 +454,11 @@ export class ArenaRenderer {
     this.stormGroup = storm.group;
     this.stormRing = storm.ring;
     this.stormWall = storm.wall;
-    this.combatEffects = new CombatEffectsLayer(this.scene, this.graphicsTier);
+    this.combatEffects = new CombatEffectsLayer(
+      this.scene,
+      this.graphicsTier,
+      (xMeters, zMeters) => (this.mapEnvironment ? standingSurfaceMeters(xMeters, zMeters) : 0),
+    );
     this.resize();
 
     window.addEventListener('resize', this.resize);
@@ -709,6 +748,7 @@ export class ArenaRenderer {
           fill: this.fillLight,
           graphicsReduced: this.graphicsTier === 'reduced',
         });
+        this.renderer.toneMappingExposure = AUTUMN_STORM.exposure;
         this.environmentKind = 'map';
       } else {
         this.createArena();
@@ -756,6 +796,32 @@ export class ArenaRenderer {
     }
 
     const localPlayer = snapshot.players.find((player) => player.entityId === this.localEntityId);
+    const currentShopIds = new Set(snapshot.shops.map((shop) => shop.shopId));
+    for (const [shopId, visual] of this.shopVisuals) {
+      if (!currentShopIds.has(shopId)) {
+        this.disposeShopVisual(visual);
+        this.shopVisuals.delete(shopId);
+      }
+    }
+    for (const shop of snapshot.shops) {
+      const definition = shopModelDefinition(shop.kind);
+      if (!definition) {
+        const existing = this.shopVisuals.get(shop.shopId);
+        if (existing) {
+          this.disposeShopVisual(existing);
+          this.shopVisuals.delete(shop.shopId);
+        }
+        continue;
+      }
+      let visual = this.shopVisuals.get(shop.shopId);
+      if (visual && (visual.shopKind !== shop.kind || visual.modelId !== definition.id)) {
+        this.disposeShopVisual(visual);
+        this.shopVisuals.delete(shop.shopId);
+        visual = undefined;
+      }
+      visual ??= this.createShopVisual(shop, definition);
+      this.updateShopVisual(visual, shop, elapsedSeconds, localPlayer?.position ?? null);
+    }
     this.updateStormVisual(snapshot, localPlayer?.position ?? null, elapsedSeconds);
     if (localPlayer?.taibaiTargetHeroId) {
       const targetDefinition = heroModelDefinition(localPlayer.taibaiTargetHeroId);
@@ -945,8 +1011,11 @@ export class ArenaRenderer {
         this.cameraSnapRequested,
       );
       this.cameraSnapRequested = false;
+      this.keepCameraTargetAboveMapSurface();
       this.camera.position.copy(this.cameraTarget).add(this.cameraOffset);
+      this.keepCameraAboveMapSurface();
       this.camera.lookAt(this.cameraTarget);
+      setWindCameraPosition(this.camera.position);
       this.mapAtmosphere?.update(
         this.cameraTarget.x,
         this.cameraTarget.z,
@@ -963,8 +1032,11 @@ export class ArenaRenderer {
       );
       this.mapEnvironment?.updateOcclusion(this.camera.position, this.occlusionFocus);
       if (this.sun) {
-        // Keep the shadow frustum centered on the local player on the big map.
-        this.sun.position.set(this.cameraTarget.x - 22, 34, this.cameraTarget.z + 18);
+        this.sun.position.set(
+          this.cameraTarget.x + AUTUMN_STORM.sunOffsetX,
+          AUTUMN_STORM.sunHeight,
+          this.cameraTarget.z + AUTUMN_STORM.sunOffsetZ,
+        );
         this.sun.target.position.copy(this.cameraTarget);
       }
     } else {
@@ -999,6 +1071,46 @@ export class ArenaRenderer {
     tickWind(elapsedSeconds);
     this.renderer.render(this.scene, this.camera);
     this.maybeReduceGraphicsLoad(elapsedSeconds);
+  }
+
+  private keepCameraAboveMapSurface(): void {
+    if (!this.mapEnvironment) {
+      return;
+    }
+    let minimumY =
+      standingSurfaceMeters(this.camera.position.x, this.camera.position.z) +
+      CAMERA_GROUND_CLEARANCE_METERS;
+    const horizontalDistance = Math.hypot(
+      this.camera.position.x - this.cameraTarget.x,
+      this.camera.position.z - this.cameraTarget.z,
+    );
+    const sampleCount = Math.min(
+      CAMERA_GROUND_MAX_SAMPLE_COUNT,
+      Math.max(5, Math.ceil(horizontalDistance / CAMERA_GROUND_SAMPLE_STEP_METERS)),
+    );
+    for (let index = 1; index <= sampleCount; index += 1) {
+      const progress = index / sampleCount;
+      const sampleX = THREE.MathUtils.lerp(this.cameraTarget.x, this.camera.position.x, progress);
+      const sampleZ = THREE.MathUtils.lerp(this.cameraTarget.z, this.camera.position.z, progress);
+      minimumY = Math.max(
+        minimumY,
+        standingSurfaceMeters(sampleX, sampleZ) + CAMERA_GROUND_CLEARANCE_METERS,
+      );
+    }
+    if (this.camera.position.y < minimumY) {
+      this.camera.position.y = minimumY;
+    }
+  }
+
+  private keepCameraTargetAboveMapSurface(): void {
+    if (!this.mapEnvironment) {
+      return;
+    }
+    this.cameraTarget.y = Math.max(
+      this.cameraTarget.y,
+      standingSurfaceMeters(this.cameraTarget.x, this.cameraTarget.z) +
+        CAMERA_TARGET_CLEARANCE_METERS,
+    );
   }
 
   private faceCamera(object: THREE.Object3D): void {
@@ -1083,11 +1195,29 @@ export class ArenaRenderer {
         fallbackRenderableMeshes: visual.model?.fallbackRenderableMeshCount ?? 0,
       }))
       .sort((left, right) => Number(left.entityId) - Number(right.entityId));
+    const shopModels = [...this.shopVisuals.entries()]
+      .map(([shopId, visual]) => ({
+        shopId,
+        shopKind: visual.shopKind,
+        modelId: visual.modelId,
+        loaded: visual.model.isLoaded,
+        loadRequested: visual.model.isLoadRequested,
+        visible: visual.group.parent === this.scene && visual.group.visible,
+        visualScale: visual.model.root.scale.x,
+        instanceUuid: visual.model.root.uuid,
+        animationState: visual.model.animationState,
+        meshNames: visual.model.loadedMeshNames,
+        fallbackRenderableMeshes: visual.model.fallbackRenderableMeshCount,
+      }))
+      .sort((left, right) => left.shopId.localeCompare(right.shopId));
     const visibleModels = [
       ...[...this.playerVisuals.values()]
         .filter((visual) => visual.group.parent === this.scene && visual.group.visible)
         .map((visual) => visual.model),
       ...[...this.monsterVisuals.values()]
+        .filter((visual) => visual.group.parent === this.scene && visual.group.visible)
+        .map((visual) => visual.model),
+      ...[...this.shopVisuals.values()]
         .filter((visual) => visual.group.parent === this.scene && visual.group.visible)
         .map((visual) => visual.model),
     ].filter((model): model is CharacterModelInstance => model !== null);
@@ -1110,6 +1240,7 @@ export class ArenaRenderer {
       sceneSprites,
       playerModels,
       monsterModels,
+      shopModels,
     };
   }
 
@@ -1360,6 +1491,9 @@ export class ArenaRenderer {
     for (const visual of this.monsterVisuals.values()) {
       this.disposeMonsterVisual(visual);
     }
+    for (const visual of this.shopVisuals.values()) {
+      this.disposeShopVisual(visual);
+    }
     for (const visual of this.lootVisuals.values()) {
       visual.mesh.geometry.dispose();
       visual.material.dispose();
@@ -1424,16 +1558,16 @@ export class ArenaRenderer {
   };
 
   private createLighting(): void {
-    // Section 7 of the scene prompt: warm gold key from the upper side, cool
-    // 青 sky bounce as ambient, and a cool counter-light so nothing falls into
-    // black. The sky half of the hemisphere carries the cool, which is what
-    // keeps overcast districts from reading as grey.
-    const hemisphere = new THREE.HemisphereLight(0xcfe1f2, 0x5b5748, 1.7);
+    const hemisphere = new THREE.HemisphereLight(
+      AUTUMN_STORM.hemiSky,
+      AUTUMN_STORM.hemiGround,
+      AUTUMN_STORM.hemiIntensity,
+    );
     this.scene.add(hemisphere);
     this.hemisphere = hemisphere;
 
-    const sun = new THREE.DirectionalLight(0xffe8bc, 2.2);
-    sun.position.set(-22, 34, 18);
+    const sun = new THREE.DirectionalLight(AUTUMN_STORM.sunColor, AUTUMN_STORM.sunIntensity);
+    sun.position.set(AUTUMN_STORM.sunOffsetX, AUTUMN_STORM.sunHeight, AUTUMN_STORM.sunOffsetZ);
     sun.castShadow = this.graphicsTier === 'balanced';
     sun.shadow.mapSize.set(1_024, 1_024);
     // Widened with the pitch drop: at 26-32 degrees the camera sees roughly
@@ -1449,9 +1583,7 @@ export class ArenaRenderer {
     this.scene.add(sun.target);
     this.sun = sun;
 
-    // Cool counter-light from the opposite quadrant lifts the faces the sun
-    // misses, so tall walls read as stone instead of dropping to black.
-    const fill = new THREE.DirectionalLight(0x9db8c4, 0.6);
+    const fill = new THREE.DirectionalLight(AUTUMN_STORM.fillColor, AUTUMN_STORM.fillIntensity);
     fill.position.set(24, 16, -20);
     this.scene.add(fill);
     this.fillLight = fill;
@@ -2171,6 +2303,78 @@ export class ArenaRenderer {
         material.dispose();
       }
     });
+  }
+
+  private createShopVisual(shop: ShopSnapshot, definition: WebShopModelDefinition): ShopVisual {
+    const group = new THREE.Group();
+    group.name = `shop-npc-${shop.shopId}`;
+    const placeholder = new THREE.Group();
+    placeholder.name = `model-loading-${definition.id}`;
+    const model = this.modelLibrary.createInstance(definition, placeholder);
+    model.root.scale.setScalar(SHOP_MODEL_VISUAL_SCALE);
+    group.add(model.root);
+    this.scene.add(group);
+    const visual = {
+      shopKind: shop.kind,
+      modelId: definition.id,
+      group,
+      model,
+    };
+    this.shopVisuals.set(shop.shopId, visual);
+    return visual;
+  }
+
+  private updateShopVisual(
+    visual: ShopVisual,
+    shop: ShopSnapshot,
+    elapsedSeconds: number,
+    localPosition: PlayerSnapshot['position'] | null,
+  ): void {
+    const distanceSquared = localPosition
+      ? (shop.position.x - localPosition.x) ** 2 + (shop.position.z - localPosition.z) ** 2
+      : 0;
+    const visible =
+      shop.status === 'open' &&
+      (!localPosition ||
+        distanceSquared <=
+          (this.graphicsTier === 'reduced'
+            ? REDUCED_ENTITY_VISUAL_CULL_DISTANCE_SQUARED
+            : BALANCED_ENTITY_VISUAL_CULL_DISTANCE_SQUARED));
+    if (visible) {
+      if (visual.group.parent !== this.scene) {
+        this.scene.add(visual.group);
+      }
+      visual.group.visible = true;
+    } else {
+      visual.group.visible = false;
+      if (visual.group.parent === this.scene) {
+        this.scene.remove(visual.group);
+      }
+      return;
+    }
+
+    const npcX = worldMeters(shop.position.x) + SHOP_NPC_LOCAL_Z * Math.sin(SHOP_PRESENTATION_YAW);
+    const npcZ = worldMeters(shop.position.z) + SHOP_NPC_LOCAL_Z * Math.cos(SHOP_PRESENTATION_YAW);
+    const npcXmm = Math.round(npcX * 1_000);
+    const npcZmm = Math.round(npcZ * 1_000);
+    visual.group.position.set(npcX, this.footingMeters(npcXmm, npcZmm), npcZ);
+    visual.group.rotation.y = SHOP_PRESENTATION_YAW;
+    visual.model.setShadows(
+      shouldCastCharacterShadow(this.graphicsTier, distanceSquared, false),
+      this.graphicsTier === 'balanced',
+    );
+    visual.model.ensureLoaded(distanceSquared <= 18_000 ** 2);
+    visual.model.update(
+      elapsedSeconds,
+      'Idle',
+      null,
+      characterAnimationIntervalSeconds(this.graphicsTier, distanceSquared, false),
+    );
+  }
+
+  private disposeShopVisual(visual: ShopVisual): void {
+    this.scene.remove(visual.group);
+    visual.model.dispose();
   }
 
   private createMonsterVisual(

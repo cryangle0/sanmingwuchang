@@ -4,6 +4,7 @@ import type {
   ActiveProjectileSnapshot,
   ActiveTargetEffectSnapshot,
   ActiveZoneSnapshot,
+  MonsterSnapshot,
   PlayerSnapshot,
   SimEvent,
   SummonSnapshot,
@@ -110,6 +111,7 @@ function activeZone(kind: ActiveZoneSnapshot['kind'], index: number): ActiveZone
 
 function combatSnapshot(options: {
   readonly players?: readonly PlayerSnapshot[];
+  readonly monsters?: readonly MonsterSnapshot[];
   readonly summons?: readonly SummonSnapshot[];
   readonly activeProjectiles?: readonly ActiveProjectileSnapshot[];
   readonly activeZones?: readonly ActiveZoneSnapshot[];
@@ -119,7 +121,7 @@ function combatSnapshot(options: {
   return {
     tick: options.tick ?? 100,
     players: options.players ?? [],
-    monsters: [],
+    monsters: options.monsters ?? [],
     summons: options.summons ?? [],
     activeProjectiles: options.activeProjectiles ?? [],
     activeZones: options.activeZones ?? [],
@@ -230,7 +232,7 @@ describe('web combat effects', () => {
     expect(layer.getDiagnostics()).toMatchObject({
       activeProjectiles: 1,
       activeZones: 1,
-      transientLimit: 28,
+      transientLimit: 36,
     });
 
     layer.setGraphicsTier('balanced');
@@ -238,7 +240,7 @@ describe('web combat effects', () => {
     expect(layer.getDiagnostics()).toMatchObject({
       activeProjectiles: 2,
       activeZones: 2,
-      transientLimit: 56,
+      transientLimit: 72,
     });
 
     layer.dispose();
@@ -472,6 +474,55 @@ describe('web combat effects', () => {
       impactEffectsSpawned: 1,
       lastSkillHeroId: 'H009',
     });
+    layer.dispose();
+  });
+
+  it('spawns unique monster attack visuals instead of generic hero impacts', () => {
+    const scene = new THREE.Scene();
+    const layer = new CombatEffectsLayer(scene, 'balanced');
+    const player = {
+      entityId: entityId(1),
+      heroId: heroId('H009'),
+      position: vec2Mm(2_000, 0),
+      facing: vec2Mm(0, 1_000),
+      lifeState: 'alive',
+      attackRangeMm: 5_000,
+    } as PlayerSnapshot;
+    const monster = {
+      entityId: entityId(40),
+      kind: 'dragon-king',
+      element: 'fire',
+      position: vec2Mm(0, 0),
+      facing: vec2Mm(1_000, 0),
+    } as MonsterSnapshot;
+    layer.update(
+      combatSnapshot({ players: [player], monsters: [monster] }),
+      [
+        {
+          type: 'damage',
+          tick: 100,
+          sourceEntityId: monster.entityId,
+          targetEntityId: player.entityId,
+          cause: 'monster',
+          form: 'basic',
+          isCritical: false,
+          amount: 40,
+          shieldDamage: 0,
+          hpDamage: 40,
+          shieldBypassHpDamage: 0,
+          remainingHp: 960,
+          remainingShield: 0,
+        },
+      ] as readonly SimEvent[],
+      4,
+    );
+    expect(layer.getDiagnostics()).toMatchObject({
+      monsterSkillCastsSpawned: 1,
+      lastMonsterKind: 'dragon-king',
+      heroSkillImpactsSpawned: 0,
+    });
+    expect(scene.getObjectByName('monster-skill-m-dragon-cast')).toBeDefined();
+    expect(scene.getObjectByName('monster-skill-m-dragon-impact')).toBeDefined();
     layer.dispose();
   });
 });

@@ -46,8 +46,8 @@ describe('hero skill burst layers', () => {
 
   it('pairs the shock rings on impact so the wave has a trailing edge', () => {
     const profile = firstProfile();
-    expect(ringsIn(createHeroSkillVisual(profile, 'impact', false).group)).toHaveLength(2);
-    expect(ringsIn(createHeroSkillVisual(profile, 'cast', false).group)).toHaveLength(1);
+    expect(ringsIn(createHeroSkillVisual(profile, 'impact', false).group)).toHaveLength(3);
+    expect(ringsIn(createHeroSkillVisual(profile, 'cast', false).group)).toHaveLength(2);
     expect(ringsIn(createHeroSkillVisual(profile, 'status', false).group)).toHaveLength(0);
   });
 

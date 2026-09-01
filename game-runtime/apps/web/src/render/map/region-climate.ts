@@ -1,22 +1,17 @@
 import { terrainHeightMeters } from '@jwgb/content';
+import { AUTUMN_STORM } from './autumn-storm';
 import type { RegionId, RegionStyle } from './map-regions';
 import { regionBlendAt } from './map-regions';
 
 /**
  * Render-only climate per 真源 district. Weather never enters the sim:
- * rain/snow are particles and lighting, ground wetness/soil/frost are
- * vertex colours plus the ground splat shader.
+ * rain and falling leaves are particles, lighting and fog are atmosphere,
+ * ground wetness/soil are vertex colours plus the ground splat shader.
  *
- * Balance follows the scene prompt sections 7 and 13. Two rules shape every
- * row below:
- *
- * 1. The key light stays warm and bright in every district. Weather varies
- *    the *ambient* — hemisphere sky goes cool 青 under cloud — rather than
- *    draining the sun to grey, which is what flattened the rainy districts
- *    into the 灰蒙/低对比 the prompt forbids.
- * 2. Fog and precipitation are capped so 前景 and 中景 stay sharp. Districts
- *    still read as wet, frozen or dusty, but mist never covers the roads,
- *    drops, enemies or telegraphs a player is supposed to see.
+ * The whole map is one autumn storm. Districts still keep their own wetness,
+ * soil and a small key/fog offset so 烬水市 reads warmer than 蛛丝峡, but
+ * nobody stands in clear weather or snow. Fog stays thin enough that roads,
+ * drops and telegraphs remain readable in the foreground.
  */
 
 export type RegionWeather = 'clear' | 'rain' | 'snow';
@@ -34,98 +29,78 @@ export interface RegionClimate {
   readonly frost: number;
 }
 
+function stormClimate(overrides: Partial<RegionClimate> = {}): RegionClimate {
+  return {
+    weather: AUTUMN_STORM.weather,
+    intensity: AUTUMN_STORM.rainIntensity,
+    fogDensity: AUTUMN_STORM.fogDensity,
+    sunIntensity: AUTUMN_STORM.sunIntensity,
+    sunColor: AUTUMN_STORM.sunColor,
+    hemiSky: AUTUMN_STORM.hemiSky,
+    hemiGround: AUTUMN_STORM.hemiGround,
+    wetness: AUTUMN_STORM.wetness,
+    soilBias: 0.16,
+    frost: AUTUMN_STORM.frost,
+    ...overrides,
+  };
+}
+
 const CLIMATE: Readonly<Record<RegionId, RegionClimate>> = {
-  // 断金坡: 低风险、清晰的石坡和断墙. The map's clearest, most legible district.
-  duanjin: {
-    weather: 'clear',
-    intensity: 0,
+  duanjin: stormClimate({
     fogDensity: 0.0016,
-    sunIntensity: 2.15,
-    sunColor: 0xffe3b6,
-    hemiSky: 0xcbdff0,
-    hemiGround: 0x776a55,
-    wetness: 0.04,
+    sunIntensity: 1.42,
     soilBias: 0.24,
-    frost: 0,
-  },
-  // 蛛丝峡: 狭窄峡谷、垂直岩壁. Wet rock and a cool sky slot overhead.
-  zhusi: {
-    weather: 'rain',
-    intensity: 0.5,
-    fogDensity: 0.0028,
-    sunIntensity: 1.75,
-    sunColor: 0xe8ecf2,
-    hemiSky: 0xb9d0e6,
-    hemiGround: 0x4a5866,
+    wetness: 0.56,
+  }),
+  zhusi: stormClimate({
+    fogDensity: 0.00195,
+    sunIntensity: 1.3,
+    sunColor: 0xc8d8de,
+    hemiSky: 0x9fb6c0,
+    hemiGround: 0x5a6567,
     wetness: 0.72,
     soilBias: 0.12,
-    frost: 0,
-  },
-  // 龙脊渊: 高台、龙宫、水汽和远距离视野. Frost belongs to the high ground.
-  longji: {
-    weather: 'snow',
-    intensity: 0.62,
-    fogDensity: 0.0025,
-    sunIntensity: 1.95,
-    sunColor: 0xf2f7fa,
-    hemiSky: 0xcfe6ee,
-    hemiGround: 0x51625f,
-    wetness: 0.18,
+  }),
+  longji: stormClimate({
+    fogDensity: 0.0018,
+    sunIntensity: 1.36,
+    sunColor: 0xc6d7d2,
+    hemiSky: 0xa3b9b8,
+    hemiGround: 0x5c6962,
+    wetness: 0.64,
     soilBias: 0.08,
-    frost: 0.82,
-  },
-  // 百足城: 密集道路、城墙、建筑. Brightest outer district so chases read.
-  baizu: {
-    weather: 'clear',
-    intensity: 0,
-    fogDensity: 0.0015,
-    sunIntensity: 2.25,
-    sunColor: 0xffe9be,
-    hemiSky: 0xcde2f2,
-    hemiGround: 0x5c6a4a,
-    wetness: 0.08,
-    soilBias: 0.06,
-    frost: 0,
-  },
-  // 热水市: 商店、桥梁、灯火. Warmest key in the map, lantern-side.
-  jinshui: {
-    weather: 'clear',
-    intensity: 0,
-    fogDensity: 0.002,
-    sunIntensity: 2,
-    sunColor: 0xffcf96,
-    hemiSky: 0xdcd6d2,
-    hemiGround: 0x6a4c36,
-    wetness: 0.02,
+  }),
+  baizu: stormClimate({
+    fogDensity: 0.0016,
+    sunIntensity: 1.44,
+    soilBias: 0.08,
+    wetness: 0.6,
+  }),
+  jinshui: stormClimate({
+    fogDensity: 0.00165,
+    sunIntensity: 1.4,
+    sunColor: 0xd8c1a6,
+    hemiSky: 0xa9a19a,
+    hemiGround: 0x665342,
+    wetness: 0.54,
     soilBias: 0.28,
-    frost: 0,
-  },
-  // 迷魂滩: 森林、猪窝、伏击点. Damp forest air, not a grey wall of rain.
-  mihun: {
-    weather: 'rain',
-    intensity: 0.6,
-    fogDensity: 0.0026,
-    sunIntensity: 1.7,
-    sunColor: 0xdfe6d8,
-    hemiSky: 0xc2d6da,
-    hemiGround: 0x46523c,
-    wetness: 0.86,
+  }),
+  mihun: stormClimate({
+    fogDensity: 0.00195,
+    sunIntensity: 1.3,
+    sunColor: 0xc5d6c7,
+    hemiSky: 0x9bb59f,
+    hemiGround: 0x596952,
+    wetness: 0.82,
     soilBias: 0.14,
-    frost: 0,
-  },
-  // 万劫三庭: the 终局 stage. Thinnest fog and the strongest key on the map.
-  santing: {
-    weather: 'clear',
-    intensity: 0,
-    fogDensity: 0.0013,
-    sunIntensity: 2.4,
-    sunColor: 0xffeabb,
-    hemiSky: 0xdfe9f2,
-    hemiGround: 0x746848,
-    wetness: 0,
+  }),
+  santing: stormClimate({
+    fogDensity: 0.00155,
+    sunIntensity: 1.48,
+    sunColor: 0xe0cda9,
+    wetness: 0.54,
     soilBias: 0.2,
-    frost: 0,
-  },
+  }),
 };
 
 export function climateOf(id: RegionId): RegionClimate {

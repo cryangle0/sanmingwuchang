@@ -94,30 +94,29 @@ describe('map art direction: colour system (section 6)', () => {
   });
 });
 
-describe('map art direction: lighting and fog (sections 7 and 13)', () => {
+describe('map art direction: lighting and fog (autumn storm)', () => {
   it('keeps fog thin enough that 前景 and 中景 stay sharp', () => {
-    // "迷雾不能覆盖已经应该被玩家看到的道路、掉落物、敌人和预警" and the section 15
-    // ban on 大面积灰雾. FogExp2 reaches ~14% extinction at 100 m for 0.004, so
-    // the ceiling here keeps a full engagement range effectively clear.
     for (const region of regionStyles()) {
       const climate = climateOf(region.id);
-      expect(climate.fogDensity, `${region.name} fog`).toBeLessThanOrEqual(0.003);
+      expect(climate.fogDensity, `${region.name} fog`).toBeLessThanOrEqual(0.0028);
+      expect(climate.fogDensity, `${region.name} fog`).toBeGreaterThanOrEqual(0.0015);
     }
   });
 
-  it('never drops a district below the contrast floor', () => {
-    // Weather varies the ambient, not the key: no district may go dim enough to
-    // read as 低对比 (section 15).
+  it('holds the key in a bright-readable storm range without washing out', () => {
     for (const region of regionStyles()) {
       const climate = climateOf(region.id);
-      expect(climate.sunIntensity, `${region.name} sun`).toBeGreaterThanOrEqual(1.65);
+      expect(climate.sunIntensity, `${region.name} sun`).toBeGreaterThanOrEqual(1.2);
+      expect(climate.sunIntensity, `${region.name} sun`).toBeLessThanOrEqual(1.55);
+      expect(climate.weather, `${region.name} weather`).toBe('rain');
+      expect(climate.frost, `${region.name} frost`).toBe(0);
     }
   });
 
   it('caps precipitation so it never walls off the frame', () => {
     for (const region of regionStyles()) {
       const climate = climateOf(region.id);
-      expect(climate.intensity, `${region.name} precipitation`).toBeLessThanOrEqual(0.7);
+      expect(climate.intensity, `${region.name} precipitation`).toBeLessThanOrEqual(0.9);
     }
   });
 

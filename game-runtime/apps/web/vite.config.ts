@@ -36,6 +36,7 @@ function modelProxyPlugin(): Plugin {
         // paths would hide local files behind a remote 404 during development.
         if (
           relativeUrl.startsWith('/characters/') ||
+          relativeUrl.startsWith('/shops/') ||
           relativeUrl.startsWith('/foliage/') ||
           relativeUrl.startsWith('/map-assets/') ||
           relativeUrl.startsWith('/global-scenes/') ||

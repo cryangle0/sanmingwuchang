@@ -199,15 +199,18 @@ export function createCharacterPresentationRoot(
 
 function animationClips(
   root: THREE.Group,
+  requestedStates: readonly CharacterAnimationState[] = Object.keys(
+    CLIP_RANGES,
+  ) as CharacterAnimationState[],
 ): ReadonlyMap<CharacterAnimationState, THREE.AnimationClip> {
   const clips = new Map<CharacterAnimationState, THREE.AnimationClip>();
-  for (const state of Object.keys(CLIP_RANGES) as CharacterAnimationState[]) {
+  for (const state of requestedStates) {
     const named = root.animations.find((clip) => clip.name === state);
     if (named) {
       clips.set(state, named);
     }
   }
-  if (clips.size === 4) {
+  if (clips.size === requestedStates.length) {
     return clips;
   }
 
@@ -218,8 +221,15 @@ function animationClips(
   if (!source) {
     return clips;
   }
-  for (const state of Object.keys(CLIP_RANGES) as CharacterAnimationState[]) {
+  if (requestedStates.length === 1 && requestedStates[0] === 'Idle') {
+    clips.set('Idle', source);
+    return clips;
+  }
+  for (const state of requestedStates) {
     const range = CLIP_RANGES[state];
+    if (!range) {
+      continue;
+    }
     clips.set(
       state,
       THREE.AnimationUtils.subclip(source, state, range.firstFrame, range.lastFrame + 1, CLIP_FPS),
@@ -601,7 +611,7 @@ export class CharacterModelLibrary {
               void (async () => {
                 try {
                   await waitForObjectTextures(sourceRoot);
-                  const clips = animationClips(sourceRoot);
+                  const clips = animationClips(sourceRoot, definition.animationStates);
                   const root = createCharacterPresentationRoot(sourceRoot, definition.height);
                   root.traverse((child) => {
                     if (child instanceof THREE.Mesh) {

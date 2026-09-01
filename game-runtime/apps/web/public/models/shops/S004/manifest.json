@@ -1,0 +1,198 @@
+{
+  "schema": "jwgb.shop-npc-model.v1",
+  "generatedAt": "2026-09-01T15:13:52.118Z",
+  "modelId": "S004",
+  "shopKind": "heishan",
+  "displayName": "黑山老妖",
+  "deliveryPath": "models/shops/S004/model.glb",
+  "targetHeight": 2.6,
+  "animationStates": [
+    "Idle"
+  ],
+  "sources": [
+    {
+      "name": "Idle",
+      "fileName": "01_待机_idle.fbx",
+      "bytes": 6217340,
+      "sha256": "0BA43ACD3014F7FC874E988428DFF3E6CEE41A20EE12752074AD02D7593C0A02",
+      "selectedClip": "Armature|CS_Idle"
+    }
+  ],
+  "conversion": {
+    "sourceMetrics": [
+      {
+        "name": "Idle",
+        "selectedClip": "Armature|CS_Idle",
+        "availableClips": [
+          "Armature|CS_Idle"
+        ],
+        "meshes": 1,
+        "skinnedMeshes": 1,
+        "staticMeshes": 0,
+        "vertices": 359994,
+        "triangles": 119998,
+        "bones": [
+          "Head",
+          "Hip",
+          "L_Calf",
+          "L_CalfTwist01",
+          "L_CalfTwist02",
+          "L_Clavicle",
+          "L_Foot",
+          "L_Forearm",
+          "L_ForearmTwist01",
+          "L_ForearmTwist02",
+          "L_Hand",
+          "L_Thigh",
+          "L_ThighTwist01",
+          "L_ThighTwist02",
+          "L_ToeBase",
+          "L_Upperarm",
+          "L_UpperarmTwist01",
+          "L_UpperarmTwist02",
+          "NeckTwist01",
+          "NeckTwist02",
+          "Pelvis",
+          "R_Calf",
+          "R_CalfTwist01",
+          "R_CalfTwist02",
+          "R_Clavicle",
+          "R_Foot",
+          "R_Forearm",
+          "R_ForearmTwist01",
+          "R_ForearmTwist02",
+          "R_Hand",
+          "R_Thigh",
+          "R_ThighTwist01",
+          "R_ThighTwist02",
+          "R_ToeBase",
+          "R_Upperarm",
+          "R_UpperarmTwist01",
+          "R_UpperarmTwist02",
+          "Root",
+          "Spine01",
+          "Spine02",
+          "Waist"
+        ],
+        "meshRecords": [
+          {
+            "name": "Body",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 359994,
+            "triangles": 119998
+          }
+        ],
+        "duration": 3.9583332538604736,
+        "tracks": 84,
+        "keyframes": 191,
+        "retargetedPositionTracks": 42,
+        "maximumRestPositionCorrection": 0,
+        "droppedTracks": 0,
+        "droppedTrackNames": []
+      }
+    ],
+    "retainedMesh": {
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "staticMeshes": 0,
+      "vertices": 359994,
+      "triangles": 119998,
+      "bones": [
+        "Head",
+        "Hip",
+        "L_Calf",
+        "L_CalfTwist01",
+        "L_CalfTwist02",
+        "L_Clavicle",
+        "L_Foot",
+        "L_Forearm",
+        "L_ForearmTwist01",
+        "L_ForearmTwist02",
+        "L_Hand",
+        "L_Thigh",
+        "L_ThighTwist01",
+        "L_ThighTwist02",
+        "L_ToeBase",
+        "L_Upperarm",
+        "L_UpperarmTwist01",
+        "L_UpperarmTwist02",
+        "NeckTwist01",
+        "NeckTwist02",
+        "Pelvis",
+        "R_Calf",
+        "R_CalfTwist01",
+        "R_CalfTwist02",
+        "R_Clavicle",
+        "R_Foot",
+        "R_Forearm",
+        "R_ForearmTwist01",
+        "R_ForearmTwist02",
+        "R_Hand",
+        "R_Thigh",
+        "R_ThighTwist01",
+        "R_ThighTwist02",
+        "R_ToeBase",
+        "R_Upperarm",
+        "R_UpperarmTwist01",
+        "R_UpperarmTwist02",
+        "Root",
+        "Spine01",
+        "Spine02",
+        "Waist"
+      ],
+      "meshRecords": [
+        {
+          "name": "S004-Body-01",
+          "parentName": "S004-黑山老妖-Animated",
+          "skinned": true,
+          "vertices": 359994,
+          "triangles": 119998
+        }
+      ]
+    },
+    "exportedClips": [
+      {
+        "name": "Idle",
+        "duration": 3.9583332538604736,
+        "tracks": 84,
+        "keyframes": 191
+      }
+    ],
+    "bodyTriangleBudget": 16000,
+    "accessoryTriangleBudget": 4000,
+    "staticMeshesAreWeapons": false
+  },
+  "optimized": {
+    "bytes": 281312,
+    "vertices": 10005,
+    "triangles": 13119,
+    "meshes": 1,
+    "materials": 1,
+    "textures": 2,
+    "bodyTriangles": 13119,
+    "accessoryTriangles": 0,
+    "animations": [
+      {
+        "name": "Idle",
+        "channels": 84,
+        "samplers": 84
+      }
+    ],
+    "skins": [
+      {
+        "name": "",
+        "joints": 41
+      }
+    ],
+    "meshRecords": [
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 13119
+      }
+    ]
+  },
+  "errors": [],
+  "status": "passed"
+}

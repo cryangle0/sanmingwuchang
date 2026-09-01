@@ -1,11 +1,12 @@
 import * as THREE from 'three';
+import { AUTUMN_STORM } from './autumn-storm';
 import { regionAt } from './map-regions';
 import type { PrecipMode } from './weather-field';
 import { precipSpawnXZ, remotePrecipPlan } from './weather-field';
 
 /**
- * Camera-following rain/snow, cloned from world-of-claudecraft's render-only
- * weather: one pooled Points cloud, district-driven, never touches the sim.
+ * Camera-following rain, cloned from world-of-claudecraft's render-only
+ * weather: one pooled Points cloud, driven by the whole-map autumn storm.
  */
 
 const HX = 48;
@@ -34,12 +35,12 @@ const STYLES: Record<PrecipMode, PrecipStyle> = {
     texture: 'flake',
   },
   rain: {
-    color: 0x9fc4e0,
-    size: 0.55,
-    fall: 48,
-    fallVar: 12,
-    sway: 0.45,
-    target: 0.68,
+    color: 0xc4d8e4,
+    size: 0.16,
+    fall: 42,
+    fallVar: 16,
+    sway: 5.5,
+    target: AUTUMN_STORM.rainIntensity,
     texture: 'streak',
   },
 };
@@ -89,7 +90,7 @@ function streakTexture(): THREE.CanvasTexture {
   gradient.addColorStop(0.5, 'rgba(255,255,255,0.9)');
   gradient.addColorStop(1, 'rgba(255,255,255,0)');
   context.fillStyle = gradient;
-  context.fillRect(28, 2, 8, 60);
+  context.fillRect(30, 2, 4, 60);
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.minFilter = THREE.LinearFilter;
@@ -117,7 +118,7 @@ export class MapWeather {
   private wasLive = false;
 
   constructor(scene: THREE.Scene, reduced: boolean) {
-    this.count = reduced ? 480 : 1200;
+    this.count = reduced ? 900 : 2200;
     this.positions = new Float32Array(this.count * 3);
     this.fallSpeed = new Float32Array(this.count);
     this.phase = new Float32Array(this.count);
@@ -144,6 +145,7 @@ export class MapWeather {
       opacity: 0,
       depthWrite: false,
       sizeAttenuation: true,
+      alphaTest: 0.18,
     });
     this.points = new THREE.Points(geometry, this.material);
     this.points.frustumCulled = false;
@@ -214,7 +216,8 @@ export class MapWeather {
       let z = this.positions[offset + 2] ?? 0;
       const fall = style.fall + speed * style.fallVar;
       y -= fall * dt;
-      x += Math.sin(this.time * 0.8 + phase) * style.sway * dt;
+      x += (Math.sin(this.time * 0.8 + phase) * style.sway + AUTUMN_STORM.rainWindX) * dt;
+      z += AUTUMN_STORM.rainWindZ * dt;
       let wrapped = false;
       const rx = x - focus.x;
       if (rx > HX) {

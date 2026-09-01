@@ -41,6 +41,15 @@ interface HealthPayload {
   };
 }
 
+interface SkillVfxManifest {
+  readonly schema?: string;
+  readonly staticOverlay?: {
+    readonly path?: string;
+    readonly slots?: number;
+  };
+  readonly effects?: Readonly<Record<string, { readonly atlasPath?: string }>>;
+}
+
 function delay(milliseconds: number): Promise<void> {
   return new Promise((resolveDelay) => setTimeout(resolveDelay, milliseconds));
 }
@@ -310,9 +319,54 @@ async function main(): Promise<void> {
     ['forest mountains card C', 'models/global-scenes/forest-mountains-card-c.glb'],
     ['forest mountains ridge A', 'models/global-scenes/forest-mountains-ridge-a.glb'],
     ['forest mountains ridge B', 'models/global-scenes/forest-mountains-ridge-b.glb'],
+    ['spawn vfx manifest', 'vfx/spawn/manifest.json'],
+    ['spawn rainbow circle', 'vfx/spawn/circle-rainbow.png'],
+    ['spawn aura sheet', 'vfx/spawn/aura-sheet.png'],
+    ['spawn ray pillar', 'vfx/spawn/ray-pillar.png'],
+    ['shop S001 model', 'models/shops/S001/model.glb'],
+    ['shop S001 manifest', 'models/shops/S001/manifest.json'],
+    ['shop S002 model', 'models/shops/S002/model.glb'],
+    ['shop S002 manifest', 'models/shops/S002/manifest.json'],
+    ['shop S003 model', 'models/shops/S003/model.glb'],
+    ['shop S003 manifest', 'models/shops/S003/manifest.json'],
+    ['shop S004 model', 'models/shops/S004/model.glb'],
+    ['shop S004 manifest', 'models/shops/S004/manifest.json'],
   ] as const;
   for (const [name, path] of packagedMapAssets) {
     await assertHttp(name, new URL(path, cdnBase).toString(), 'HEAD');
+  }
+  const skillManifestUrl = new URL('vfx/skills/manifest.json', cdnBase).toString();
+  const skillManifestResponse = await assertHttp('skill VFX manifest', skillManifestUrl);
+  const skillManifest = (await skillManifestResponse.json()) as SkillVfxManifest;
+  const skillEffects = Object.entries(skillManifest.effects ?? {});
+  if (
+    skillManifest.schema !== 'jwgb.skill-vfx-atlas.v1' ||
+    skillEffects.length !== 54 ||
+    !skillManifest.staticOverlay?.path ||
+    skillManifest.staticOverlay.slots !== 14
+  ) {
+    throw new Error(
+      `invalid online skill VFX manifest: ${JSON.stringify({
+        schema: skillManifest.schema,
+        effectCount: skillEffects.length,
+        staticOverlay: skillManifest.staticOverlay,
+      })}`,
+    );
+  }
+  await assertHttp(
+    'skill VFX static overlay',
+    new URL(skillManifest.staticOverlay.path, cdnBase).toString(),
+    'HEAD',
+  );
+  for (const [key, entry] of skillEffects) {
+    if (!entry.atlasPath) {
+      throw new Error(`online skill VFX manifest has no atlas path for ${key}`);
+    }
+    await assertHttp(
+      `skill VFX ${key}`,
+      new URL(entry.atlasPath, cdnBase).toString(),
+      'HEAD',
+    );
   }
   await assertHttp(
     'same-origin hero portrait',
@@ -331,6 +385,8 @@ async function main(): Promise<void> {
     modelBase,
     assetCount: assetCandidates.length,
     packagedMapAssetCount: packagedMapAssets.length,
+    skillVfxEffectCount: skillEffects.length,
+    skillVfxStaticOverlaySlots: skillManifest.staticOverlay.slots,
     socket: socketResult,
   };
   const reportPath = resolve(

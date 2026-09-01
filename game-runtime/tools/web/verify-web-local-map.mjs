@@ -1180,7 +1180,7 @@ await mobilePage.waitForFunction(
         flora.source === 'grassworks' &&
         flora.failedAssets.length === 0 &&
         flora.loadedAssets.length === 2 &&
-        flora.maxGrassDistanceMeters === 96 &&
+        flora.maxGrassDistanceMeters === 108 &&
         flora.grassInstances > 100_000 &&
         flora.visibleGrassInstances > 0 &&
         flora.treeInstances > 0 &&
@@ -1414,7 +1414,7 @@ const result = {
       REQUIRED_GRASSWORKS_ASSETS.every((asset) =>
         mobileRuntime.flora.loadedAssets.includes(asset),
       ) &&
-      mobileRuntime.flora.maxGrassDistanceMeters === 96 &&
+       mobileRuntime.flora.maxGrassDistanceMeters === 108 &&
       mobileRuntime.flora.legacyFloraInstances === 0 &&
       mobileRuntime.flora.legacyScatterInstances === 0 &&
       mobileRuntime.flora.legacyGlobalSceneVegetationInstances === 0 &&

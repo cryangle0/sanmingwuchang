@@ -26,7 +26,19 @@ PavingStones046 系列来自 ambientCG，CC0 1.0。
 现有 three.js r165 WebGL 渲染器上实现等价运行机制，并非原代码原样运行。
 
 - 树模型衍生自来源目录中的 `grass-webgpu/Assets/terrain2.glb`。
+- 近景叶子卡保留来源 GLB 的摄影树枝簇贴图（MASK 0.5）；远景广告牌保留来源树形剪影（MASK 0.35）。演示里的 `leaf-green.png` / `leaf-yellow.png` / `leaf-whites.png` 是飘落叶光效，不再贴到树卡上，否则会变成可见纸片。
+- 运行时 `models/grassworks/grass-atlas5.png` 使用同一来源的 `grass-atlas5.png`；采样矩形从单元格边角内缩，避开 pngtree 水印。
 - 来源目录内未发现许可证文件，因此不得将这些树模型视为已确认可商用素材。
-- 来源 `grass-atlas5.png` 带有可见 pngtree 水印且无随附许可，未纳入运行时产物。
-- 运行时 `models/grassworks/grass-atlas5.png` 由项目已有的
-  `assets/terrain/Grass001_Stylized.jpg` 生成；其来源为 ambientCG，CC0 1.0。
+
+## 角色诞生特效贴图
+
+玩家出生光柱使用项目方提供的本地特效包衍生贴图，运行时位于
+`apps/web/public/vfx/spawn/`：
+
+- 序列帧包 `265款游戏技能特效序列帧PNG图片` 中的 `s升级光效2`
+- 贴图包 `特效贴图（PNG）` 中的彩虹法阵、召唤环、线性光柱与星光点
+
+当前上线为方案 1「青龙升天」：彩虹法阵铺地，半透明青绿光幕立体裹住角色。
+
+来源目录内未发现许可证文件，因此不得将这些贴图视为已确认可商用素材。它们只用于
+出生点表现，不进入权威模拟或碰撞。

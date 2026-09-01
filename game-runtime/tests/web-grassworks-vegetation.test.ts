@@ -5,7 +5,6 @@ import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import {
   buildGrassworksVegetationLayer,
-  GRASSWORKS_FOREST_GROVES,
   GRASSWORKS_SOURCE_PROFILE,
   GRASSWORKS_VEGETATION_ASSET_PATHS,
   sampleGrassworksGrassPoints,
@@ -20,7 +19,7 @@ function sha256(path: string): string {
 }
 
 describe('web Grassworks vegetation', () => {
-  it('ships the adapted tree and watermark-free grass assets with matching metadata', () => {
+  it('ships the adapted tree and demo grass atlas with matching metadata', () => {
     const manifestPath = resolve(assetRoot, 'models/grassworks/manifest.json');
     const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as {
       readonly schema: string;
@@ -40,7 +39,17 @@ describe('web Grassworks vegetation', () => {
         readonly grassAtlasSha256: string;
         readonly grassAtlasWidth: number;
         readonly grassAtlasHeight: number;
+        readonly grassAtlasSource: string;
         readonly grassAtlasLicense: string;
+        readonly leafPolicy: string;
+        readonly billboardSprites: number;
+        readonly leafSprites: {
+          readonly source: string;
+          readonly leafMaterials: number;
+          readonly billboardMaterials: number;
+          readonly highAlphaCutoff: number;
+          readonly lowAlphaCutoff: number;
+        };
       };
       readonly variants: readonly {
         readonly variant: number;
@@ -51,11 +60,20 @@ describe('web Grassworks vegetation', () => {
 
     expect(manifest.schema).toBe('jwgb.grassworks-vegetation.v1');
     expect(manifest.source.license).toContain('No license file');
-    expect(manifest.source.excludedGrassAtlas.included).toBe(false);
-    expect(manifest.source.excludedGrassAtlas.reason).toContain('watermark');
-    expect(manifest.runtime.grassAtlasLicense).toContain('CC0');
-    expect(manifest.runtime.grassAtlasWidth).toBe(1_024);
-    expect(manifest.runtime.grassAtlasHeight).toBe(1_024);
+    expect(manifest.source.excludedGrassAtlas.included).toBe(true);
+    expect(manifest.source.excludedGrassAtlas.reason).toContain('pngtree');
+    expect(manifest.runtime.grassAtlasSource).toContain('grass-atlas5.png');
+    expect(manifest.runtime.grassAtlasWidth).toBe(1_000);
+    expect(manifest.runtime.grassAtlasHeight).toBe(1_000);
+    expect(manifest.runtime.leafPolicy).toContain('photographic');
+    expect(manifest.runtime.leafPolicy).toContain('billboard');
+    expect(manifest.runtime.leafPolicy).toContain('Do not replace');
+    expect(manifest.runtime.billboardSprites).toBe(9);
+    expect(manifest.runtime.leafSprites.leafMaterials).toBeGreaterThan(0);
+    expect(manifest.runtime.leafSprites.billboardMaterials).toBe(9);
+    expect(manifest.runtime.leafSprites.highAlphaCutoff).toBe(0.5);
+    expect(manifest.runtime.leafSprites.lowAlphaCutoff).toBe(0.35);
+    expect(manifest.runtime.leafSprites.source).toContain('terrain2.glb');
     expect(manifest.variants).toHaveLength(9);
     expect(manifest.variants.every((variant) => variant.sourceHighTriangles > 0)).toBe(true);
     expect(manifest.variants.every((variant) => variant.sourceLowTriangles === 4)).toBe(true);
@@ -79,25 +97,35 @@ describe('web Grassworks vegetation', () => {
     expect(first.length).toBeGreaterThan(250_000);
   });
 
-  it('builds deterministic, continuous forests instead of isolated tree clumps', () => {
+  it('scatters trees across the whole walkable map', () => {
     const first = sampleGrassworksTreePoints(0x08b3d5a4);
     const second = sampleGrassworksTreePoints(0x08b3d5a4);
     expect(second).toEqual(first);
     expect(first).toHaveLength(1_800);
-    expect(GRASSWORKS_FOREST_GROVES).toHaveLength(7);
 
-    for (const grove of GRASSWORKS_FOREST_GROVES) {
-      const treesInGrove = first.filter((point) => {
-        const dx = point.x / 1_000 - grove.centerX;
-        const dz = point.z / 1_000 - grove.centerZ;
-        return (
-          (dx * dx) / (grove.radiusX * grove.radiusX) +
-            (dz * dz) / (grove.radiusZ * grove.radiusZ) <=
-          1
-        );
-      });
-      expect(treesInGrove.length, grove.id).toBeGreaterThanOrEqual(grove.treeCount);
+    const xs = first.map((point) => point.x / 1_000);
+    const zs = first.map((point) => point.z / 1_000);
+    expect(Math.max(...xs) - Math.min(...xs)).toBeGreaterThan(500);
+    expect(Math.max(...zs) - Math.min(...zs)).toBeGreaterThan(400);
+
+    const quadrants = { nw: 0, ne: 0, sw: 0, se: 0 };
+    for (const point of first) {
+      const x = point.x / 1_000;
+      const z = point.z / 1_000;
+      if (x < 0 && z >= 0) {
+        quadrants.nw += 1;
+      } else if (x >= 0 && z >= 0) {
+        quadrants.ne += 1;
+      } else if (x < 0 && z < 0) {
+        quadrants.sw += 1;
+      } else {
+        quadrants.se += 1;
+      }
     }
+    expect(quadrants.nw).toBeGreaterThan(80);
+    expect(quadrants.ne).toBeGreaterThan(80);
+    expect(quadrants.sw).toBeGreaterThan(80);
+    expect(quadrants.se).toBeGreaterThan(80);
   });
 
   it('preserves the source profile in the WebGL adaptation', () => {
@@ -113,8 +141,20 @@ describe('web Grassworks vegetation', () => {
       runtimeReducedMaxDistanceMeters: 108,
       runtimeRoadVergeMm: -1,
       runtimeTreeCount: 1_800,
-      runtimeForestTreeCount: 1_510,
-      runtimeForestGroves: 7,
+      runtimeTreePlacement: 'whole-map clustered woodland',
+      runtimeTreeHighDistanceMeters: 150,
+      runtimeTreeLowDistanceMeters: 260,
+      runtimeReducedTreeLowDistanceMeters: 208,
+      runtimeTreeHighHysteresisMeters: 12,
+      runtimeTreeLowHysteresisMeters: 16,
+      leafSprites: {
+        highAlphaTest: 0.5,
+        lowAlphaTest: 0.35,
+        highEmissiveIntensity: 0.12,
+        lowEmissiveIntensity: 0.06,
+        highWind: 0.045,
+        lowWind: 0.032,
+      },
     });
     expect(GRASSWORKS_SOURCE_PROFILE.sourceLods).toEqual([
       { id: 'high', detail: 5, density: 4, distanceRatio: 0.3 },
@@ -122,12 +162,7 @@ describe('web Grassworks vegetation', () => {
       { id: 'low', detail: 1, density: 2, distanceRatio: 0.9 },
       { id: 'veryLow', detail: 1, density: 1, distanceRatio: 0.9 },
     ]);
-    expect(GRASSWORKS_SOURCE_PROFILE.runtimeLods).toEqual([
-      { id: 'high', detail: 5, density: 4, distanceRatio: 0.3 },
-      { id: 'medium', detail: 3, density: 4, distanceRatio: 0.7 },
-      { id: 'low', detail: 2, density: 4, distanceRatio: 0.9 },
-      { id: 'veryLow', detail: 2, density: 4, distanceRatio: 1 },
-    ]);
+    expect(GRASSWORKS_SOURCE_PROFILE.runtimeLods).toEqual(GRASSWORKS_SOURCE_PROFILE.sourceLods);
   });
 
   it('stays disabled without a renderer and reports no legacy vegetation', () => {

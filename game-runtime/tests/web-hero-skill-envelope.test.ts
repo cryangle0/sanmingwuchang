@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   createHeroSkillVisual,
   HERO_SKILL_VFX_PROFILES,
+  placeHeroSkillVisual,
   type HeroSkillMotion,
   updateHeroSkillVisual,
 } from '../apps/web/src/render/hero-skill-vfx';
@@ -131,6 +132,18 @@ describe('hero skill envelope', () => {
     updateHeroSkillVisual(visual.group, 0.2, 0.12);
     expect(visual.group.scale.x).toBeGreaterThan(opening);
     expect(visual.group.position.z).toBe(0);
+  });
+
+  it('keeps the world anchor while applying local cast motion', () => {
+    const visual = createHeroSkillVisual(profileFor('forward'), 'cast', false);
+    visual.group.userData.baseRotationY = Math.PI / 2;
+    placeHeroSkillVisual(visual.group, 12, 2.5, -7);
+
+    updateHeroSkillVisual(visual.group, 0.85, 0.61);
+
+    expect(visual.group.position.x).toBeGreaterThan(12.5);
+    expect(visual.group.position.y).toBeGreaterThan(2.5);
+    expect(visual.group.position.z).toBeCloseTo(-7, 6);
   });
 
   it('fades the motif materials out by the end of a cast', () => {

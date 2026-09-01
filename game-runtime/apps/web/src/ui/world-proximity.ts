@@ -12,8 +12,8 @@ export const LOOT_HEAP_CELL_MM = 2_000;
 export const WORLD_SHEET_PAGE_SIZE = 12;
 
 export function shopDisplayName(shop: WorldSnapshot['shops'][number]): string {
-  if (shop.kind === 'taibai') return '太白';
-  if (shop.kind === 'heishan') return '黑山';
+  if (shop.kind === 'taibai') return '太白金星';
+  if (shop.kind === 'heishan') return '黑山老妖';
   if (shop.kind === 'shoemaker') {
     return shop.shopId.endsWith('-b') ? '鞋匠乙' : '鞋匠甲';
   }

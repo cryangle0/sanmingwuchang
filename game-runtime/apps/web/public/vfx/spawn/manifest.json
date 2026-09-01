@@ -1,0 +1,31 @@
+{
+  "schema": "jwgb.spawn-vfx.v1",
+  "option": 1,
+  "name": "青龙升天",
+  "aura": {
+    "file": "aura-sheet.png",
+    "frames": 22,
+    "columns": 8,
+    "rows": 3,
+    "frameWidth": 256,
+    "frameHeight": 296,
+    "fps": 16,
+    "source": "265款游戏技能特效序列帧PNG图片/s升级光效2"
+  },
+  "circle": {
+    "file": "circle-rainbow.png",
+    "source": "特效贴图（PNG）/魔法阵类/magic_circle_rainbow.png"
+  },
+  "ring": {
+    "file": "ring-rainbow.png",
+    "source": "特效贴图（PNG）/魔法阵类/el_rainbowsummonring01.png"
+  },
+  "ray": {
+    "file": "ray-pillar.png",
+    "source": "特效贴图（PNG）/线性条状类/new_ray.png"
+  },
+  "spark": {
+    "file": "spark-star.png",
+    "source": "特效贴图（PNG）/光点类/starflashorange.png"
+  }
+}

@@ -4,7 +4,12 @@ import {
   CharacterModelLibrary,
   characterModelRenderableBounds,
 } from './character-model-library';
-import { WEB_HERO_MODELS, WEB_MONSTER_MODELS, type WebModelDefinition } from './web-model-catalog';
+import {
+  WEB_HERO_MODELS,
+  WEB_MONSTER_MODELS,
+  WEB_SHOP_MODELS,
+  type WebModelDefinition,
+} from './web-model-catalog';
 
 interface VectorRecord {
   readonly x: number;
@@ -83,9 +88,10 @@ const requestedModelIds = new Set(
     .map((value) => value.trim())
     .filter(Boolean) ?? [],
 );
+const MODEL_CATALOG = [...WEB_HERO_MODELS, ...WEB_MONSTER_MODELS, ...WEB_SHOP_MODELS];
 const ALL_MODELS =
   requestedModelIds.size > 0
-    ? [...WEB_HERO_MODELS, ...WEB_MONSTER_MODELS].filter((model) => requestedModelIds.has(model.id))
+    ? MODEL_CATALOG.filter((model) => requestedModelIds.has(model.id))
     : [...WEB_HERO_MODELS, ...WEB_MONSTER_MODELS];
 const RENDER_SIZE = 256;
 const BACKGROUND = 0x172023;
@@ -242,6 +248,7 @@ function validateAnimations(
   root: THREE.Group,
   clips: ReadonlyMap<CharacterAnimationState, THREE.AnimationClip>,
   targetHeight: number,
+  animationStates: readonly CharacterAnimationState[],
   errors: string[],
 ): {
   readonly trackCount: number;
@@ -257,7 +264,7 @@ function validateAnimations(
   const initialBounds = characterModelRenderableBounds(root);
   const initialCenter = initialBounds.getCenter(new THREE.Vector3());
 
-  for (const state of ANIMATION_STATES) {
+  for (const state of animationStates) {
     const clip = clips.get(state);
     if (!clip) {
       errors.push(`missing ${state} clip`);
@@ -559,7 +566,13 @@ async function auditModel(
       errors.push(`only ${readyTextureCount}/${textureCount} textures loaded`);
     }
     animationClipCount = template.clips.size;
-    const animationAudit = validateAnimations(visual, template.clips, definition.height, errors);
+    const animationAudit = validateAnimations(
+      visual,
+      template.clips,
+      definition.height,
+      definition.animationStates ?? ANIMATION_STATES,
+      errors,
+    );
     animationTrackCount = animationAudit.trackCount;
     animationBounds = animationAudit.bounds;
     bounds = characterModelRenderableBounds(visual);

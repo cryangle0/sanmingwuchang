@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { attachSkillTextureLayer, updateSkillTextureLayer } from './skill-texture-vfx';
 
 export type HeroSkillMotif =
   | 'fan-gale'
@@ -46,6 +47,7 @@ export type HeroSkillAudioPhase = 'cast' | 'impact' | 'end' | 'loop';
 
 export interface HeroSkillVfxProfile {
   readonly heroId: string;
+  readonly textureKey: string;
   readonly motif: HeroSkillMotif;
   readonly primary: number;
   readonly secondary: number;
@@ -143,6 +145,7 @@ function profile(
 ): HeroSkillVfxProfile {
   return {
     heroId,
+    textureKey: heroId,
     motif,
     primary,
     secondary,
@@ -341,42 +344,72 @@ function addSparkBurst(
     return;
   }
 
-  const count = reduced ? 12 : stage === 'impact' ? 28 : 20;
+  const count = reduced ? 16 : stage === 'impact' ? 42 : 28;
   const positions = new Float32Array(count * 3);
   const velocities = new Float32Array(count * 3);
   const origins = new Float32Array(count * 3);
-  // Spokes rather than a random scatter: the prototype's even fan is what
-  // makes a small number of particles read as a deliberate burst instead of
-  // as noise, and it survives the low count the reduced tier needs.
   for (let index = 0; index < count; index += 1) {
     const spoke = (index / count) * Math.PI * 2;
     const wobble = ((index * 2654435761) % 1000) / 1000;
     const angle = spoke + (wobble - 0.5) * 0.22;
-    const lift = stage === 'impact' ? 0.55 + wobble * 0.9 : 0.35 + wobble * 0.6;
-    const speed = (stage === 'impact' ? 2.6 : 1.7) * (0.72 + wobble * 0.56);
-    const start = stage === 'impact' ? 0.12 : 0.3;
-    const originX = Math.sin(angle) * start;
-    const originY = 0.24 + wobble * 0.3;
-    const originZ = Math.cos(angle) * start;
+    const start = stage === 'impact' ? 0.1 : 0.22;
+    let originX = Math.sin(angle) * start;
+    let originY = 0.28 + wobble * 0.28;
+    let originZ = Math.cos(angle) * start;
+    let velocityX = Math.sin(angle);
+    let velocityY = stage === 'impact' ? 0.7 + wobble * 1.1 : 0.4 + wobble * 0.7;
+    let velocityZ = Math.cos(angle);
+    const speed = (stage === 'impact' ? 3.4 : 2.2) * (0.7 + wobble * 0.6);
+    switch (profile.motion) {
+      case 'forward':
+        velocityX *= 0.42;
+        velocityZ = 1.35 + wobble * 0.8;
+        originZ = 0.35;
+        break;
+      case 'rise':
+        velocityX *= 0.55;
+        velocityZ *= 0.55;
+        velocityY = 2.4 + wobble * 1.6;
+        break;
+      case 'spiral':
+        velocityX = Math.cos(angle) * 1.6;
+        velocityZ = Math.sin(angle) * 1.6;
+        velocityY = 1.1 + wobble;
+        break;
+      case 'collapse':
+        velocityX *= -1.8;
+        velocityZ *= -1.8;
+        velocityY = 0.25;
+        originX = Math.sin(angle) * 1.15;
+        originZ = Math.cos(angle) * 1.15;
+        break;
+      case 'aura':
+        velocityX *= 0.35;
+        velocityZ *= 0.35;
+        velocityY = 0.15;
+        break;
+      default:
+        break;
+    }
     origins[index * 3] = originX;
     origins[index * 3 + 1] = originY;
     origins[index * 3 + 2] = originZ;
     positions[index * 3] = originX;
     positions[index * 3 + 1] = originY;
     positions[index * 3 + 2] = originZ;
-    velocities[index * 3] = Math.sin(angle) * speed;
-    velocities[index * 3 + 1] = lift;
-    velocities[index * 3 + 2] = Math.cos(angle) * speed;
+    velocities[index * 3] = velocityX * speed;
+    velocities[index * 3 + 1] = velocityY * (0.7 + wobble * 0.5);
+    velocities[index * 3 + 2] = velocityZ * speed;
   }
 
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   const material = new THREE.PointsMaterial({
     color: profile.core,
-    size: reduced ? 0.16 : 0.2,
+    size: reduced ? 0.2 : 0.28,
     sizeAttenuation: true,
     transparent: true,
-    opacity: 0.95,
+    opacity: 1,
     depthWrite: false,
     blending: THREE.AdditiveBlending,
   });
@@ -408,34 +441,68 @@ function addShockRings(
   }
 
   const rings: THREE.Mesh[] = [];
-  const segments = reduced ? 24 : 44;
-  const count = stage === 'impact' ? 2 : 1;
+  const segments = reduced ? 24 : 48;
+  const count = stage === 'impact' ? 3 : 2;
+  const crescent =
+    profile.motion === 'forward' ||
+    profile.motif === 'fan-gale' ||
+    profile.motif === 'divine-gale' ||
+    profile.motif === 'golden-wings';
   for (let index = 0; index < count; index += 1) {
-    const geometry = new THREE.RingGeometry(0.82, 1, segments);
+    const geometry = crescent
+      ? new THREE.RingGeometry(0.72, 1, segments, 1, -1.2, 2.4)
+      : new THREE.RingGeometry(0.78, 1, segments);
     geometry.rotateX(-Math.PI / 2);
     const material = new THREE.MeshBasicMaterial({
-      color: index === 0 ? profile.primary : profile.secondary,
+      color: index === 0 ? profile.primary : index === 1 ? profile.secondary : profile.core,
       transparent: true,
-      opacity: 0.75,
+      opacity: 0.88,
       depthWrite: false,
       side: THREE.DoubleSide,
       blending: THREE.AdditiveBlending,
     });
-    material.userData.baseOpacity = 0.75;
+    material.userData.baseOpacity = 0.88;
     const ring = new THREE.Mesh(geometry, material);
     ring.position.y = 0.06;
     // The second ring starts later AND stops shorter. Starting later alone is
     // not enough: give the follower a longer reach and it overtakes the leader
     // mid-flight, which reads as two rings crossing rather than as one wave
     // with a trailing edge.
-    ring.userData.ringDelay = index * 0.22;
-    ring.userData.ringReach = (stage === 'impact' ? 2.5 : 1.7) - index * 0.45;
+    ring.userData.ringDelay = index * 0.16;
+    ring.userData.ringReach = (stage === 'impact' ? 3.1 : 2.1) - index * 0.38;
     ring.userData.shockRing = true;
     rings.push(ring);
     group.add(ring);
   }
 
   group.userData.shockRings = rings;
+}
+
+function addCoreFlare(
+  group: THREE.Group,
+  profile: HeroSkillVfxProfile,
+  stage: HeroSkillStage,
+  materials: readonly [THREE.MeshBasicMaterial, THREE.MeshBasicMaterial, THREE.MeshBasicMaterial],
+): void {
+  const [, secondary, core] = materials;
+  addMesh(group, new THREE.OctahedronGeometry(0.22, 1), core, {
+    y: 0.62,
+    pulse: 0.22,
+    spinY: 4.8,
+  });
+  addMesh(group, new THREE.SphereGeometry(0.38, 14, 10), secondary, {
+    y: 0.62,
+    pulse: 0.12,
+  });
+  if (stage === 'status') {
+    return;
+  }
+  if (profile.motion === 'rise' || profile.motion === 'aura' || profile.motion === 'burst') {
+    addMesh(group, new THREE.CylinderGeometry(0.05, 0.18, 2.4, 10, 1, true), core, {
+      y: 1.35,
+      pulse: 0.1,
+    });
+  }
 }
 
 function addMesh(
@@ -1062,16 +1129,19 @@ export function createHeroSkillVisual(
   group.name = `hero-skill-${profile.heroId.toLowerCase()}-${stage}-${profile.motif}`;
   group.userData.heroSkillMotion = profile.motion;
   group.userData.heroSkillStage = stage;
-  group.userData.baseScale = profile.scale;
+  group.userData.baseScale = profile.scale * (stage === 'impact' ? 1.12 : 1);
+  group.renderOrder = 8;
   const materials = [
-    glowMaterial(profile.primary, stage === 'status' ? 0.48 : 0.78),
-    glowMaterial(profile.secondary, stage === 'status' ? 0.4 : 0.68),
-    glowMaterial(profile.core, stage === 'status' ? 0.58 : 0.9),
+    glowMaterial(profile.primary, stage === 'status' ? 0.58 : 0.92),
+    glowMaterial(profile.secondary, stage === 'status' ? 0.5 : 0.82),
+    glowMaterial(profile.core, stage === 'status' ? 0.66 : 1),
   ] as const;
   group.userData.heroSkillMaterials = materials;
   populateMotif(group, profile, stage, reduced, materials);
+  addCoreFlare(group, profile, stage, materials);
   addShockRings(group, profile, stage, reduced);
   addSparkBurst(group, profile, stage, reduced);
+  attachSkillTextureLayer(group, profile.textureKey, stage, reduced);
   cacheAnimatedMeshes(group);
   const durationSeconds =
     stage === 'cast'
@@ -1080,6 +1150,24 @@ export function createHeroSkillVisual(
         ? profile.impactDurationSeconds
         : profile.statusDurationSeconds;
   return { group, materials, durationSeconds };
+}
+
+/**
+ * Store the world-space anchor separately from the animation envelope.
+ * Envelope motion is local to the skill, so it must never replace the
+ * position assigned by the combat layer.
+ */
+export function placeHeroSkillVisual(
+  group: THREE.Group,
+  x: number,
+  y: number,
+  z: number,
+): void {
+  const anchor = (group.userData.heroSkillWorldPosition as THREE.Vector3 | undefined) ??
+    new THREE.Vector3();
+  anchor.set(x, y, z);
+  group.userData.heroSkillWorldPosition = anchor;
+  group.position.copy(anchor);
 }
 
 function cacheAnimatedMeshes(group: THREE.Group): readonly THREE.Mesh[] {
@@ -1281,10 +1369,21 @@ export function updateHeroSkillVisual(
   group.rotation.y =
     Number(group.userData.baseRotationY ?? 0) + elapsedSeconds * spinRate * envelope.spin;
 
-  group.position.y = envelope.lift;
-  // The cast direction is the group's own forward; pushing along it keeps a
-  // lunge pointed wherever the caster aimed.
-  group.position.z = envelope.push;
+  const anchor =
+    (group.userData.heroSkillWorldPosition as THREE.Vector3 | undefined) ??
+    (() => {
+      const fallback = group.position.clone();
+      group.userData.heroSkillWorldPosition = fallback;
+      return fallback;
+    })();
+  const baseRotationY = Number(group.userData.baseRotationY ?? 0);
+  // The cast direction is the group's authored forward; pushing along it keeps
+  // a lunge pointed wherever the caster aimed without losing the world anchor.
+  group.position.set(
+    anchor.x + Math.sin(baseRotationY) * envelope.push,
+    anchor.y + envelope.lift,
+    anchor.z + Math.cos(baseRotationY) * envelope.push,
+  );
 
   for (const material of (group.userData.heroSkillMaterials as
     | readonly THREE.Material[]
@@ -1295,6 +1394,7 @@ export function updateHeroSkillVisual(
 
   updateSparkBurst(group, progress, elapsedSeconds);
   updateShockRings(group, progress);
+  updateSkillTextureLayer(group, progress, elapsedSeconds);
 
   for (const child of cacheAnimatedMeshes(group)) {
     const basePosition = child.userData.basePosition as THREE.Vector3 | undefined;

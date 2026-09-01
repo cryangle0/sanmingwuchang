@@ -4,6 +4,8 @@ import type {
   ActiveProjectileSnapshot,
   ActiveTargetEffectSnapshot,
   ActiveZoneSnapshot,
+  CoreBossHazardSnapshot,
+  MonsterSnapshot,
   PlayerSnapshot,
   SimEvent,
   WorldSnapshot,
@@ -12,11 +14,18 @@ import * as THREE from 'three';
 import {
   createHeroSkillVisual,
   createHeroSkillZoneSigil,
+  placeHeroSkillVisual,
   type HeroSkillVfxProfile,
   heroSkillSigilMaterials,
   heroSkillVfxProfile,
   updateHeroSkillVisual,
 } from './hero-skill-vfx';
+import {
+  coreBossAbilityVfxProfile,
+  createMonsterSkillVisual,
+  monsterAttackVfxProfile,
+  updateMonsterSkillVisual,
+} from './monster-skill-vfx';
 
 type GraphicsTier = 'balanced' | 'reduced';
 type TransientEffectKind =
@@ -26,7 +35,8 @@ type TransientEffectKind =
   | 'critical'
   | 'cast'
   | 'heal'
-  | 'hero-skill';
+  | 'hero-skill'
+  | 'monster-skill';
 type ActiveZoneKind = ActiveZoneSnapshot['kind'];
 
 interface ActiveProjectileVisual {
@@ -65,6 +75,13 @@ interface HeroAuraVisual {
   readonly materials: readonly THREE.MeshBasicMaterial[];
 }
 
+interface CoreBossHazardVisual {
+  readonly abilityId: string;
+  readonly warning: boolean;
+  readonly group: THREE.Group;
+  readonly materials: readonly THREE.MeshBasicMaterial[];
+}
+
 interface TransientCombatEffect {
   readonly kind: TransientEffectKind;
   readonly group: THREE.Group;
@@ -77,7 +94,10 @@ interface EffectPosition {
   readonly x: number;
   readonly y: number;
   readonly z: number;
+  readonly surfaceY: number;
 }
+
+export type CombatSurfaceHeightAt = (xMeters: number, zMeters: number) => number;
 
 export interface CombatEffectDiagnostics {
   readonly activeProjectiles: number;
@@ -91,9 +111,12 @@ export interface CombatEffectDiagnostics {
   readonly activeCastEffectsSpawned: number;
   readonly heroSkillCastsSpawned: number;
   readonly heroSkillImpactsSpawned: number;
+  readonly monsterSkillCastsSpawned: number;
+  readonly coreBossHazards: number;
   readonly impactEffectsSpawned: number;
   readonly lastAttackHeroId: string | null;
   readonly lastSkillHeroId: string | null;
+  readonly lastMonsterKind: string | null;
 }
 
 interface ZoneStyle {
@@ -113,8 +136,8 @@ const ELEMENT_EFFECT_COLORS: Readonly<Record<FiveElement, number>> = {
 };
 const BALANCED_EFFECT_CULL_DISTANCE_METERS = 60;
 const REDUCED_EFFECT_CULL_DISTANCE_METERS = 45;
-const BALANCED_TRANSIENT_EFFECT_LIMIT = 56;
-const REDUCED_TRANSIENT_EFFECT_LIMIT = 28;
+const BALANCED_TRANSIENT_EFFECT_LIMIT = 72;
+const REDUCED_TRANSIENT_EFFECT_LIMIT = 36;
 
 const ACTIVE_PROJECTILE_COLORS: Readonly<
   Record<ActiveProjectileSnapshot['kind'], readonly [number, number]>
@@ -269,6 +292,7 @@ function createGlowMaterial(color: number, opacity: number): THREE.MeshBasicMate
 }
 
 function disposeGroup(group: THREE.Group): void {
+  group.userData.disposeRequested = true;
   group.removeFromParent();
   const geometries = new Set<THREE.BufferGeometry>();
   const materials = new Set<THREE.Material>();
@@ -295,34 +319,53 @@ function disposeGroup(group: THREE.Group): void {
   }
 }
 
-function entityPositions(snapshot: WorldSnapshot): ReadonlyMap<EntityId, EffectPosition> {
+function entityPositions(
+  snapshot: WorldSnapshot,
+  surfaceHeightAt: CombatSurfaceHeightAt,
+): ReadonlyMap<EntityId, EffectPosition> {
   const positions = new Map<EntityId, EffectPosition>();
   for (const player of snapshot.players) {
+    const x = worldMeters(player.position.x);
+    const z = worldMeters(player.position.z);
+    const surfaceY = surfaceHeightAt(x, z);
     positions.set(player.entityId, {
-      x: worldMeters(player.position.x),
-      y: player.lifeState === 'soul-flight' ? 3.2 : 1.05,
-      z: worldMeters(player.position.z),
+      x,
+      y: surfaceY + (player.lifeState === 'soul-flight' ? 3.2 : 1.05),
+      z,
+      surfaceY,
     });
   }
   for (const monster of snapshot.monsters) {
+    const x = worldMeters(monster.position.x);
+    const z = worldMeters(monster.position.z);
+    const surfaceY = surfaceHeightAt(x, z);
     positions.set(monster.entityId, {
-      x: worldMeters(monster.position.x),
-      y: Math.max(0.7, worldMeters(monster.collisionRadiusMm) * 1.25),
-      z: worldMeters(monster.position.z),
+      x,
+      y: surfaceY + Math.max(0.7, worldMeters(monster.collisionRadiusMm) * 1.25),
+      z,
+      surfaceY,
     });
   }
   for (const summon of snapshot.summons) {
+    const x = worldMeters(summon.position.x);
+    const z = worldMeters(summon.position.z);
+    const surfaceY = surfaceHeightAt(x, z);
     positions.set(summon.entityId, {
-      x: worldMeters(summon.position.x),
-      y: summon.kind === 'stone-statue' ? 1.2 : 0.8,
-      z: worldMeters(summon.position.z),
+      x,
+      y: surfaceY + (summon.kind === 'stone-statue' ? 1.2 : 0.8),
+      z,
+      surfaceY,
     });
   }
   for (const zone of snapshot.activeZones) {
+    const x = worldMeters(zone.center.x);
+    const z = worldMeters(zone.center.z);
+    const surfaceY = surfaceHeightAt(x, z);
     positions.set(zone.entityId, {
-      x: worldMeters(zone.center.x),
-      y: 0.3,
-      z: worldMeters(zone.center.z),
+      x,
+      y: surfaceY + 0.3,
+      z,
+      surfaceY,
     });
   }
   return positions;
@@ -341,21 +384,25 @@ export class CombatEffectsLayer {
   private readonly activeZoneVisuals = new Map<EntityId, ActiveZoneVisual>();
   private readonly activeTargetEffectVisuals = new Map<string, ActiveTargetEffectVisual>();
   private readonly heroAuraVisuals = new Map<EntityId, HeroAuraVisual>();
+  private readonly coreBossHazardVisuals = new Map<EntityId, CoreBossHazardVisual>();
   private readonly transientEffects: TransientCombatEffect[] = [];
   private graphicsTier: GraphicsTier;
   private basicAttackEffectsSpawned = 0;
   private activeCastEffectsSpawned = 0;
   private heroSkillCastsSpawned = 0;
   private heroSkillImpactsSpawned = 0;
+  private monsterSkillCastsSpawned = 0;
   private impactEffectsSpawned = 0;
   private lastAttackHeroId: string | null = null;
   private lastSkillHeroId: string | null = null;
+  private lastMonsterKind: string | null = null;
   private readonly focusPosition = new THREE.Vector2();
   private hasFocusPosition = false;
 
   constructor(
     private readonly scene: THREE.Scene,
     graphicsTier: GraphicsTier,
+    private readonly surfaceHeightAt: CombatSurfaceHeightAt = () => 0,
   ) {
     this.graphicsTier = graphicsTier;
     this.root.name = 'combat-effects';
@@ -377,11 +424,12 @@ export class CombatEffectsLayer {
     if (focusPositionMm) {
       this.focusPosition.set(worldMeters(focusPositionMm.x), worldMeters(focusPositionMm.z));
     }
-    const positions = entityPositions(snapshot);
+    const positions = entityPositions(snapshot, this.surfaceHeightAt);
     this.syncActiveProjectiles(snapshot.activeProjectiles, elapsedSeconds);
     this.syncActiveZones(snapshot.activeZones, snapshot.tick, elapsedSeconds);
     this.syncActiveTargetEffects(snapshot, positions, elapsedSeconds);
     this.syncHeroAuras(snapshot.players, elapsedSeconds);
+    this.syncCoreBossHazards(snapshot.coreBossHazards ?? [], snapshot.tick, elapsedSeconds);
     this.processEvents(snapshot, positions, events, elapsedSeconds);
     this.updateTransientEffects(elapsedSeconds);
   }
@@ -403,9 +451,12 @@ export class CombatEffectsLayer {
       activeCastEffectsSpawned: this.activeCastEffectsSpawned,
       heroSkillCastsSpawned: this.heroSkillCastsSpawned,
       heroSkillImpactsSpawned: this.heroSkillImpactsSpawned,
+      monsterSkillCastsSpawned: this.monsterSkillCastsSpawned,
+      coreBossHazards: this.coreBossHazardVisuals.size,
       impactEffectsSpawned: this.impactEffectsSpawned,
       lastAttackHeroId: this.lastAttackHeroId,
       lastSkillHeroId: this.lastSkillHeroId,
+      lastMonsterKind: this.lastMonsterKind,
     };
   }
 
@@ -422,6 +473,9 @@ export class CombatEffectsLayer {
     for (const visual of this.heroAuraVisuals.values()) {
       disposeGroup(visual.group);
     }
+    for (const visual of this.coreBossHazardVisuals.values()) {
+      disposeGroup(visual.group);
+    }
     for (const effect of this.transientEffects) {
       disposeGroup(effect.group);
     }
@@ -429,6 +483,7 @@ export class CombatEffectsLayer {
     this.activeZoneVisuals.clear();
     this.activeTargetEffectVisuals.clear();
     this.heroAuraVisuals.clear();
+    this.coreBossHazardVisuals.clear();
     this.transientEffects.length = 0;
     this.scene.remove(this.root);
   }
@@ -570,10 +625,12 @@ export class CombatEffectsLayer {
     projectile: ActiveProjectileSnapshot,
     elapsedSeconds: number,
   ): void {
+    const x = worldMeters(projectile.position.x);
+    const z = worldMeters(projectile.position.z);
     visual.group.position.set(
-      worldMeters(projectile.position.x),
-      1.05,
-      worldMeters(projectile.position.z),
+      x,
+      this.surfaceHeightAt(x, z) + 1.05,
+      z,
     );
     visual.group.rotation.y = Math.atan2(projectile.direction.x, projectile.direction.z);
     const pulse = 0.94 + Math.sin(elapsedSeconds * 18 + Number(projectile.entityId)) * 0.08;
@@ -700,7 +757,9 @@ export class CombatEffectsLayer {
     currentTick: number,
     elapsedSeconds: number,
   ): void {
-    visual.group.position.set(worldMeters(zone.center.x), 0, worldMeters(zone.center.z));
+    const x = worldMeters(zone.center.x);
+    const z = worldMeters(zone.center.z);
+    visual.group.position.set(x, this.surfaceHeightAt(x, z), z);
     visual.group.rotation.y = Math.atan2(zone.direction.x, zone.direction.z);
     const warning = currentTick < zone.activatesAtTick;
     const warningFactor = warning ? 0.48 : 1;
@@ -807,7 +866,12 @@ export class CombatEffectsLayer {
         this.activeTargetEffectVisuals.set(effect.key, visual);
       }
 
-      visual.group.position.set(position.x, 0.06, position.z);
+      placeHeroSkillVisual(
+        visual.group,
+        position.x,
+        position.surfaceY + 0.06,
+        position.z,
+      );
       visual.group.userData.baseScale = profile.scale * (0.68 + Math.min(effect.stacks, 6) * 0.045);
       updateHeroSkillVisual(visual.group, 0.5, elapsedSeconds);
       const remainingRatio =
@@ -864,11 +928,9 @@ export class CombatEffectsLayer {
         };
         this.heroAuraVisuals.set(player.entityId, visual);
       }
-      visual.group.position.set(
-        worldMeters(player.position.x),
-        0.055,
-        worldMeters(player.position.z),
-      );
+      const x = worldMeters(player.position.x);
+      const z = worldMeters(player.position.z);
+      placeHeroSkillVisual(visual.group, x, this.surfaceHeightAt(x, z) + 0.055, z);
       updateHeroSkillVisual(visual.group, 0.5, elapsedSeconds);
     }
   }
@@ -891,6 +953,56 @@ export class CombatEffectsLayer {
         return player.activeDamageReductionTicks > 0 || player.activeSpeedBonusTicks > 0;
       default:
         return false;
+    }
+  }
+
+  private syncCoreBossHazards(
+    hazards: readonly CoreBossHazardSnapshot[],
+    tick: number,
+    elapsedSeconds: number,
+  ): void {
+    const visible = hazards.filter((hazard) => this.isWithinEffectRangeMm(hazard.center, 8_000));
+    const currentIds = new Set(visible.map((hazard) => hazard.entityId));
+    for (const [entityId, visual] of this.coreBossHazardVisuals) {
+      if (!currentIds.has(entityId)) {
+        disposeGroup(visual.group);
+        this.coreBossHazardVisuals.delete(entityId);
+      }
+    }
+    for (const hazard of visible) {
+      const warning = tick < hazard.activatesAtTick;
+      let visual = this.coreBossHazardVisuals.get(hazard.entityId);
+      if (visual && (visual.abilityId !== hazard.abilityId || visual.warning !== warning)) {
+        disposeGroup(visual.group);
+        this.coreBossHazardVisuals.delete(hazard.entityId);
+        visual = undefined;
+      }
+      if (!visual) {
+        const profile = coreBossAbilityVfxProfile(hazard.abilityId);
+        const created = createMonsterSkillVisual(
+          profile,
+          warning ? 'cast' : 'impact',
+          this.graphicsTier === 'reduced',
+        );
+        created.group.name = `core-boss-hazard-${hazard.abilityId}`;
+        const radius = Math.max(1.2, worldMeters(Math.max(hazard.radiusMm, hazard.widthMm)) / 3.2);
+        created.group.userData.baseScale = profile.scale * radius;
+        this.root.add(created.group);
+        visual = {
+          abilityId: hazard.abilityId,
+          warning,
+          group: created.group,
+          materials: created.materials,
+        };
+        this.coreBossHazardVisuals.set(hazard.entityId, visual);
+      }
+      const x = worldMeters(hazard.center.x);
+      const z = worldMeters(hazard.center.z);
+      placeHeroSkillVisual(visual.group, x, this.surfaceHeightAt(x, z) + 0.06, z);
+      visual.group.userData.baseRotationY = Math.atan2(hazard.direction.x, hazard.direction.z);
+      const span = Math.max(0.08, hazard.expiresAtTick - hazard.createdAtTick);
+      const progress = Math.max(0, Math.min(1, (tick - hazard.createdAtTick) / span));
+      updateMonsterSkillVisual(visual.group, warning ? 0.35 + progress * 0.3 : 0.55, elapsedSeconds);
     }
   }
 
@@ -949,6 +1061,15 @@ export class CombatEffectsLayer {
             }
             if (critical) {
               this.spawnImpactEffect(position, true, elapsedSeconds);
+            }
+          } else if (event.cause === 'monster' && event.sourceEntityId) {
+            const monster = snapshot.monsters.find(
+              (candidate) => candidate.entityId === event.sourceEntityId,
+            );
+            if (monster) {
+              this.spawnMonsterAttackEffect(monster, position, elapsedSeconds);
+            } else {
+              this.spawnImpactEffect(position, critical, elapsedSeconds);
             }
           } else {
             this.spawnImpactEffect(position, critical, elapsedSeconds);
@@ -1028,6 +1149,33 @@ export class CombatEffectsLayer {
         if (position && this.isWithinEffectRange(position) && profile) {
           this.spawnHeroSkillImpactEffect(profile, position, elapsedSeconds, 0.9);
         }
+      } else if (event.type === 'core-boss-cast') {
+        const x = worldMeters(event.center.x);
+        const z = worldMeters(event.center.z);
+        const position = {
+          x,
+          y: this.surfaceHeightAt(x, z) + 0.08,
+          z,
+          surfaceY: this.surfaceHeightAt(x, z),
+        };
+        if (this.isWithinEffectRange(position)) {
+          const profile = coreBossAbilityVfxProfile(event.abilityId);
+          const visual = createMonsterSkillVisual(
+            profile,
+            event.phase === 'warning' ? 'cast' : 'impact',
+            this.graphicsTier === 'reduced',
+          );
+          placeHeroSkillVisual(visual.group, position.x, position.y, position.z);
+          this.monsterSkillCastsSpawned += 1;
+          this.lastMonsterKind = 'core-boss';
+          this.addTransientEffect(
+            'monster-skill',
+            visual.group,
+            visual.materials,
+            elapsedSeconds,
+            visual.durationSeconds,
+          );
+        }
       }
     }
   }
@@ -1043,7 +1191,9 @@ export class CombatEffectsLayer {
 
     const group = new THREE.Group();
     group.name = `melee-sweep-${player.heroId}`;
-    group.position.set(worldMeters(player.position.x), 0.48, worldMeters(player.position.z));
+    const x = worldMeters(player.position.x);
+    const z = worldMeters(player.position.z);
+    group.position.set(x, this.surfaceHeightAt(x, z) + 0.48, z);
     group.rotation.y = Math.atan2(player.facing.x, player.facing.z);
     const material = createGlowMaterial(profile.color, 0.78);
     const outerRadius = Math.min(2.4, Math.max(1.25, worldMeters(player.attackRangeMm) * 0.36));
@@ -1066,7 +1216,9 @@ export class CombatEffectsLayer {
   private spawnMuzzleEffect(player: PlayerSnapshot, color: number, elapsedSeconds: number): void {
     const group = new THREE.Group();
     group.name = `ranged-muzzle-${player.heroId}`;
-    group.position.set(worldMeters(player.position.x), 1.05, worldMeters(player.position.z));
+    const x = worldMeters(player.position.x);
+    const z = worldMeters(player.position.z);
+    group.position.set(x, this.surfaceHeightAt(x, z) + 1.05, z);
     group.rotation.y = Math.atan2(player.facing.x, player.facing.z);
     const coreMaterial = createGlowMaterial(color, 0.9);
     const flareMaterial = createGlowMaterial(0xffe5ad, 0.66);
@@ -1085,7 +1237,9 @@ export class CombatEffectsLayer {
     elapsedSeconds: number,
   ): void {
     const visual = createHeroSkillVisual(profile, 'cast', this.graphicsTier === 'reduced');
-    visual.group.position.set(worldMeters(player.position.x), 0.08, worldMeters(player.position.z));
+    const x = worldMeters(player.position.x);
+    const z = worldMeters(player.position.z);
+    placeHeroSkillVisual(visual.group, x, this.surfaceHeightAt(x, z) + 0.08, z);
     visual.group.userData.baseRotationY = Math.atan2(player.facing.x, player.facing.z);
     visual.group.rotation.y = visual.group.userData.baseRotationY;
     this.heroSkillCastsSpawned += 1;
@@ -1102,12 +1256,17 @@ export class CombatEffectsLayer {
 
   private spawnHeroSkillImpactEffect(
     profile: HeroSkillVfxProfile,
-    position: { readonly x: number; readonly y: number; readonly z: number },
+    position: EffectPosition,
     elapsedSeconds: number,
     scaleMultiplier = 1,
   ): void {
     const visual = createHeroSkillVisual(profile, 'impact', this.graphicsTier === 'reduced');
-    visual.group.position.set(position.x, 0.07, position.z);
+    placeHeroSkillVisual(
+      visual.group,
+      position.x,
+      position.surfaceY + 0.07,
+      position.z,
+    );
     visual.group.userData.baseScale = profile.scale * scaleMultiplier;
     this.heroSkillImpactsSpawned += 1;
     this.lastSkillHeroId = profile.heroId;
@@ -1120,8 +1279,51 @@ export class CombatEffectsLayer {
     );
   }
 
+  private spawnMonsterAttackEffect(
+    monster: MonsterSnapshot,
+    target: EffectPosition,
+    elapsedSeconds: number,
+  ): void {
+    const profile = monsterAttackVfxProfile(monster.kind, monster.element);
+    const reduced = this.graphicsTier === 'reduced';
+    const swing = createMonsterSkillVisual(profile, 'cast', reduced);
+    const monsterX = worldMeters(monster.position.x);
+    const monsterZ = worldMeters(monster.position.z);
+    placeHeroSkillVisual(
+      swing.group,
+      monsterX,
+      this.surfaceHeightAt(monsterX, monsterZ) + 0.08,
+      monsterZ,
+    );
+    swing.group.userData.baseRotationY = Math.atan2(
+      target.x - swing.group.position.x,
+      target.z - swing.group.position.z,
+    );
+    swing.group.rotation.y = swing.group.userData.baseRotationY;
+    this.monsterSkillCastsSpawned += 1;
+    this.lastMonsterKind = monster.kind;
+    this.addTransientEffect(
+      'monster-skill',
+      swing.group,
+      swing.materials,
+      elapsedSeconds,
+      swing.durationSeconds,
+    );
+
+    const hit = createMonsterSkillVisual(profile, 'impact', reduced);
+    placeHeroSkillVisual(hit.group, target.x, target.surfaceY + 0.07, target.z);
+    hit.group.userData.baseScale = profile.scale * 0.82;
+    this.addTransientEffect(
+      'monster-skill',
+      hit.group,
+      hit.materials,
+      elapsedSeconds,
+      hit.durationSeconds,
+    );
+  }
+
   private spawnImpactEffect(
-    position: { readonly x: number; readonly y: number; readonly z: number },
+    position: EffectPosition,
     critical: boolean,
     elapsedSeconds: number,
   ): void {
@@ -1140,7 +1342,7 @@ export class CombatEffectsLayer {
       ringMaterial,
     );
     ring.rotation.x = -Math.PI / 2;
-    ring.position.y = -position.y + 0.13;
+    ring.position.y = position.surfaceY + 0.13 - position.y;
     group.add(core, ring);
     this.impactEffectsSpawned += 1;
     this.addTransientEffect(
@@ -1153,31 +1355,31 @@ export class CombatEffectsLayer {
   }
 
   private spawnCastEffect(
-    position: { readonly x: number; readonly y: number; readonly z: number },
+    position: EffectPosition,
     color: number,
     elapsedSeconds: number,
   ): void {
     const group = new THREE.Group();
     group.name = 'active-cast-pulse';
-    group.position.set(position.x, 0.13, position.z);
+    group.position.set(position.x, position.surfaceY + 0.13, position.z);
     const ringMaterial = createGlowMaterial(color, 0.82);
     const coreMaterial = createGlowMaterial(0xffefba, 0.46);
     const ring = new THREE.Mesh(new THREE.RingGeometry(0.5, 1.18, 36), ringMaterial);
     ring.rotation.x = -Math.PI / 2;
     const core = new THREE.Mesh(new THREE.SphereGeometry(0.36, 12, 8), coreMaterial);
-    core.position.y = position.y;
+    core.position.y = position.y - group.position.y;
     group.add(ring, core);
     this.activeCastEffectsSpawned += 1;
     this.addTransientEffect('cast', group, [ringMaterial, coreMaterial], elapsedSeconds, 0.52);
   }
 
   private spawnHealEffect(
-    position: { readonly x: number; readonly y: number; readonly z: number },
+    position: EffectPosition,
     elapsedSeconds: number,
   ): void {
     const group = new THREE.Group();
     group.name = 'heal-pulse';
-    group.position.set(position.x, 0.14, position.z);
+    group.position.set(position.x, position.surfaceY + 0.14, position.z);
     const material = createGlowMaterial(0x76e59a, 0.72);
     const ring = new THREE.Mesh(new THREE.RingGeometry(0.35, 0.95, 30), material);
     ring.rotation.x = -Math.PI / 2;
@@ -1233,9 +1435,12 @@ export class CombatEffectsLayer {
       }
       if (effect.kind === 'hero-skill') {
         updateHeroSkillVisual(effect.group, progress, elapsedSeconds);
+      } else if (effect.kind === 'monster-skill') {
+        updateMonsterSkillVisual(effect.group, progress, elapsedSeconds);
       }
+      const authored = effect.kind === 'hero-skill' || effect.kind === 'monster-skill';
       const scale =
-        effect.kind === 'hero-skill'
+        authored
           ? 1
           : effect.kind === 'melee-sweep'
             ? 0.88 + progress * 0.32
@@ -1246,8 +1451,11 @@ export class CombatEffectsLayer {
                 : effect.kind === 'cast' || effect.kind === 'heal'
                   ? 0.62 + progress * 1.25
                   : 0.68 + progress;
-      if (effect.kind !== 'hero-skill') {
+      if (!authored) {
         effect.group.scale.setScalar(scale);
+      }
+      if (authored) {
+        continue;
       }
       for (const material of effect.materials) {
         const baseOpacity =

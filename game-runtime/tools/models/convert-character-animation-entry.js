@@ -203,14 +203,14 @@ function materialTexture(source, property) {
   return value instanceof THREE.Texture ? value : null;
 }
 
-function standardizeMaterials(root) {
+function standardizeMaterials(root, staticMeshesAreWeapons = true) {
   const converted = new Map();
   const originalMaterials = new Set();
   root.traverse((object) => {
     if (!(object instanceof THREE.Mesh)) {
       return;
     }
-    const isWeapon = !(object instanceof THREE.SkinnedMesh);
+    const isWeapon = staticMeshesAreWeapons && !(object instanceof THREE.SkinnedMesh);
     const sourceMaterials = Array.isArray(object.material) ? object.material : [object.material];
     const materials = sourceMaterials.map((source) => {
       originalMaterials.add(source);
@@ -453,7 +453,7 @@ window.addCharacterAnimationSource = async (input) => {
   state.clips.set(input.name, clip);
   if (input.name === 'Idle') {
     prepareCharacterMeshes(root, state.config.modelId, state.config.requiresSeparateWeapon);
-    standardizeMaterials(root);
+    standardizeMaterials(root, state.config.staticMeshesAreWeapons !== false);
     root.name = `${state.config.modelId}-${state.config.displayName}-Animated`;
     state.root = root;
   } else {
@@ -463,7 +463,7 @@ window.addCharacterAnimationSource = async (input) => {
 };
 
 window.exportCharacterAnimationAsset = async () => {
-  const clipNames = ['Idle', 'Move', 'Attack', 'Spell'];
+  const clipNames = state.config.animationStates ?? ['Idle', 'Move', 'Attack', 'Spell'];
   if (!state.root || clipNames.some((name) => !state.clips.has(name))) {
     throw new Error('all four character animation sources are required');
   }

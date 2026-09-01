@@ -93,14 +93,42 @@ is an equivalent WebGL implementation rather than a direct runtime copy.
 
 The nine tree variants in
 `apps/web/public/models/grassworks/grassworks-trees.glb` are derived from
-`grass-webgpu/Assets/terrain2.glb`. No license file was present in the supplied
-source directory, so commercial redistribution rights for those tree meshes
-are not asserted here.
+`grass-webgpu/Assets/terrain2.glb`. Near LOD keeps the source photographic
+branch-cluster leaf cards (`leaves*` materials, MASK cutoff 0.5). Far LOD
+keeps the source tree billboards (`Tree*_Billboard`, MASK cutoff 0.35). The
+demo's falling-leaf teardrop sprites (`leaf-green.png`, `leaf-yellow.png`,
+`leaf-whites.png`) are not applied to the tree cards — those sprites are
+glow VFX and turn the foliage into visible paper rectangles. No license
+file was present in the supplied source directory, so commercial
+redistribution rights for those tree meshes and leaf textures are not
+asserted here.
 
-The supplied `grass-atlas5.png` is excluded because it contains visible
-pngtree watermarks and no bundled license. The runtime
-`apps/web/public/models/grassworks/grass-atlas5.png` is generated instead from
-the existing ambientCG CC0 derivative `Grass001_Stylized.jpg`.
+The supplied `grass-atlas5.png` is the demo's 2x2 photographic clump atlas.
+Runtime UV rectangles are inset from each cell so pngtree corner marks stay
+out of the sampled tuft. The atlas is copied to
+`apps/web/public/models/grassworks/grass-atlas5.png`.
+
+## Player spawn VFX
+
+Source packs supplied by the project owner:
+
+- `特效贴图（PNG）` for still effect maps
+- `265款游戏技能特效序列帧PNG图片` for skill flipbooks
+
+Converted delivery assets in `apps/web/public/vfx/spawn/`:
+
+- `aura-sheet.png` from `s升级光效2`
+- `circle-rainbow.png` from `魔法阵类/magic_circle_rainbow.png`
+- `ring-rainbow.png` from `魔法阵类/el_rainbowsummonring01.png`
+- `ray-pillar.png` from `线性条状类/new_ray.png`
+- `spark-star.png` from `光点类/starflashorange.png`
+
+The shipped spawn presentation is option 1, 青龙升天, with the rainbow
+magic circle as the ground base. Three additive wrap planes enclose the
+character without hiding it, and orange sky rays continue upward. These are
+render-only spawn presentation textures. They do not change simulation,
+collision, or map geometry. No license file was present in the supplied
+source directories, so commercial redistribution rights are not asserted here.
 
 ## Map Foliage Models
 
@@ -253,3 +281,30 @@ skeletal layouts:
 Each of these three deliveries contains four exported clips named
 `Idle`, `Move`, `Attack`, and `Spell`. H006 is fully skinned; H007 retains
 its separate Cloud and Weapon meshes; H015 retains its separate Weapon mesh.
+
+## Shop NPC Models
+
+The project owner supplied four shop NPC archives. Their actual contents were
+inspected before conversion: each archive contains one skinned FBX with one
+idle animation and no movement, attack, or spell source.
+
+The corrected identity mapping is:
+
+- `鞋匠2_FBX.zip` -> `S001` 鞋匠
+- `太白金星_FBX.zip` -> `S002` 太白金星
+- `土地_FBX.zip` -> `S003` 土地公
+- `财神_FBX.zip` -> `S004` 黑山老妖
+
+The `财神` archive is intentionally mapped to 黑山老妖; it is not treated as
+土地公. The four optimized WebGL delivery assets are:
+
+- `models/shops/S001/model.glb`
+- `models/shops/S002/model.glb`
+- `models/shops/S003/model.glb`
+- `models/shops/S004/model.glb`
+
+Each delivery retains the real `Idle` clip, 41-joint skin, and textured mesh.
+The runtime instantiates the model for every open shop snapshot, positions it
+on the shop presentation side, follows the authoritative terrain height, and
+reuses the same model template for the two same-kind shops. No missing
+movement, attack, or spell animation is claimed for these NPCs.

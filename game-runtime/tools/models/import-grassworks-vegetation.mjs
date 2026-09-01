@@ -23,18 +23,12 @@ const SOURCE_GRASS_ATLAS_PATH = resolve(
   process.env.JWGB_GRASSWORKS_GRASS_ATLAS_SOURCE?.trim() ||
     join(SOURCE_ROOT, 'Assets', 'grass-atlas5.png'),
 );
-const GRASS_TEXTURE_SOURCE_PATH = resolve(
-  process.env.JWGB_GRASSWORKS_GRASS_TEXTURE_SOURCE?.trim() ||
-    join(ROOT, 'apps', 'web', 'public', 'assets', 'terrain', 'Grass001_Stylized.jpg'),
-);
 const GRASS_ATLAS_OUTPUT_PATH = resolve(
   process.env.JWGB_GRASSWORKS_GRASS_ATLAS_OUTPUT?.trim() ||
     join(ROOT, 'apps', 'web', 'public', 'models', 'grassworks', 'grass-atlas5.png'),
 );
 const MANIFEST_PATH = join(dirname(OUTPUT_PATH), 'manifest.json');
 const TREE_VARIANTS = Array.from({ length: 9 }, (_, index) => index + 1);
-const GRASS_ATLAS_SIZE = 1_024;
-const GRASS_ATLAS_CELL_SIZE = GRASS_ATLAS_SIZE / 2;
 const TARGET_NODE_NAMES = new Set(
   TREE_VARIANTS.flatMap((variant) => [`Tree${variant}_High`, `Tree${variant}_Low`]),
 );
@@ -97,101 +91,57 @@ function reportCounts(report) {
   };
 }
 
-function createRandom(seed) {
-  let state = seed >>> 0;
-  return () => {
-    state = (Math.imul(state, 1_664_525) + 1_013_904_223) >>> 0;
-    return state / 0x1_0000_0000;
-  };
+function lockSourceFoliageMaterials(document) {
+  let leafMaterials = 0;
+  let billboardMaterials = 0;
+  for (const material of document.getRoot().listMaterials()) {
+    const name = material.getName() ?? '';
+    if (/^leaves/i.test(name)) {
+      material.setAlphaMode('MASK');
+      material.setAlphaCutoff(0.5);
+      material.setDoubleSided(true);
+      leafMaterials += 1;
+    }
+    if (/billboard/i.test(name)) {
+      material.setAlphaMode('MASK');
+      material.setAlphaCutoff(0.35);
+      material.setDoubleSided(true);
+      billboardMaterials += 1;
+    }
+  }
+  if (leafMaterials === 0) {
+    throw new Error('Grassworks tree import found no source leaf materials');
+  }
+  if (billboardMaterials === 0) {
+    throw new Error('Grassworks tree import found no source billboard materials');
+  }
+  return { leafMaterials, billboardMaterials };
 }
 
-function grassMaskSvg(variant) {
-  const nextRandom = createRandom(0x51f15e + variant * 0x9e3779b9);
-  const size = GRASS_ATLAS_CELL_SIZE;
-  const blades = [];
-  const profiles = [
-    { center: 0.46, spread: 0.16, bladeCount: 86, minHeight: 0.28, heightRange: 0.58 },
-    { center: 0.54, spread: 0.2, bladeCount: 102, minHeight: 0.22, heightRange: 0.54 },
-    { center: 0.48, spread: 0.23, bladeCount: 78, minHeight: 0.34, heightRange: 0.55 },
-    { center: 0.51, spread: 0.14, bladeCount: 92, minHeight: 0.26, heightRange: 0.48 },
-  ];
-  const profile = profiles[variant] ?? profiles[0];
-  const bladeCount = profile.bladeCount;
-  for (let index = 0; index < bladeCount; index += 1) {
-    const clustered = (nextRandom() + nextRandom() + nextRandom()) / 3 - 0.5;
-    const secondaryLobe = variant === 1 && index % 3 === 0 ? -0.11 : variant === 2 ? 0.06 : 0;
-    const baseX =
-      size *
-      Math.max(
-        0.08,
-        Math.min(0.92, profile.center + secondaryLobe + clustered * profile.spread * 2),
-      );
-    const baseY = size * (0.93 + nextRandom() * 0.065);
-    const height = size * (profile.minHeight + nextRandom() * profile.heightRange);
-    const width = 1.4 + nextRandom() * (variant === 3 ? 4.2 : 3.5);
-    const lean = (nextRandom() - 0.5) * (34 + variant * 8);
-    const tipX = Math.max(4, Math.min(size - 4, baseX + lean));
-    const shoulderY = baseY - height * (0.48 + nextRandom() * 0.18);
-    const opacity = 0.76 + nextRandom() * 0.24;
-    blades.push(
-      `<path d="M ${baseX - width / 2} ${baseY} ` +
-        `C ${baseX - width * 0.34} ${shoulderY}, ${tipX - width * 0.18} ${
-          baseY - height * 0.86
-        }, ${tipX} ${baseY - height} ` +
-        `C ${tipX + width * 0.22} ${baseY - height * 0.82}, ${
-          baseX + width * 0.4
-        } ${shoulderY}, ${baseX + width / 2} ${baseY} Z" opacity="${opacity.toFixed(3)}"/>`,
-    );
+function assertFoliageTexturesKeepAlpha(document) {
+  for (const material of document.getRoot().listMaterials()) {
+    const name = material.getName() ?? '';
+    if (!/^leaves/i.test(name) && !/billboard/i.test(name)) {
+      continue;
+    }
+    const texture = material.getBaseColorTexture();
+    const mime = texture?.getMimeType() ?? '';
+    if (!texture || (mime !== 'image/png' && mime !== 'image/webp')) {
+      throw new Error(`${name} lost its alpha foliage texture (${mime || 'missing'})`);
+    }
   }
-  return Buffer.from(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">` +
-      '<rect width="100%" height="100%" fill="none"/>' +
-      `<g fill="#fff">${blades.join('')}</g>` +
-      '</svg>',
-  );
 }
 
 async function buildGrassAtlas() {
-  const grassTextureBytes = await readFile(GRASS_TEXTURE_SOURCE_PATH);
   const sourceAtlasBytes = await readFile(SOURCE_GRASS_ATLAS_PATH);
-  const composites = [];
-  const variants = [
-    { brightness: 1.03, saturation: 1.18, hue: -4 },
-    { brightness: 0.92, saturation: 1.08, hue: 8 },
-    { brightness: 0.98, saturation: 0.94, hue: -10 },
-    { brightness: 1.08, saturation: 1.25, hue: 4 },
-  ];
-  for (const [variant, colour] of variants.entries()) {
-    const tile = await sharp(grassTextureBytes)
-      .resize(GRASS_ATLAS_CELL_SIZE, GRASS_ATLAS_CELL_SIZE, { fit: 'cover' })
-      .modulate(colour)
-      .ensureAlpha()
-      .composite([{ input: grassMaskSvg(variant), blend: 'dest-in' }])
-      .png({ compressionLevel: 9, palette: false })
-      .toBuffer();
-    composites.push({
-      input: tile,
-      left: (variant % 2) * GRASS_ATLAS_CELL_SIZE,
-      top: Math.floor(variant / 2) * GRASS_ATLAS_CELL_SIZE,
-    });
-  }
-  const outputBytes = await sharp({
-    create: {
-      width: GRASS_ATLAS_SIZE,
-      height: GRASS_ATLAS_SIZE,
-      channels: 4,
-      background: { r: 0, g: 0, b: 0, alpha: 0 },
-    },
-  })
-    .composite(composites)
-    .png({ compressionLevel: 9, palette: false })
-    .toBuffer();
+  const metadata = await sharp(sourceAtlasBytes).metadata();
   await mkdir(dirname(GRASS_ATLAS_OUTPUT_PATH), { recursive: true });
-  await writeFile(GRASS_ATLAS_OUTPUT_PATH, outputBytes);
+  await writeFile(GRASS_ATLAS_OUTPUT_PATH, sourceAtlasBytes);
   return {
-    outputBytes,
-    grassTextureBytes,
+    outputBytes: sourceAtlasBytes,
     sourceAtlasBytes,
+    width: metadata.width ?? 1_000,
+    height: metadata.height ?? 1_000,
   };
 }
 
@@ -250,6 +200,8 @@ async function main() {
     });
   }
 
+  const foliage = lockSourceFoliageMaterials(document);
+  await document.transform(prune(), dedup());
   await document.transform(
     prune(),
     dedup(),
@@ -257,9 +209,11 @@ async function main() {
       encoder: sharp,
       targetFormat: 'webp',
       resize: [1024, 1024],
+      pattern: /^(?!Image_3|TreeLOD)/,
     }),
     meshopt({ encoder: MeshoptEncoder, level: 'high' }),
   );
+  assertFoliageTexturesKeepAlpha(document);
 
   await mkdir(dirname(OUTPUT_PATH), { recursive: true });
   await io.write(OUTPUT_PATH, document);
@@ -279,9 +233,9 @@ async function main() {
       excludedGrassAtlas: {
         file: 'grass-webgpu/Assets/grass-atlas5.png',
         sha256: sha256(atlas.sourceAtlasBytes),
-        included: false,
+        included: true,
         reason:
-          'The supplied image contains visible pngtree watermarks and has no bundled license.',
+          'Demo 2x2 clump atlas. Runtime UV rectangles are inset from cell corners to avoid pngtree marks.',
       },
     },
     runtime: {
@@ -291,15 +245,27 @@ async function main() {
       grassAtlas: 'models/grassworks/grass-atlas5.png',
       grassAtlasBytes: atlas.outputBytes.length,
       grassAtlasSha256: sha256(atlas.outputBytes),
-      grassAtlasWidth: GRASS_ATLAS_SIZE,
-      grassAtlasHeight: GRASS_ATLAS_SIZE,
-      grassAtlasSource: 'assets/terrain/Grass001_Stylized.jpg',
-      grassAtlasSourceSha256: sha256(atlas.grassTextureBytes),
-      grassAtlasLicense: 'Creative Commons CC0 1.0 Universal (ambientCG derivative).',
+      grassAtlasWidth: atlas.width,
+      grassAtlasHeight: atlas.height,
+      grassAtlasSource: 'grass-webgpu/Assets/grass-atlas5.png',
+      grassAtlasSourceSha256: sha256(atlas.sourceAtlasBytes),
+      grassAtlasLicense: 'No license file was present in the user-provided source directory.',
       grassAtlasPolicy:
-        'Four deterministic transparent clump variants; no source watermark pixels.',
-      lodPolicy: 'near high-detail meshes; medium-distance source billboards; chunk culling',
-      grassPolicy: 'chunked instanced blades with GPU vertex wind and interaction bending',
+        'Demo 2x2 photographic clumps; UV rectangles inset from cell corners to avoid pngtree marks.',
+      lodPolicy:
+        'near source high-detail branch-cluster leaf cards; medium-distance source canopy billboards; chunk culling',
+      grassPolicy:
+        '25 m tiles, source four-band LOD density, instanced clumps with GPU wind and interaction bending',
+      leafPolicy:
+        'Keep the terrain2.glb photographic leaf-cluster cards and tree billboards. MASK cutouts match the demo (0.5 near, 0.35 far). Do not replace them with the demo falling-leaf teardrop sprites.',
+      billboardSprites: foliage.billboardMaterials,
+      leafSprites: {
+        source: 'terrain2.glb leaves/* and Tree*_Billboard materials',
+        leafMaterials: foliage.leafMaterials,
+        billboardMaterials: foliage.billboardMaterials,
+        highAlphaCutoff: 0.5,
+        lowAlphaCutoff: 0.35,
+      },
     },
     variants,
     optimized: reportCounts(report),
@@ -307,12 +273,14 @@ async function main() {
       'source terrain',
       'source character and animations',
       'source fences, stones, lanterns, water, sky, audio, and UI',
+      'demo falling-leaf teardrop sprites (leaf-green/yellow/whites)',
     ],
   };
   await writeFile(MANIFEST_PATH, `${JSON.stringify(manifest, null, 2)}\n`);
   console.log(
     `${basename(SOURCE_PATH)} -> ${OUTPUT_PATH}: ${manifest.optimized.triangles} triangles, ` +
-      `${Math.round(outputStats.size / 1024)} KiB`,
+      `${Math.round(outputStats.size / 1024)} KiB, ` +
+      `leaves=${foliage.leafMaterials}, billboards=${foliage.billboardMaterials}`,
   );
 }
 

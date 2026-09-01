@@ -10,17 +10,17 @@ import {
 import { remotePrecipPlan } from '../apps/web/src/render/map/weather-field';
 
 describe('district climate', () => {
-  it('assigns rain, snow and clear weather from the six districts', () => {
+  it('puts rain on every district of the autumn storm', () => {
     expect(precipForRegion('mihun')).toBe('rain');
     expect(precipForRegion('zhusi')).toBe('rain');
-    expect(precipForRegion('longji')).toBe('snow');
-    expect(precipForRegion('jinshui')).toBeNull();
-    expect(precipForRegion('duanjin')).toBeNull();
-    expect(precipForRegion('baizu')).toBeNull();
-    expect(precipForRegion('santing')).toBeNull();
+    expect(precipForRegion('longji')).toBe('rain');
+    expect(precipForRegion('jinshui')).toBe('rain');
+    expect(precipForRegion('duanjin')).toBe('rain');
+    expect(precipForRegion('baizu')).toBe('rain');
+    expect(precipForRegion('santing')).toBe('rain');
   });
 
-  it('keeps precipitation local when the camera stands in a weathered district', () => {
+  it('keeps precipitation local because the whole map is raining', () => {
     const zhusi = regionById('zhusi').anchor;
     const plan = remotePrecipPlan(zhusi.x, zhusi.z, 48, 48, (x, z) => {
       const dx = x - zhusi.x;
@@ -30,26 +30,21 @@ describe('district climate', () => {
     expect(plan).toEqual({ mode: 'rain', local: true });
   });
 
-  it('shows a neighbour snowfield from a clear vantage', () => {
+  it('still rains from a former clear vantage', () => {
     const plan = remotePrecipPlan(0, 0, 48, 48, (x) => (x > 20 ? 'longji' : 'santing'));
-    expect(plan.mode).toBe('snow');
-    expect(plan.local).toBe(false);
+    expect(plan.mode).toBe('rain');
+    expect(plan.local).toBe(true);
   });
 
-  it('bakes wet marsh, ashy market and highland frost into the ground splat', () => {
-    // Heights are sampled, not written in: frost and wetness now key off how
-    // far a point stands above or below its surroundings, so passing a literal
-    // height describes a spot that does not exist.
+  it('bakes wet marsh and ashy market into the ground splat', () => {
     const splatAt = (x: number, z: number) => climateSplatAt(x, z, terrainHeightMeters(x, z));
     const marsh = splatAt(-20, -265);
     const market = splatAt(300, -145);
     const grove = splatAt(-282, -180);
     expect(marsh.wet).toBeGreaterThan(0.55);
     expect(market.soil).toBeGreaterThan(grove.soil);
-    expect(grove.wet).toBeLessThan(0.2);
+    expect(grove.wet).toBeGreaterThan(0.4);
 
-    // Frost belongs to high ground in 龙脊渊, wherever that ground happens to
-    // be. Asserting a fixed coordinate would only test the noise seed.
     let peakFrost = 0;
     for (let x = 200; x <= 400; x += 8) {
       for (let z = 60; z <= 300; z += 8) {
@@ -59,7 +54,7 @@ describe('district climate', () => {
         peakFrost = Math.max(peakFrost, splatAt(x, z).frost);
       }
     }
-    expect(peakFrost).toBeGreaterThan(0.45);
+    expect(peakFrost).toBe(0);
   });
 
   it('does not change authoritative terrain height', () => {

@@ -3,7 +3,8 @@ import * as THREE from 'three';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { appendAssetVersion, webAssetUrl } from '../../runtime/asset-url';
-import { applyWindSway, windTimeUniform } from '../shading/wind';
+import { applyWindSway, setWindCameraPosition, windTimeUniform } from '../shading/wind';
+import { AUTUMN_STORM } from './autumn-storm';
 import type { FloraModelLayerDiagnostics } from './flora-models';
 import {
   FloraOcclusionController,
@@ -30,39 +31,6 @@ const TREE_VARIANTS = 9;
 const TREE_COUNT = 1_800;
 const TREE_SEED_SALT = 0x9e3779b9;
 const GRASS_SEED_SALT = 0x4f1bbcdc;
-const GRASS_SPACING_METERS = 1.25;
-const GRASS_JITTER = 0.55;
-const GRASS_ROAD_VERGE_MM = -1;
-const GRASS_WIDTH_MIN = 1.9;
-const GRASS_WIDTH_MAX = 2.5;
-const GRASS_ATLAS_SIZE = 1_024;
-// Texture.flipY maps UV y=0 to the source image's lower half.
-const GRASS_ATLAS_RECTS = [
-  { x: 157, y: 0, width: 238, height: 512 },
-  { x: 688, y: 0, width: 161, height: 512 },
-  { x: 142, y: 512, width: 186, height: 512 },
-  { x: 620, y: 512, width: 284, height: 512 },
-] as const;
-const GRASS_LOGICAL_TILE_SIZE = 25;
-const GRASS_RENDER_BATCH_SIZE = GRASS_LOGICAL_TILE_SIZE * 2;
-const TREE_CHUNK_SIZE = 56;
-const GRASS_VISIBILITY_UPDATE_INTERVAL = 3;
-const TREE_VISIBILITY_UPDATE_INTERVAL = 3;
-const INFLUENCE_UPDATE_INTERVAL = 2;
-const INFLUENCE_RESOLUTION = 256;
-const INFLUENCE_RADIUS_METERS = 5.8;
-const INFLUENCE_RECOVERY_PER_UPDATE = 7;
-const BALANCED_GRASS_DISTANCE = 180;
-const REDUCED_GRASS_DISTANCE = 108;
-const BALANCED_TREE_HIGH_DISTANCE = 18;
-const BALANCED_TREE_LOW_DISTANCE = 192;
-const REDUCED_TREE_LOW_DISTANCE = 138;
-const REDUCED_TREE_DENSITY = 0.66;
-const TREE_TARGET_HEIGHT_MIN = 7.2;
-const TREE_TARGET_HEIGHT_MAX = 10.4;
-const GRASS_VERTICES_PER_DETAIL = 6;
-const GRASS_TRIANGLES_PER_DETAIL = 2;
-
 export interface GrassworksForestGrove {
   readonly id: string;
   readonly centerX: number;
@@ -89,9 +57,49 @@ export const GRASSWORKS_FOREST_GROVES: readonly GrassworksForestGrove[] = [
   { id: 'southeast-forest', centerX: 280, centerZ: -80, radiusX: 50, radiusZ: 38, treeCount: 210 },
 ] as const;
 
-const FOREST_TREE_COUNT = GRASSWORKS_FOREST_GROVES.reduce((sum, grove) => sum + grove.treeCount, 0);
+const FOREST_TREE_COUNT = GRASSWORKS_FOREST_GROVES.reduce(
+  (sum, grove) => sum + grove.treeCount,
+  0,
+);
 const FOREST_ROAD_VERGE_MM = 2_500;
 const FOREST_MIN_DISTANCE_METERS = 2.55;
+const GRASS_SPACING_METERS = 1.25;
+const GRASS_JITTER = 0.55;
+const GRASS_ROAD_VERGE_MM = -1;
+const GRASS_WIDTH_MIN = 1.36;
+const GRASS_WIDTH_MAX = 1.92;
+const GRASS_HEIGHT_MIN = 0.92;
+const GRASS_HEIGHT_MAX = 1.58;
+const GRASS_ATLAS_SIZE = 1_000;
+// Texture.flipY maps UV y=0 to the source image's lower half. Rects are inset
+// from each 500px cell so pngtree corner marks stay out of the sampled tuft.
+const GRASS_ATLAS_RECTS = [
+  { x: 72, y: 8, width: 356, height: 484 },
+  { x: 572, y: 8, width: 356, height: 484 },
+  { x: 72, y: 508, width: 356, height: 484 },
+  { x: 572, y: 508, width: 356, height: 484 },
+] as const;
+const GRASS_LOGICAL_TILE_SIZE = 25;
+const GRASS_RENDER_BATCH_SIZE = GRASS_LOGICAL_TILE_SIZE * 2;
+const TREE_CHUNK_SIZE = 56;
+const GRASS_VISIBILITY_UPDATE_INTERVAL = 3;
+const TREE_VISIBILITY_UPDATE_INTERVAL = 3;
+const INFLUENCE_UPDATE_INTERVAL = 2;
+const INFLUENCE_RESOLUTION = 256;
+const INFLUENCE_RADIUS_METERS = 5.8;
+const INFLUENCE_RECOVERY_PER_UPDATE = 7;
+const BALANCED_GRASS_DISTANCE = 180;
+const REDUCED_GRASS_DISTANCE = 108;
+const BALANCED_TREE_HIGH_DISTANCE = 150;
+const BALANCED_TREE_LOW_DISTANCE = 260;
+const REDUCED_TREE_LOW_DISTANCE = 208;
+const TREE_HIGH_HYSTERESIS = 12;
+const TREE_LOW_HYSTERESIS = 16;
+const REDUCED_TREE_DENSITY = 0.66;
+const TREE_TARGET_HEIGHT_MIN = 7.2;
+const TREE_TARGET_HEIGHT_MAX = 10.4;
+const GRASS_VERTICES_PER_DETAIL = 6;
+const GRASS_TRIANGLES_PER_DETAIL = 2;
 
 export type GrassworksGraphicsTier = 'balanced' | 'reduced';
 export type GrassworksGrassLod = 'high' | 'medium' | 'low' | 'veryLow';
@@ -105,10 +113,11 @@ interface GrassworksGrassLodDefinition {
 
 const GRASS_LODS: readonly GrassworksGrassLodDefinition[] = [
   { id: 'high', detail: 5, density: 4, distanceRatio: 0.3 },
-  { id: 'medium', detail: 3, density: 4, distanceRatio: 0.7 },
-  { id: 'low', detail: 2, density: 4, distanceRatio: 0.9 },
-  { id: 'veryLow', detail: 2, density: 4, distanceRatio: 1 },
+  { id: 'medium', detail: 2, density: 3, distanceRatio: 0.7 },
+  { id: 'low', detail: 1, density: 2, distanceRatio: 0.9 },
+  { id: 'veryLow', detail: 1, density: 1, distanceRatio: 0.9 },
 ] as const;
+const GRASS_MAX_DENSITY = Math.max(...GRASS_LODS.map((definition) => definition.density));
 
 /**
  * Literal source settings plus the WebGL compatibility choices used here.
@@ -141,9 +150,23 @@ export const GRASSWORKS_SOURCE_PROFILE = {
     max: GRASS_WIDTH_MAX,
   },
   runtimeTreeCount: TREE_COUNT,
+  runtimeTreePlacement: 'whole-map clustered woodland',
   runtimeForestTreeCount: FOREST_TREE_COUNT,
   runtimeForestGroves: GRASSWORKS_FOREST_GROVES.length,
+  runtimeTreeHighDistanceMeters: BALANCED_TREE_HIGH_DISTANCE,
+  runtimeTreeLowDistanceMeters: BALANCED_TREE_LOW_DISTANCE,
+  runtimeReducedTreeLowDistanceMeters: REDUCED_TREE_LOW_DISTANCE,
+  runtimeTreeHighHysteresisMeters: TREE_HIGH_HYSTERESIS,
+  runtimeTreeLowHysteresisMeters: TREE_LOW_HYSTERESIS,
   runtimeLods: GRASS_LODS,
+  leafSprites: {
+    highAlphaTest: 0.5,
+    lowAlphaTest: 0.35,
+    highEmissiveIntensity: AUTUMN_STORM.leafEmissiveHigh,
+    lowEmissiveIntensity: AUTUMN_STORM.leafEmissiveLow,
+    highWind: AUTUMN_STORM.windLeafHigh,
+    lowWind: AUTUMN_STORM.windLeafLow,
+  },
 } as const;
 
 export const GRASSWORKS_VEGETATION_ASSET_PATHS = [TREE_ASSET_PATH, GRASS_ATLAS_PATH] as const;
@@ -253,6 +276,7 @@ interface TreeChunk {
   readonly minZ: number;
   readonly maxZ: number;
   readonly instances: number;
+  lod: 'hidden' | 'high' | 'low';
 }
 
 interface TreeBuild {
@@ -297,8 +321,7 @@ const tempEuler = new THREE.Euler();
 const tempQuaternion = new THREE.Quaternion();
 const tempScale = new THREE.Vector3();
 const tempPosition = new THREE.Vector3();
-const grassTintTarget = new THREE.Color(0x7f9e5d);
-const grassTintWhite = new THREE.Color(0xffffff);
+const grassTintTarget = new THREE.Color(0x756f3e);
 
 function assetUrl(path: string): string {
   return appendAssetVersion(webAssetUrl(path));
@@ -663,9 +686,9 @@ function createGrassMaterial(
     map: atlas,
     roughness: 0.96,
     metalness: 0,
-    emissive: 0x0c1608,
-    emissiveIntensity: 0.14,
-    alphaTest: 0.36,
+    emissive: 0x080604,
+    emissiveIntensity: 0.02,
+    alphaTest: 0.22,
     side: THREE.DoubleSide,
   });
   material.alphaToCoverage = true;
@@ -722,8 +745,17 @@ function createGrassMaterial(
           'transformed.xz *= grassworksWidth;',
           'transformed.y *= grassworksHeight;',
           'transformed.xz = mat2(grassworksCos, -grassworksSin, grassworksSin, grassworksCos) * transformed.xz;',
-          'float grassworksGust = sin(uGrassworksTime * 1.55 + grassworksPhase + grassworksOffset.x * 0.18 + grassworksOffset.z * 0.15);',
-          'float grassworksRipple = sin(uGrassworksTime * 3.1 + grassworksPhase * 1.7 + grassworksOffset.x * 0.47 - grassworksOffset.z * 0.39);',
+          'vec2 grassworksWindSample = grassworksOffset.xz + transformed.xz * 0.35;',
+          'float grassworksWindPhase = uGrassworksTime * 3.0 + grassworksPhase * 0.08;',
+          'float grassworksBroad = sin(grassworksWindSample.x * 0.18 + grassworksWindSample.y * 0.14 + grassworksWindPhase);',
+          'float grassworksCross = cos(grassworksWindSample.x * 0.08 + grassworksWindSample.y * 0.22 + grassworksWindPhase * 0.72);',
+          'float grassworksDetail = sin(grassworksWindSample.x * 0.55 + grassworksWindSample.y * 0.42 + grassworksWindPhase * 0.35);',
+          'float grassworksMicro = sin(grassworksWindSample.x * 0.50 - grassworksWindSample.y * 0.31 + grassworksWindPhase * 0.50);',
+          'vec2 grassworksWindDirection = normalize(vec2(0.93, 0.36));',
+          'vec2 grassworksWindSide = vec2(-grassworksWindDirection.y, grassworksWindDirection.x);',
+          'float grassworksGust = 0.70 + grassworksBroad * 0.20 + grassworksDetail * 0.10;',
+          'float grassworksCrossAmount = grassworksCross * 0.06 + grassworksMicro * 0.035;',
+          'vec2 grassworksWind = grassworksWindDirection * grassworksGust + grassworksWindSide * grassworksCrossAmount;',
           'vec2 grassworksWorld = grassworksOffset.xz + transformed.xz;',
           'vec2 grassworksAway = grassworksWorld - uGrassworksFocus.xz;',
           'float grassworksFocusDistance = length(grassworksAway);',
@@ -738,8 +770,7 @@ function createGrassMaterial(
           'float grassworksCombinedLength = length(grassworksCombinedDirection);',
           'vec2 grassworksPushDirection = grassworksCombinedLength > 0.001 ? grassworksCombinedDirection / grassworksCombinedLength : vec2(1.0, 0.0);',
           'float grassworksInteraction = max(grassworksImmediate, grassworksPersistent);',
-          'transformed.x += (grassworksGust * 0.18 + grassworksRipple * 0.07) * grassworksWeight;',
-          'transformed.z += (grassworksGust * 0.1 - grassworksRipple * 0.05) * grassworksWeight;',
+          'transformed.xz += grassworksWind * grassworksWeight * 0.12;',
           'transformed.xz += grassworksPushDirection * grassworksInteraction * grassworksWeight * 0.82;',
           'transformed.y *= 1.0 - grassworksInteraction * grassworksWeight * 0.34;',
           'transformed += grassworksOffset;',
@@ -753,7 +784,7 @@ function createGrassMaterial(
         [
           '#include <color_fragment>',
           'diffuseColor.rgb *= vGrassworksTint;',
-          'diffuseColor.rgb = mix(diffuseColor.rgb, sqrt(max(diffuseColor.rgb, vec3(0.0))), 0.1);',
+          'diffuseColor.rgb = mix(diffuseColor.rgb, sqrt(max(diffuseColor.rgb, vec3(0.0))), 0.035);',
         ].join('\n'),
       )
       .replace(
@@ -763,16 +794,9 @@ function createGrassMaterial(
           'normal.y = abs(normal.y);',
           'normal = normalize(mix(normal, vec3(0.0, 1.0, 0.0), 0.24));',
         ].join('\n'),
-      )
-      .replace(
-        '#include <emissivemap_fragment>',
-        [
-          '#include <emissivemap_fragment>',
-          'totalEmissiveRadiance += diffuseColor.rgb * 0.16;',
-        ].join('\n'),
       );
   };
-  material.customProgramCacheKey = () => 'jwgb-grassworks-grass-atlas-influence-v4';
+  material.customProgramCacheKey = () => 'jwgb-grassworks-grass-atlas-influence-v7-storm';
   return material;
 }
 
@@ -816,10 +840,10 @@ function buildGrassChunks(
       `${chunkCoordinate(x, GRASS_LOGICAL_TILE_SIZE)}:` +
       `${chunkCoordinate(z, GRASS_LOGICAL_TILE_SIZE)}`;
     const region = regionAt(x, z);
-    const colour = new THREE.Color(region.scatter)
-      .lerp(grassTintTarget, 0.62)
-      .lerp(grassTintWhite, 0.12)
-      .multiplyScalar(0.88 + hashAt(x, z, 7) * 0.18);
+    const colour = new THREE.Color(0x9b8a54)
+      .lerp(new THREE.Color(region.scatter), 0.18)
+      .lerp(grassTintTarget, 0.42)
+      .multiplyScalar(1.02 + hashAt(x, z, 7) * 0.08);
     const atlasIndex = Math.min(3, Math.floor(hashAt(x, z, 29) * 4));
     const atlasRect = GRASS_ATLAS_RECTS[atlasIndex] ?? GRASS_ATLAS_RECTS[0];
     const grassPoint: GrassPoint = {
@@ -828,7 +852,7 @@ function buildGrassChunks(
       z,
       yaw: hashAt(x, z, 11) * Math.PI * 2,
       width: GRASS_WIDTH_MIN + hashAt(x, z, 13) * (GRASS_WIDTH_MAX - GRASS_WIDTH_MIN),
-      height: 0.62 + hashAt(x, z, 17) * 0.58,
+      height: GRASS_HEIGHT_MIN + hashAt(x, z, 17) * (GRASS_HEIGHT_MAX - GRASS_HEIGHT_MIN),
       phase: hashAt(x, z, 19) * Math.PI * 2,
       atlasRect,
       colour,
@@ -988,22 +1012,46 @@ function prepareTreeMaterial(
   material.name = `grassworks-${lod}-${source.name || 'material'}`;
   if (isLeaf) {
     material.transparent = false;
-    material.alphaTest = Math.max(material.alphaTest, lod === 'low' ? 0.42 : 0.46);
+    material.alphaTest =
+      lod === 'low'
+        ? GRASSWORKS_SOURCE_PROFILE.leafSprites.lowAlphaTest
+        : GRASSWORKS_SOURCE_PROFILE.leafSprites.highAlphaTest;
     material.alphaToCoverage = true;
+    // Source foliage is alpha-masked and writes depth. This keeps near trees
+    // from being overwritten by farther instances in the same billboard draw.
     material.depthWrite = true;
     material.side = THREE.DoubleSide;
-    applyWindSway(material, lod === 'high' ? 0.025 : 0.008);
   } else {
     material.side = THREE.FrontSide;
   }
+  applyWindSway(
+    material,
+    isLeaf
+      ? lod === 'high'
+        ? GRASSWORKS_SOURCE_PROFILE.leafSprites.highWind
+        : GRASSWORKS_SOURCE_PROFILE.leafSprites.lowWind
+      : AUTUMN_STORM.windTrunk,
+    { billboard: lod === 'low' },
+  );
   if (material instanceof THREE.MeshStandardMaterial) {
-    material.roughness = Math.max(material.roughness, 0.88);
+    material.roughness = Math.max(material.roughness, isLeaf ? 0.72 : 0.88);
     material.metalness = Math.min(material.metalness, 0.03);
-    material.color.multiplyScalar(lod === 'low' ? 0.86 : 0.94);
+    if (!isLeaf) {
+      material.color.multiplyScalar(lod === 'low' ? 0.62 : 0.72);
+    }
     if (isLeaf) {
+      // Autumn colour is supplied per instance below. Applying the same tint
+      // here as well squared the colour and made the canopy nearly black.
       material.emissiveMap = material.map;
-      material.emissive.setRGB(0.075, 0.11, 0.045);
-      material.emissiveIntensity = lod === 'high' ? 0.34 : 0.26;
+      material.emissive.setRGB(
+        AUTUMN_STORM.leafEmissive.r,
+        AUTUMN_STORM.leafEmissive.g,
+        AUTUMN_STORM.leafEmissive.b,
+      );
+      material.emissiveIntensity =
+        lod === 'high'
+          ? GRASSWORKS_SOURCE_PROFILE.leafSprites.highEmissiveIntensity
+          : GRASSWORKS_SOURCE_PROFILE.leafSprites.lowEmissiveIntensity;
     }
   }
   material.needsUpdate = true;
@@ -1171,6 +1219,7 @@ function buildTreeContent(
       minZ,
       maxZ,
       instances: chunkPlacements.length,
+      lod: 'hidden',
     };
     chunks.push(chunk);
     instances += chunkPlacements.length;
@@ -1199,10 +1248,12 @@ function buildTreeContent(
           const matrix = matrices[index] as THREE.Matrix4;
           mesh.setMatrixAt(index, matrix);
           const region = regionAt(placement.x, placement.z);
-          const colour = new THREE.Color(part.isLeaf ? region.scatter : region.groundAlt).lerp(
-            new THREE.Color(0xffffff),
-            part.isLeaf ? 0.7 : 0.58,
-          );
+          const colour = part.isLeaf
+            ? new THREE.Color(AUTUMN_STORM.canopyTint).lerp(
+                new THREE.Color(0x9a4e18),
+                hashAt(placement.x, placement.z, 41) * 0.42,
+              )
+            : new THREE.Color(region.groundAlt).lerp(new THREE.Color(0x2a2218), 0.38);
           mesh.setColorAt(index, colour);
           targetParts.get(placement.id)?.push({
             id: part.isLeaf ? 'canopy' : 'trunk',
@@ -1364,7 +1415,10 @@ export function buildGrassworksVegetationLayer(
         chunk.detail = 0;
         continue;
       }
-      const visibleCount = chunk.fullCount;
+      const visibleCount = Math.max(
+        1,
+        Math.ceil((chunk.fullCount * lod.density) / GRASS_MAX_DENSITY),
+      );
       chunk.mesh.visible = true;
       chunk.mesh.geometry.instanceCount = visibleCount;
       chunk.mesh.geometry.setDrawRange(0, lod.detail * GRASS_VERTICES_PER_DETAIL);
@@ -1394,19 +1448,43 @@ export function buildGrassworksVegetationLayer(
         chunk.maxZ,
         8,
       );
-      const high = tier === 'balanced' && distanceSquared <= BALANCED_TREE_HIGH_DISTANCE ** 2;
       const lowDistance =
         tier === 'balanced' ? BALANCED_TREE_LOW_DISTANCE : REDUCED_TREE_LOW_DISTANCE;
-      const low = !high && distanceSquared <= lowDistance ** 2;
-      chunk.group.visible = group.visible && (high || low);
-      chunk.high.visible = chunk.group.visible && high;
-      chunk.low.visible = chunk.group.visible && low;
+      const distance = Math.sqrt(distanceSquared);
+      const highEnterDistance = Math.max(0, BALANCED_TREE_HIGH_DISTANCE - TREE_HIGH_HYSTERESIS);
+      const highExitDistance = BALANCED_TREE_HIGH_DISTANCE + TREE_HIGH_HYSTERESIS;
+      const lowEnterDistance = Math.max(0, lowDistance - TREE_LOW_HYSTERESIS);
+      const lowExitDistance = lowDistance + TREE_LOW_HYSTERESIS;
+      let lod: TreeChunk['lod'];
+      if (tier === 'balanced' && chunk.lod === 'high') {
+        lod =
+          distance <= highExitDistance ? 'high' : distance <= lowExitDistance ? 'low' : 'hidden';
+      } else if (chunk.lod === 'low') {
+        lod =
+          tier === 'balanced' && distance <= highEnterDistance
+            ? 'high'
+            : distance <= lowExitDistance
+              ? 'low'
+              : 'hidden';
+      } else {
+        lod =
+          tier === 'balanced' && distance <= highEnterDistance
+            ? 'high'
+            : distance <= lowEnterDistance
+              ? 'low'
+              : 'hidden';
+      }
+      chunk.lod = lod;
+      const visible = group.visible && lod !== 'hidden';
+      chunk.group.visible = visible;
+      chunk.high.visible = visible && lod === 'high';
+      chunk.low.visible = visible && lod === 'low';
       if (!chunk.group.visible) {
         continue;
       }
       visibleTreeChunks += 1;
       visibleTreeInstances += chunk.instances;
-      if (high) {
+      if (lod === 'high') {
         visibleHighTreeInstances += chunk.instances;
       } else {
         visibleLowTreeInstances += chunk.instances;
@@ -1508,7 +1586,8 @@ export function buildGrassworksVegetationLayer(
       if (disposed) {
         return;
       }
-      visibilityReference.copy(focusPosition.lengthSq() > 0 ? focusPosition : cameraPosition);
+      setWindCameraPosition(cameraPosition);
+      visibilityReference.copy(cameraPosition);
       grassFocusUniform.value.copy(focusPosition);
       influence.update(focusPosition);
       grassFrame = (grassFrame + 1) % GRASS_VISIBILITY_UPDATE_INTERVAL;

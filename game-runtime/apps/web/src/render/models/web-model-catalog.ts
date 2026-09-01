@@ -1,15 +1,21 @@
 import type { FiveElement } from '@jwgb/content';
 import type { EntityId } from '@jwgb/core';
-import type { MonsterKind } from '@jwgb/sim';
+import type { MonsterKind, ShopKind } from '@jwgb/sim';
 
 export interface WebModelDefinition {
   readonly id: string;
   readonly sourceName: string;
-  readonly kind: 'hero' | MonsterKind;
+  readonly kind: 'hero' | MonsterKind | 'shop';
   readonly height: number;
   readonly assetBase: 'model-cdn' | 'web';
   readonly format: 'fbx' | 'glb';
   readonly assetPath: string;
+  readonly animationStates?: readonly ('Idle' | 'Move' | 'Attack' | 'Spell')[];
+}
+
+export interface WebShopModelDefinition extends WebModelDefinition {
+  readonly kind: 'shop';
+  readonly shopKind: ShopKind;
 }
 
 function hero(
@@ -51,6 +57,25 @@ function monster(
     assetBase: 'model-cdn',
     format: 'fbx',
     assetPath: `monsters/${id}/model.fbx`,
+  };
+}
+
+function shop(
+  id: string,
+  sourceName: string,
+  shopKind: ShopKind,
+  height: number,
+): WebShopModelDefinition {
+  return {
+    id,
+    sourceName,
+    kind: 'shop',
+    shopKind,
+    height,
+    assetBase: 'web',
+    format: 'glb',
+    assetPath: `models/shops/${id}/model.glb`,
+    animationStates: ['Idle'],
   };
 }
 
@@ -212,9 +237,19 @@ export const WEB_MONSTER_MODELS: readonly WebModelDefinition[] = [
   monster('M038', '龙王（金）', 'dragon-king'),
 ];
 
+export const WEB_SHOP_MODELS: readonly WebShopModelDefinition[] = [
+  shop('S001', '鞋匠', 'shoemaker', 2.05),
+  shop('S002', '太白金星', 'taibai', 2.2),
+  shop('S003', '土地公', 'land-god', 1.8),
+  shop('S004', '黑山老妖', 'heishan', 2.6),
+];
+
 const HERO_MODEL_BY_ID = new Map(WEB_HERO_MODELS.map((definition) => [definition.id, definition]));
 const MONSTER_MODEL_BY_ID = new Map(
   WEB_MONSTER_MODELS.map((definition) => [definition.id, definition]),
+);
+const SHOP_MODEL_BY_KIND = new Map<ShopKind, WebShopModelDefinition>(
+  WEB_SHOP_MODELS.map((definition) => [definition.shopKind, definition] as const),
 );
 const MONSTER_MODELS_BY_KIND = new Map<MonsterKind, readonly WebModelDefinition[]>();
 const ELEMENTAL_PIG_MODEL_IDS: Readonly<Record<FiveElement, string>> = {
@@ -283,4 +318,8 @@ export function monsterModelDefinition(
     return null;
   }
   return candidates[numericId % candidates.length] ?? candidates[0] ?? null;
+}
+
+export function shopModelDefinition(shopKind: ShopKind): WebShopModelDefinition | null {
+  return SHOP_MODEL_BY_KIND.get(shopKind) ?? null;
 }
