@@ -104,9 +104,13 @@ redistribution rights for those tree meshes and leaf textures are not
 asserted here.
 
 The supplied `grass-atlas5.png` is the demo's 2x2 photographic clump atlas.
-Runtime UV rectangles are inset from each cell so pngtree corner marks stay
-out of the sampled tuft. The atlas is copied to
-`apps/web/public/models/grassworks/grass-atlas5.png`.
+Only its two whole top-row clumps are used: the bottom-left clump is clipped
+by the image edge and the bottom-right one is a few broad blades that read as
+flat slats in the scene. The import tool removes the pngtree watermark, then
+repacks the two clumps into `apps/web/public/models/grassworks/grass-atlas5.png`
+(1024x512), one 512 px slot each with a transparent margin, so no runtime
+sampling rectangle ever cuts through a blade. The slot rectangles are written
+to `manifest.json` (`runtime.grassAtlasRects`) and mirrored by the renderer.
 
 ## Player spawn VFX
 

@@ -10,7 +10,7 @@ import {
 } from '@jwgb/content';
 import * as THREE from 'three';
 import { buildBeyond } from './beyond';
-import { buildBoundaryCliffs } from './boundary-cliffs';
+import { buildBoundaryRiver } from './boundary-river';
 import { buildRegionDressing } from './dressing/region-dressing';
 import { buildGlobalSceneLayer, type GlobalSceneLayerDiagnostics } from './global-scene-layer';
 import {
@@ -18,6 +18,7 @@ import {
   type GrassworksVegetationDiagnostics,
 } from './grassworks-vegetation';
 import { buildGroundGeometry } from './ground';
+import { buildInteriorRidges } from './interior-ridges';
 import { buildMapLandmarks } from './landmarks';
 import { buildMapAssetLayer, type MapAssetLayerDiagnostics } from './map-asset-layer';
 import {
@@ -27,6 +28,7 @@ import {
 } from './map-occlusion';
 import { createMapMaterials } from './map-palette';
 import { PrismGeometryAccumulator } from './prism-geometry';
+import { buildSpawnPonds } from './spawn-ponds';
 import { buildWaterGeometry } from './water';
 
 const MM = 1_000;
@@ -87,6 +89,7 @@ export function buildMapEnvironment(
   };
   const ground = layer('map-ground');
   const highlands = layer('map-highlands');
+  const walls = layer('map-walls');
   const courts = layer('map-courts');
   const spawnPads = layer('map-spawn-pads');
   const props = layer('map-props');
@@ -108,6 +111,9 @@ export function buildMapEnvironment(
     (geometry, material, options) => addMesh(highlands, geometry, material, options),
     materials,
   );
+  // 封界级 walls are the sim's only solid interior barriers; draw them as rock
+  // so the footprint the player cannot enter is not a bare hole in the grass.
+  buildInteriorRidges(walls, materials, track);
   buildCourts(
     courts,
     (geometry, material, options) => addMesh(courts, geometry, material, options),
@@ -115,6 +121,7 @@ export function buildMapEnvironment(
     track,
   );
   buildSpawnPads(spawnPads, materials, track);
+  buildSpawnPonds(spawnPads, materials, track);
   buildProps(props, materials, track);
   buildMapLandmarks(landmarks, materials, track, surfaceSeed, (batch) => {
     roofBatches.push(batch);
@@ -127,7 +134,7 @@ export function buildMapEnvironment(
     graphicsTier,
     seed: surfaceSeed,
   });
-  buildBoundaryCliffs(beyond, materials, track);
+  buildBoundaryRiver(beyond, materials, track);
   buildBeyond(beyond, materials, track, surfaceSeed);
   const proceduralRockMarkers = props.getObjectByName('map-procedural-rock-markers');
   const importedAssetLayer = buildMapAssetLayer(importedAssets, {

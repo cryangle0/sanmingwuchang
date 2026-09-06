@@ -1,5 +1,7 @@
 # fanavatar.org 域名与新加坡服务器配置说明
 
+> **业务部署、OSS/CDN、发版命令**：见 [`docs/服务器与部署.md`](../docs/服务器与部署.md)。本文是 2026-08-06 开通域名/证书时的记录，当时首页还是占位页。
+
 > 文档生成时间：2026-08-06 (Asia/Shanghai / CST)  
 > 文档路径：  
 > - 本机：`E:\angsa\angsa_data\Games\JourneyWestGreatBrawl\服务器\fanavatar.org-setup.md`  

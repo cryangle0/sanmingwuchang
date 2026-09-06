@@ -4,6 +4,10 @@ import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.j
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { appendAssetVersion, webAssetUrl } from '../../runtime/asset-url';
 import { applyWindSway, setWindCameraPosition, windTimeUniform } from '../shading/wind';
+import {
+  type AutumnGroundDressingLayer,
+  buildAutumnGroundDressing,
+} from './autumn-ground-dressing';
 import { AUTUMN_STORM } from './autumn-storm';
 import type { FloraModelLayerDiagnostics } from './flora-models';
 import {
@@ -17,10 +21,13 @@ import { regionAt } from './map-regions';
 import {
   createRandomStream,
   dressingSurfaceMeters,
+  isInsideBoundWall,
+  isInsideVaultWall,
   isOpenGround,
   sampleGroundLattice,
   sampleOpenGround,
 } from './map-sampling';
+import { isInSpawnPond } from './spawn-ponds';
 import { waterSurfaceAt } from './water';
 
 const MM = 1_000;
@@ -28,9 +35,23 @@ const SOURCE = 'grassworks' as const;
 const TREE_ASSET_PATH = 'models/grassworks/grassworks-trees.glb';
 const GRASS_ATLAS_PATH = 'models/grassworks/grass-atlas5.png';
 const TREE_VARIANTS = 9;
-const TREE_COUNT = 1_800;
+const TREE_COUNT = 1_500;
 const TREE_SEED_SALT = 0x9e3779b9;
 const GRASS_SEED_SALT = 0x4f1bbcdc;
+/**
+ * Woodland on the BOUND massifs and the walkable VAULT hills. A lattice over
+ * the wall footprints rather than the open-ground cluster sampler, because a
+ * range should read as continuously wooded from foot to crest, not as a few
+ * copses on bare rock.
+ */
+const MASSIF_TREE_SPACING_METERS = 4.2;
+const MASSIF_TREE_JITTER = 0.88;
+const MASSIF_TREE_KEEP = 0.94;
+const MASSIF_TREE_SEED_SALT = 0x2f6b1d93;
+const HILL_TREE_SPACING_METERS = 5.6;
+const HILL_TREE_JITTER = 0.86;
+const HILL_TREE_KEEP = 0.88;
+const HILL_TREE_SEED_SALT = 0x5a1c4e27;
 export interface GrassworksForestGrove {
   readonly id: string;
   readonly centerX: number;
@@ -40,29 +61,29 @@ export interface GrassworksForestGrove {
   readonly treeCount: number;
 }
 
+// Grove counts were set for 7–10 m trees. Crowns now cover roughly twice the
+// ground each, so three quarters of the old count gives the same canopy
+// closure without turning every grove into a roof over the camera.
 export const GRASSWORKS_FOREST_GROVES: readonly GrassworksForestGrove[] = [
-  { id: 'northwest-forest', centerX: -300, centerZ: 150, radiusX: 52, radiusZ: 38, treeCount: 220 },
-  { id: 'north-forest', centerX: -65, centerZ: 205, radiusX: 52, radiusZ: 38, treeCount: 210 },
-  { id: 'east-forest', centerX: 260, centerZ: 235, radiusX: 54, radiusZ: 38, treeCount: 200 },
-  { id: 'west-forest', centerX: -300, centerZ: -115, radiusX: 50, radiusZ: 38, treeCount: 220 },
+  { id: 'northwest-forest', centerX: -300, centerZ: 150, radiusX: 52, radiusZ: 38, treeCount: 165 },
+  { id: 'north-forest', centerX: -65, centerZ: 205, radiusX: 52, radiusZ: 38, treeCount: 158 },
+  { id: 'east-forest', centerX: 260, centerZ: 235, radiusX: 54, radiusZ: 38, treeCount: 150 },
+  { id: 'west-forest', centerX: -300, centerZ: -115, radiusX: 50, radiusZ: 38, treeCount: 165 },
   {
     id: 'southwest-forest',
     centerX: -190,
     centerZ: -210,
     radiusX: 52,
     radiusZ: 38,
-    treeCount: 230,
+    treeCount: 172,
   },
-  { id: 'south-forest', centerX: 70, centerZ: -225, radiusX: 52, radiusZ: 36, treeCount: 220 },
-  { id: 'southeast-forest', centerX: 280, centerZ: -80, radiusX: 50, radiusZ: 38, treeCount: 210 },
+  { id: 'south-forest', centerX: 70, centerZ: -225, radiusX: 52, radiusZ: 36, treeCount: 165 },
+  { id: 'southeast-forest', centerX: 280, centerZ: -80, radiusX: 50, radiusZ: 38, treeCount: 158 },
 ] as const;
 
-const FOREST_TREE_COUNT = GRASSWORKS_FOREST_GROVES.reduce(
-  (sum, grove) => sum + grove.treeCount,
-  0,
-);
+const FOREST_TREE_COUNT = GRASSWORKS_FOREST_GROVES.reduce((sum, grove) => sum + grove.treeCount, 0);
 const FOREST_ROAD_VERGE_MM = 2_500;
-const FOREST_MIN_DISTANCE_METERS = 2.55;
+const FOREST_MIN_DISTANCE_METERS = 5.6;
 const GRASS_SPACING_METERS = 1.25;
 const GRASS_JITTER = 0.55;
 const GRASS_ROAD_VERGE_MM = -1;
@@ -70,14 +91,17 @@ const GRASS_WIDTH_MIN = 1.36;
 const GRASS_WIDTH_MAX = 1.92;
 const GRASS_HEIGHT_MIN = 0.92;
 const GRASS_HEIGHT_MAX = 1.58;
-const GRASS_ATLAS_SIZE = 1_000;
-// Texture.flipY maps UV y=0 to the source image's lower half. Rects are inset
-// from each 500px cell so pngtree corner marks stay out of the sampled tuft.
+// The runtime atlas is repacked by tools/models/import-grassworks-vegetation.mjs:
+// the two whole demo clumps, each in its own 512 px slot with a transparent
+// margin, bottom-anchored so the cut stems sit on the ground line. Rects are in
+// pixel units with y measured from the bottom (Texture.flipY), and must match
+// manifest.runtime.grassAtlasRects — sampling any other rectangle slices blades
+// at the rect border and puts straight cut edges on the grass cards.
+const GRASS_ATLAS_WIDTH = 1_024;
+const GRASS_ATLAS_HEIGHT = 512;
 const GRASS_ATLAS_RECTS = [
-  { x: 72, y: 8, width: 356, height: 484 },
-  { x: 572, y: 8, width: 356, height: 484 },
-  { x: 72, y: 508, width: 356, height: 484 },
-  { x: 572, y: 508, width: 356, height: 484 },
+  { x: 0, y: 0, width: 512, height: 444 },
+  { x: 512, y: 0, width: 512, height: 325 },
 ] as const;
 const GRASS_LOGICAL_TILE_SIZE = 25;
 const GRASS_RENDER_BATCH_SIZE = GRASS_LOGICAL_TILE_SIZE * 2;
@@ -96,8 +120,17 @@ const REDUCED_TREE_LOW_DISTANCE = 208;
 const TREE_HIGH_HYSTERESIS = 12;
 const TREE_LOW_HYSTERESIS = 16;
 const REDUCED_TREE_DENSITY = 0.66;
-const TREE_TARGET_HEIGHT_MIN = 7.2;
-const TREE_TARGET_HEIGHT_MAX = 10.4;
+/**
+ * Heroes render at 2.2–2.5 m × 1.5, so a 3.5 m figure stands in this grass.
+ * Trees at 11–15 m were only three to four heroes tall and still read as
+ * orchard stock. These crowns sit five to six heroes high — a real canopy
+ * over a chibi figure. Near-camera occlusion hides any tree that would put
+ * the 30° chase lens inside the leaves.
+ */
+const TREE_TARGET_HEIGHT_MIN = 16;
+const TREE_TARGET_HEIGHT_MAX = 22;
+/** Trees on a slope sink by up to this much so the uphill roots stay buried. */
+const TREE_SLOPE_SINK_MAX_METERS = 0.9;
 const GRASS_VERTICES_PER_DETAIL = 6;
 const GRASS_TRIANGLES_PER_DETAIL = 2;
 
@@ -133,6 +166,11 @@ export const GRASSWORKS_SOURCE_PROFILE = {
   maxDistanceMeters: 150,
   atlasColumns: 2,
   atlasRows: 2,
+  runtimeAtlas: {
+    width: GRASS_ATLAS_WIDTH,
+    height: GRASS_ATLAS_HEIGHT,
+    rects: GRASS_ATLAS_RECTS,
+  },
   influenceResolution: 256,
   sourceLods: [
     { id: 'high', detail: 5, density: 4, distanceRatio: 0.3 },
@@ -153,6 +191,13 @@ export const GRASSWORKS_SOURCE_PROFILE = {
   runtimeTreePlacement: 'whole-map clustered woodland',
   runtimeForestTreeCount: FOREST_TREE_COUNT,
   runtimeForestGroves: GRASSWORKS_FOREST_GROVES.length,
+  runtimeTreeHeightMeters: {
+    min: TREE_TARGET_HEIGHT_MIN,
+    max: TREE_TARGET_HEIGHT_MAX,
+  },
+  runtimeMassifTreeSpacingMeters: MASSIF_TREE_SPACING_METERS,
+  runtimeHillTreeSpacingMeters: HILL_TREE_SPACING_METERS,
+  runtimeMassifVegetation: 'grass lattice plus tree lattices on BOUND massifs and VAULT hills',
   runtimeTreeHighDistanceMeters: BALANCED_TREE_HIGH_DISTANCE,
   runtimeTreeLowDistanceMeters: BALANCED_TREE_LOW_DISTANCE,
   runtimeReducedTreeLowDistanceMeters: REDUCED_TREE_LOW_DISTANCE,
@@ -193,6 +238,8 @@ export interface GrassworksVegetationDiagnostics extends FloraModelLayerDiagnost
   readonly legacyFloraInstances: 0;
   readonly legacyScatterInstances: 0;
   readonly legacyGlobalSceneVegetationInstances: 0;
+  readonly autumnFlowerInstances: number;
+  readonly autumnLeafLitterInstances: number;
 }
 
 export interface GrassworksVegetationLayer {
@@ -347,13 +394,17 @@ function hashAt(x: number, z: number, salt: number): number {
 }
 
 function isWaterPoint(point: MapPointMm): boolean {
-  return waterSurfaceAt(point.x / MM, point.z / MM) !== null;
+  return waterSurfaceAt(point.x / MM, point.z / MM) !== null || isInSpawnPond(point);
 }
 
 export function sampleGrassworksGrassPoints(seed: number): readonly MapPointMm[] {
   return sampleGroundLattice(GRASS_SPACING_METERS, createRandomStream(seed ^ GRASS_SEED_SALT), {
     roadVergeMm: GRASS_ROAD_VERGE_MM,
+    landmarkClearanceScale: 0.5,
     jitter: GRASS_JITTER,
+    // The massifs are rock in the sim only; on screen they are wooded hills,
+    // so the same grass lattice climbs them and stands on their surface.
+    includeBoundMassifs: true,
     reject: isWaterPoint,
   });
 }
@@ -374,7 +425,47 @@ export function sampleGrassworksTreePoints(seed: number): readonly MapPointMm[] 
     3.2,
     forest,
   );
-  return [...forest, ...sparse];
+  const occupied = [...forest, ...sparse];
+  const massif = sampleMassifTreePoints(seed);
+  const hill = sampleHillTreePoints(seed).filter((point) =>
+    farEnoughFrom(occupied, point, HILL_TREE_SPACING_METERS * 0.7),
+  );
+  return [...occupied, ...massif, ...hill];
+}
+
+/** Trees over every BOUND massif footprint; nothing else is accepted here. */
+export function sampleMassifTreePoints(seed: number): readonly MapPointMm[] {
+  return sampleGroundLattice(
+    MASSIF_TREE_SPACING_METERS,
+    createRandomStream(seed ^ MASSIF_TREE_SEED_SALT),
+    {
+      roadVergeMm: -1,
+      landmarkClearanceScale: 0,
+      jitter: MASSIF_TREE_JITTER,
+      includeBoundMassifs: true,
+      reject: (point) =>
+        !isInsideBoundWall(point) ||
+        isWaterPoint(point) ||
+        hashAt(point.x / MM, point.z / MM, 53) >= MASSIF_TREE_KEEP,
+    },
+  );
+}
+
+/** Trees over every walkable VAULT hill, so raised terrain is wooded like the massifs. */
+export function sampleHillTreePoints(seed: number): readonly MapPointMm[] {
+  return sampleGroundLattice(
+    HILL_TREE_SPACING_METERS,
+    createRandomStream(seed ^ HILL_TREE_SEED_SALT),
+    {
+      roadVergeMm: 800,
+      landmarkClearanceScale: 0.35,
+      jitter: HILL_TREE_JITTER,
+      reject: (point) =>
+        !isInsideVaultWall(point) ||
+        isWaterPoint(point) ||
+        hashAt(point.x / MM, point.z / MM, 59) >= HILL_TREE_KEEP,
+    },
+  );
 }
 
 function sampleForestGroves(nextRandom: () => number): MapPointMm[] {
@@ -669,10 +760,13 @@ function configureGrassAtlas(texture: THREE.Texture, renderer: THREE.WebGLRender
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.wrapS = THREE.ClampToEdgeWrapping;
   texture.wrapT = THREE.ClampToEdgeWrapping;
-  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  // The source PNG has black RGB in fully transparent texels. Mip generation
+  // blends that RGB into the alpha edge, producing black grass-shaped noise
+  // at distance even when the fragment is later alpha-tested.
+  texture.minFilter = THREE.LinearFilter;
   texture.magFilter = THREE.LinearFilter;
-  texture.generateMipmaps = true;
-  texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+  texture.generateMipmaps = false;
+  texture.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
   texture.needsUpdate = true;
 }
 
@@ -688,10 +782,10 @@ function createGrassMaterial(
     metalness: 0,
     emissive: 0x080604,
     emissiveIntensity: 0.02,
-    alphaTest: 0.22,
+    alphaTest: 0.42,
     side: THREE.DoubleSide,
   });
-  material.alphaToCoverage = true;
+  material.alphaToCoverage = false;
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uGrassworksTime = windTimeUniform();
     shader.uniforms.uGrassworksFocus = focusUniform;
@@ -829,30 +923,33 @@ function squaredDistanceToBounds(
 
 function buildGrassChunks(
   parent: THREE.Group,
-  seed: number,
   material: THREE.MeshStandardMaterial,
+  points: readonly MapPointMm[],
 ): GrassBuild {
   const pointsByLogicalTile = new Map<string, GrassPoint[]>();
-  for (const point of sampleGrassworksGrassPoints(seed)) {
+  for (const point of points) {
     const x = point.x / MM;
     const z = point.z / MM;
     const key =
       `${chunkCoordinate(x, GRASS_LOGICAL_TILE_SIZE)}:` +
       `${chunkCoordinate(z, GRASS_LOGICAL_TILE_SIZE)}`;
     const region = regionAt(x, z);
-    const colour = new THREE.Color(0x9b8a54)
-      .lerp(new THREE.Color(region.scatter), 0.18)
-      .lerp(grassTintTarget, 0.42)
-      .multiplyScalar(1.02 + hashAt(x, z, 7) * 0.08);
-    const atlasIndex = Math.min(3, Math.floor(hashAt(x, z, 29) * 4));
+    const colour = autumnGrassColour(x, z, region.scatter);
+    const atlasIndex = Math.min(
+      GRASS_ATLAS_RECTS.length - 1,
+      Math.floor(hashAt(x, z, 29) * GRASS_ATLAS_RECTS.length),
+    );
     const atlasRect = GRASS_ATLAS_RECTS[atlasIndex] ?? GRASS_ATLAS_RECTS[0];
+    const onMassif = isInsideBoundWall(point);
+    const heightScale = onMassif ? 1.22 : 1;
     const grassPoint: GrassPoint = {
       x,
       y: dressingSurfaceMeters(point) + 0.014,
       z,
       yaw: hashAt(x, z, 11) * Math.PI * 2,
       width: GRASS_WIDTH_MIN + hashAt(x, z, 13) * (GRASS_WIDTH_MAX - GRASS_WIDTH_MIN),
-      height: GRASS_HEIGHT_MIN + hashAt(x, z, 17) * (GRASS_HEIGHT_MAX - GRASS_HEIGHT_MIN),
+      height:
+        (GRASS_HEIGHT_MIN + hashAt(x, z, 17) * (GRASS_HEIGHT_MAX - GRASS_HEIGHT_MIN)) * heightScale,
       phase: hashAt(x, z, 19) * Math.PI * 2,
       atlasRect,
       colour,
@@ -904,10 +1001,10 @@ function buildGrassChunks(
       tints.set(point.colour.toArray(), index * 3);
       atlasRects.set(
         [
-          point.atlasRect.x / GRASS_ATLAS_SIZE,
-          point.atlasRect.y / GRASS_ATLAS_SIZE,
-          point.atlasRect.width / GRASS_ATLAS_SIZE,
-          point.atlasRect.height / GRASS_ATLAS_SIZE,
+          point.atlasRect.x / GRASS_ATLAS_WIDTH,
+          point.atlasRect.y / GRASS_ATLAS_HEIGHT,
+          point.atlasRect.width / GRASS_ATLAS_WIDTH,
+          point.atlasRect.height / GRASS_ATLAS_HEIGHT,
         ],
         index * 4,
       );
@@ -955,6 +1052,24 @@ function buildGrassChunks(
     chunks,
     logicalTileCount: pointsByLogicalTile.size,
   };
+}
+
+function autumnGrassColour(x: number, z: number, regionScatter: number): THREE.Color {
+  const season = hashAt(x, z, 0x64aa3d11);
+  const palette =
+    season < 0.32
+      ? 0x526f3d
+      : season < 0.54
+        ? 0x71883e
+        : season < 0.73
+          ? 0x9d8738
+          : season < 0.89
+            ? 0xb47d32
+            : 0x795533;
+  return new THREE.Color(regionScatter)
+    .lerp(new THREE.Color(palette), 0.72)
+    .lerp(grassTintTarget, 0.14)
+    .multiplyScalar(0.96 + hashAt(x, z, 0xf0b1cd33) * 0.1);
 }
 
 function grassLodForDistance(
@@ -1156,16 +1271,28 @@ function composeTreeMatrix(placement: TreePlacement): THREE.Matrix4 {
   tempEuler.set(0, placement.yaw, 0);
   tempQuaternion.setFromEuler(tempEuler);
   tempScale.setScalar(placement.height);
-  tempPosition.set(
-    placement.x,
-    dressingSurfaceMeters({
-      x: Math.round(placement.x * MM),
-      z: Math.round(placement.z * MM),
-    }),
-    placement.z,
-  );
+  tempPosition.set(placement.x, treeGroundMeters(placement.x, placement.z), placement.z);
   tempMatrix.compose(tempPosition, tempQuaternion, tempScale);
   return tempMatrix.clone();
+}
+
+/**
+ * Where a trunk meets the ground. On a massif slope the surface under the
+ * downhill edge of the trunk is lower than under the centre, so the tree is
+ * dropped by the local fall over one metre, capped so the crown stays clear.
+ */
+function treeGroundMeters(x: number, z: number): number {
+  const surfaceAt = (px: number, pz: number): number =>
+    dressingSurfaceMeters({ x: Math.round(px * MM), z: Math.round(pz * MM) });
+  const centre = surfaceAt(x, z);
+  const fall = Math.max(
+    0,
+    centre - surfaceAt(x + 1, z),
+    centre - surfaceAt(x - 1, z),
+    centre - surfaceAt(x, z + 1),
+    centre - surfaceAt(x, z - 1),
+  );
+  return centre - Math.min(TREE_SLOPE_SINK_MAX_METERS, fall);
 }
 
 function buildTreeContent(
@@ -1375,6 +1502,7 @@ export function buildGrassworksVegetationLayer(
   let visibleHighTreeInstances = 0;
   let visibleLowTreeInstances = 0;
   let visibleTreeChunks = 0;
+  let autumnGroundDressing: AutumnGroundDressingLayer | null = null;
   const visibilityReference = new THREE.Vector3();
   const grassFocusUniform = { value: new THREE.Vector3(1_000_000, 0, 1_000_000) };
   const influence = createGrassInfluenceMap();
@@ -1521,9 +1649,15 @@ export function buildGrassworksVegetationLayer(
         configureGrassAtlas(texture, renderer);
         grassAtlas = texture;
         grassMaterial = createGrassMaterial(texture, influence.texture, grassFocusUniform);
-        const grassBuild = buildGrassChunks(group, options.seed, grassMaterial);
+        const grassPoints = sampleGrassworksGrassPoints(options.seed);
+        const grassBuild = buildGrassChunks(group, grassMaterial, grassPoints);
         grassChunks = grassBuild.chunks;
         grassLogicalTileCount = grassBuild.logicalTileCount;
+        autumnGroundDressing = buildAutumnGroundDressing(group, grassPoints, tier);
+        const autumnDressingRoot = group.getObjectByName('map-autumn-ground-dressing');
+        if (autumnDressingRoot) {
+          autumnDressingRoot.visible = true;
+        }
         grassReady = grassChunks.length > 0;
         loadedAssets.add(GRASS_ATLAS_PATH);
         updateGrassVisibility(visibilityReference);
@@ -1578,6 +1712,7 @@ export function buildGrassworksVegetationLayer(
         return;
       }
       tier = nextTier;
+      autumnGroundDressing?.setGraphicsTier(tier);
       rebuildTrees();
       updateGrassVisibility(visibilityReference);
       updateTreeVisibility(visibilityReference);
@@ -1611,6 +1746,12 @@ export function buildGrassworksVegetationLayer(
         ) ?? [];
       const grassInstances = grassChunks.reduce((sum, chunk) => sum + chunk.fullCount, 0);
       const treeInstances = treeBuild?.instances ?? 0;
+      const autumnCounts = autumnGroundDressing?.diagnostics() ?? {
+        flowerInstances: 0,
+        leafLitterInstances: 0,
+      };
+      const autumnDrawCalls =
+        autumnGroundDressing && group.visible ? autumnGroundDressing.diagnostics().drawCalls : 0;
       return {
         source: SOURCE,
         status,
@@ -1622,8 +1763,12 @@ export function buildGrassworksVegetationLayer(
         visibleRockInstances: 0,
         dressingInstances: 0,
         visibleDressingInstances: 0,
-        instancedBatches: grassChunks.length + (treeBuild?.batches.length ?? 0),
-        visibleInstancedBatches: visibleGrassBatches.length + visibleTreeBatches.length,
+        instancedBatches:
+          grassChunks.length +
+          (treeBuild?.batches.length ?? 0) +
+          (autumnGroundDressing?.diagnostics().drawCalls ?? 0),
+        visibleInstancedBatches:
+          visibleGrassBatches.length + visibleTreeBatches.length + autumnDrawCalls,
         triangles:
           visibleGrassBatches.reduce(
             (sum, chunk) => sum + GRASS_TRIANGLES_PER_DETAIL * chunk.detail * chunk.visibleCount,
@@ -1632,8 +1777,10 @@ export function buildGrassworksVegetationLayer(
           visibleTreeBatches.reduce(
             (sum, batch) => sum + batch.trianglesPerInstance * batch.instances,
             0,
-          ),
-        drawCalls: visibleGrassBatches.length + visibleTreeBatches.length,
+          ) +
+          autumnCounts.flowerInstances * 4 +
+          autumnCounts.leafLitterInstances * 2,
+        drawCalls: visibleGrassBatches.length + visibleTreeBatches.length + autumnDrawCalls,
         visible: group.visible,
         tileSizeMeters: GRASS_LOGICAL_TILE_SIZE,
         renderBatchSizeMeters: GRASS_RENDER_BATCH_SIZE,
@@ -1656,6 +1803,8 @@ export function buildGrassworksVegetationLayer(
         legacyFloraInstances: 0,
         legacyScatterInstances: 0,
         legacyGlobalSceneVegetationInstances: 0,
+        autumnFlowerInstances: autumnCounts.flowerInstances,
+        autumnLeafLitterInstances: autumnCounts.leafLitterInstances,
       };
     },
     occlusionDiagnostics(): FloraOcclusionDiagnostics {
@@ -1677,6 +1826,8 @@ export function buildGrassworksVegetationLayer(
       }
       grassMaterial?.dispose();
       grassAtlas?.dispose();
+      autumnGroundDressing?.dispose();
+      autumnGroundDressing = null;
       influence.dispose();
       grassChunks = [];
       grassLogicalTileCount = 0;

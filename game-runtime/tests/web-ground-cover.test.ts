@@ -7,6 +7,7 @@ import {
 import {
   dressingSurfaceMeters,
   highlandTopMeters,
+  massifSurfaceMeters,
   ringContains,
 } from '../apps/web/src/render/map/map-sampling';
 import { waterSurfaceAt } from '../apps/web/src/render/map/water';
@@ -96,8 +97,15 @@ describe('Grassworks ground cover lattice', () => {
       onPlateau += 1;
       const under = terrainHeightMeters(point.x / MM, point.z / MM);
       // Placed on whichever surface is on top: the cap where it stands clear,
-      // the terrain where the hillside rises through it.
-      expect(dressingSurfaceMeters(point)).toBeCloseTo(Math.max(top, under), 6);
+      // the terrain where the hillside rises through it, and the massif rock
+      // where a BOUND wall stands on the plateau (its crest may overhang the
+      // compiled footprint by a few metres, and cover under it rides the rock).
+      const ground = Math.max(top, under);
+      if (massifSurfaceMeters(point) !== null) {
+        expect(dressingSurfaceMeters(point)).toBeGreaterThanOrEqual(ground - 1e-6);
+      } else {
+        expect(dressingSurfaceMeters(point)).toBeCloseTo(ground, 6);
+      }
     }
     expect(onPlateau).toBeGreaterThan(200);
   });

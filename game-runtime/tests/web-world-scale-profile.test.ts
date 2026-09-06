@@ -31,8 +31,12 @@ describe('web world scale profile', () => {
     ];
     const treeHeights = Object.values(WORLD_SCALE_PROFILE.flora.treeTargetHeights);
 
-    expect(Math.min(...architectureHeights)).toBeGreaterThanOrEqual(7.5);
-    expect(Math.max(...architectureHeights)).toBeLessThanOrEqual(15);
+    // Heroes render 3.3–3.75 m tall; the smallest building is over four of
+    // them and the gate court about eight, so architecture reads as buildings
+    // rather than as garden sheds beside the character.
+    const heroHeight = 2.2 * WORLD_SCALE_PROFILE.character.playerModelScale;
+    expect(Math.min(...architectureHeights)).toBeGreaterThanOrEqual(heroHeight * 4);
+    expect(Math.max(...architectureHeights)).toBeLessThanOrEqual(32);
     expect(Math.min(...treeHeights)).toBeGreaterThanOrEqual(6.8);
     expect(Math.max(...treeHeights)).toBeLessThanOrEqual(7.8);
     expect(Math.min(...treeHeights)).toBeGreaterThan(2.2 * 3);

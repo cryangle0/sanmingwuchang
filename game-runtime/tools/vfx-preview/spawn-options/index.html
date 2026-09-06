@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>出生光柱六选一</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;800&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #e8dcc4;
+      --mute: #9d8f78;
+      --plate: #8a5a2b;
+      --well: #14110e;
+      --pick: #e2b15a;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background:
+        radial-gradient(1200px 500px at 50% -10%, #3a414c 0%, transparent 55%),
+        linear-gradient(#1b1e22, #12110f);
+      color: var(--ink);
+      font-family: "IBM Plex Sans", sans-serif;
+    }
+    header {
+      padding: 22px 28px 8px;
+      text-align: center;
+    }
+    header h1 {
+      margin: 0;
+      font-family: "Noto Serif SC", serif;
+      font-size: 28px;
+      letter-spacing: 0.18em;
+      font-weight: 800;
+    }
+    header p {
+      margin: 8px 0 0;
+      color: var(--mute);
+      font-size: 14px;
+    }
+    header strong { color: var(--pick); font-weight: 500; }
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(280px, 360px));
+      justify-content: center;
+      gap: 18px;
+      padding: 18px 22px 40px;
+    }
+    .card {
+      background: var(--well);
+      border: 1px solid #3a3228;
+      box-shadow: 0 18px 40px rgba(0,0,0,.45), inset 0 0 0 1px #2a241c;
+      cursor: pointer;
+      position: relative;
+    }
+    .card.picked {
+      border-color: var(--pick);
+      box-shadow: 0 0 0 2px var(--pick), 0 18px 40px rgba(0,0,0,.45);
+    }
+    .plate {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 10px 12px 8px;
+      background: linear-gradient(#3d2a18, #2a1c12);
+      color: #f0d7a4;
+      font-family: "Noto Serif SC", serif;
+    }
+    .plate .num {
+      font-size: 22px;
+      letter-spacing: 0.08em;
+    }
+    .plate .name { font-size: 15px; }
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      background: #000;
+    }
+    .note {
+      padding: 8px 12px 12px;
+      color: #b7aa94;
+      font-size: 12px;
+      line-height: 1.45;
+      min-height: 3.4em;
+    }
+    .picked .note { color: var(--pick); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>出生光柱</h1>
+    <p>原序列帧 + 叠加混合。点一张，或按键盘 <strong>1–6</strong>。选定后把编号发我，我再接到游戏里。</p>
+    <p id="choice">尚未选择</p>
+  </header>
+  <main class="board" id="board"></main>
+  <script>
+    const OPTIONS = [
+      {
+        id: 1,
+        name: "青龙升天",
+        note: "青绿光幕裹住身体，脚下彩虹法阵，橙白射线冲天。",
+      },
+      {
+        id: 2,
+        name: "金虹冲霄",
+        note: "金色束光冲天，蓄气金环贴地，星光往上飘。",
+      },
+      {
+        id: 3,
+        name: "传送降临",
+        note: "蓝紫传送门裹身，脚下用方案1的彩虹法阵，细白光冲天。",
+      },
+      {
+        id: 4,
+        name: "烈焰法柱",
+        note: "完整技能柱：黄绿法阵、橙红光柱、碎石旋绕。",
+      },
+      {
+        id: 5,
+        name: "朱阵天火",
+        note: "旋转朱砂法阵铺地，金橙光柱从阵心拔起。",
+      },
+      {
+        id: 6,
+        name: "虹环圣柱",
+        note: "彩虹双环 + 电青细光裹身 + 冲天白柱。",
+      },
+    ];
+
+    const W = 360;
+    const H = 540;
+    const FEET = { x: W / 2, y: H - 86 };
+
+    let manifest;
+    const images = {};
+    let picked = Number(localStorage.getItem("jwgb-spawn-pick") || 0);
+
+    function loadImage(src) {
+      return new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = () => reject(new Error(src));
+        image.src = src;
+      });
+    }
+
+    async function boot() {
+      manifest = await (await fetch("assets/manifest.json")).json();
+      const jobs = [];
+      for (const [key, sheet] of Object.entries(manifest.sheets)) {
+        jobs.push(loadImage("assets/" + sheet.file).then((img) => { images[key] = img; }));
+      }
+      for (const still of [
+        "circle-rainbow", "ring-rainbow", "new-ray", "gold-beam", "up-beam", "rays2", "spark",
+      ]) {
+        jobs.push(loadImage("assets/stills/" + still + ".png").then((img) => { images[still] = img; }));
+      }
+      await Promise.all(jobs);
+      const board = document.getElementById("board");
+      for (const option of OPTIONS) {
+        const card = document.createElement("article");
+        card.className = "card" + (picked === option.id ? " picked" : "");
+        card.dataset.id = String(option.id);
+        card.innerHTML = `
+          <div class="plate"><span class="num">${option.id}</span><span class="name">${option.name}</span></div>
+          <canvas width="${W}" height="${H}"></canvas>
+          <div class="note">${option.note}</div>
+        `;
+        card.addEventListener("click", () => select(option.id));
+        board.appendChild(card);
+      }
+      document.addEventListener("keydown", (event) => {
+        const id = Number(event.key);
+        if (id >= 1 && id <= 6) select(id);
+      });
+      refreshChoice();
+      requestAnimationFrame(tick);
+    }
+
+    function select(id) {
+      picked = id;
+      localStorage.setItem("jwgb-spawn-pick", String(id));
+      for (const card of document.querySelectorAll(".card")) {
+        card.classList.toggle("picked", Number(card.dataset.id) === id);
+      }
+      refreshChoice();
+    }
+
+    function refreshChoice() {
+      const node = document.getElementById("choice");
+      const option = OPTIONS.find((item) => item.id === picked);
+      node.innerHTML = option
+        ? "当前选中：<strong>方案 " + option.id + " · " + option.name + "</strong>。把这个编号发我就行。"
+        : "尚未选择";
+    }
+
+    function sheetFrame(key, seconds, fps) {
+      const meta = manifest.sheets[key];
+      return Math.floor(seconds * fps) % meta.frames;
+    }
+
+    function drawSheet(ctx, key, frame, dx, dy, dw, dh) {
+      const meta = manifest.sheets[key];
+      const image = images[key];
+      const col = frame % meta.columns;
+      const row = Math.floor(frame / meta.columns);
+      ctx.drawImage(
+        image,
+        col * meta.frameWidth,
+        row * meta.frameHeight,
+        meta.frameWidth,
+        meta.frameHeight,
+        dx,
+        dy,
+        dw,
+        dh,
+      );
+    }
+
+    function add(ctx, draw) {
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      draw();
+      ctx.restore();
+    }
+
+    function drawStill(ctx, key, x, y, w, h, rotation, alpha) {
+      const image = images[key];
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.translate(x, y);
+      ctx.rotate(rotation || 0);
+      ctx.drawImage(image, -w / 2, -h / 2, w, h);
+      ctx.restore();
+    }
+
+    function drawGround(ctx, key, x, y, w, h, rotation, sheetFrameIndex) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(1, 0.3);
+      ctx.rotate(rotation || 0);
+      if (typeof sheetFrameIndex === "number") {
+        drawSheet(ctx, key, sheetFrameIndex, -w / 2, -h / 2, w, h);
+      } else {
+        ctx.drawImage(images[key], -w / 2, -h / 2, w, h);
+      }
+      ctx.restore();
+    }
+
+    function drawBackdrop(ctx) {
+      const sky = ctx.createLinearGradient(0, 0, 0, H);
+      sky.addColorStop(0, "#2c3540");
+      sky.addColorStop(0.48, "#3a424c");
+      sky.addColorStop(0.7, "#4a5346");
+      sky.addColorStop(1, "#2f3228");
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = "rgba(18,16,12,.55)";
+      ctx.beginPath();
+      ctx.ellipse(FEET.x, FEET.y + 8, 148, 26, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawHero(ctx) {
+      const x = FEET.x;
+      const y = FEET.y;
+      ctx.save();
+      ctx.fillStyle = "#16110d";
+      ctx.strokeStyle = "#d7b37a";
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.ellipse(x, y - 18, 14, 7, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(x - 11, y - 26);
+      ctx.lineTo(x + 11, y - 26);
+      ctx.lineTo(x + 16, y - 92);
+      ctx.lineTo(x - 16, y - 92);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(x, y - 112, 16, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x + 10, y - 100);
+      ctx.lineTo(x + 34, y - 38);
+      ctx.moveTo(x - 10, y - 100);
+      ctx.lineTo(x - 28, y - 44);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function option1(ctx, t) {
+      add(ctx, () => {
+        drawGround(ctx, "circle-rainbow", FEET.x, FEET.y + 6, 250, 250, t * 0.55);
+        drawGround(ctx, "ring-rainbow", FEET.x, FEET.y + 4, 300, 300, -t * 0.8);
+        drawStill(ctx, "new-ray", FEET.x, FEET.y - 250, 70, 520, 0, 0.95);
+        drawStill(ctx, "new-ray", FEET.x - 18, FEET.y - 240, 48, 500, 0.04, 0.55);
+        drawStill(ctx, "new-ray", FEET.x + 18, FEET.y - 240, 48, 500, -0.04, 0.55);
+        const frame = sheetFrame("upgrade2", t, 16);
+        drawSheet(ctx, "upgrade2", frame, FEET.x - 110, FEET.y - 250, 220, 260);
+        drawSheet(ctx, "upgrade2", frame, FEET.x - 90, FEET.y - 240, 180, 240);
+        const sparkY = FEET.y - ((t * 90) % 360);
+        drawStill(ctx, "spark", FEET.x - 40, sparkY, 28, 28, t, 0.9);
+        drawStill(ctx, "spark", FEET.x + 36, sparkY + 80, 22, 22, -t, 0.8);
+      });
+    }
+
+    function option2(ctx, t) {
+      add(ctx, () => {
+        drawGround(ctx, "charge", FEET.x, FEET.y + 6, 280, 180, t * 0.7, sheetFrame("charge", t, 10));
+        drawStill(ctx, "gold-beam", FEET.x, FEET.y - 250, 90, 540, 0, 1);
+        drawStill(ctx, "gold-beam", FEET.x - 22, FEET.y - 230, 50, 500, 0.03, 0.7);
+        drawStill(ctx, "gold-beam", FEET.x + 22, FEET.y - 230, 50, 500, -0.03, 0.7);
+        drawStill(ctx, "up-beam", FEET.x, FEET.y - 260, 36, 560, 0, 0.85);
+        drawSheet(ctx, "stars", sheetFrame("stars", t, 14), FEET.x - 90, FEET.y - 280, 180, 180);
+        drawSheet(ctx, "rise", sheetFrame("rise", t, 12), FEET.x - 40, FEET.y - 300, 80, 280);
+      });
+    }
+
+    function option3(ctx, t) {
+      add(ctx, () => {
+        drawGround(ctx, "circle-rainbow", FEET.x, FEET.y + 6, 250, 250, t * 0.55);
+        drawGround(ctx, "ring-rainbow", FEET.x, FEET.y + 4, 300, 300, -t * 0.8);
+        drawSheet(ctx, "teleport", sheetFrame("teleport", t, 12), FEET.x - 120, FEET.y - 160, 240, 240);
+        drawSheet(ctx, "rise", sheetFrame("rise", t, 12), FEET.x - 50, FEET.y - 320, 100, 320);
+        drawSheet(ctx, "burst", sheetFrame("burst", t, 10), FEET.x - 90, FEET.y - 200, 180, 180);
+        drawStill(ctx, "up-beam", FEET.x, FEET.y - 250, 28, 540, 0, 0.55);
+      });
+    }
+
+    function option4(ctx, t) {
+      add(ctx, () => {
+        drawSheet(ctx, "pillar", sheetFrame("pillar", t, 10), FEET.x - 150, FEET.y - 310, 300, 340);
+      });
+    }
+
+    function option5(ctx, t) {
+      add(ctx, () => {
+        drawGround(ctx, "array", FEET.x, FEET.y + 8, 310, 310, t * 0.35, sheetFrame("array", t, 12));
+        drawStill(ctx, "gold-beam", FEET.x, FEET.y - 250, 80, 540, 0, 0.95);
+        drawStill(ctx, "new-ray", FEET.x, FEET.y - 250, 64, 520, 0, 0.8);
+        drawSheet(ctx, "rise", sheetFrame("rise", t, 12), FEET.x - 36, FEET.y - 300, 72, 300);
+        drawStill(ctx, "spark", FEET.x, FEET.y - 300 - ((t * 40) % 80), 36, 36, t * 2, 0.9);
+      });
+    }
+
+    function option6(ctx, t) {
+      add(ctx, () => {
+        drawGround(ctx, "circle-rainbow", FEET.x, FEET.y + 6, 240, 240, t * 0.6);
+        drawGround(ctx, "ring-rainbow", FEET.x, FEET.y + 2, 310, 310, -t * 0.9);
+        drawStill(ctx, "rays2", FEET.x, FEET.y - 260, 70, 560, 0, 0.9);
+        drawStill(ctx, "up-beam", FEET.x, FEET.y - 270, 40, 580, 0, 0.8);
+        drawSheet(ctx, "upgrade3", sheetFrame("upgrade3", t, 14), FEET.x - 80, FEET.y - 280, 160, 280);
+        drawSheet(ctx, "burst", sheetFrame("burst", t, 8), FEET.x - 70, FEET.y - 150, 140, 140);
+        drawSheet(ctx, "stars", sheetFrame("stars", t, 14), FEET.x - 80, FEET.y - 240, 160, 160);
+      });
+    }
+
+    const DRAWS = [option1, option2, option3, option4, option5, option6];
+    const start = performance.now();
+
+    function tick(now) {
+      const t = (now - start) / 1000;
+      const cards = document.querySelectorAll(".card");
+      cards.forEach((card, index) => {
+        const ctx = card.querySelector("canvas").getContext("2d");
+        drawBackdrop(ctx);
+        drawHero(ctx);
+        DRAWS[index](ctx, t);
+      });
+      requestAnimationFrame(tick);
+    }
+
+    boot().catch((error) => {
+      document.getElementById("choice").textContent = "贴图没加载上，请用本地服务器打开这一页。 " + error.message;
+    });
+  </script>
+</body>
+</html>

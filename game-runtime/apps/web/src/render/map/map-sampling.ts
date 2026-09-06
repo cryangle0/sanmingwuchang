@@ -1,17 +1,19 @@
 import {
   AUTHORITATIVE_MAP_SHOPS,
   MAP_BOUNDARY,
+  MAP_CHESTS,
   MAP_COURTS,
   MAP_DRAGONS,
   MAP_ELITES,
-  MAP_HIGHLANDS,
   MAP_PIGS,
   MAP_ROUTE_EDGES,
   MAP_ROUTE_NODES,
-  MAP_WALL_PIECES,
+  MAP_SPAWN_POINTS,
   type MapPointMm,
-  terrainHeightMeters,
 } from '@jwgb/content';
+import { groundSurfaceMeters } from './ground-surface';
+import { convexContains, ringContains } from './map-polygons';
+import { isInsideBoundWall, massifSurfaceMeters } from './massif-surface';
 
 /**
  * Shared deterministic sampling helpers for map dressing builders.
@@ -21,6 +23,10 @@ import {
  * compiled geometry the sim collides with — dressing can never sit inside a
  * wall the player cannot reach.
  */
+
+export { groundSurfaceMeters, highlandTopMeters } from './ground-surface';
+export { convexContains, ringContains } from './map-polygons';
+export { isInsideBoundWall, isInsideVaultWall, massifSurfaceMeters } from './massif-surface';
 
 const MM = 1_000;
 
@@ -34,33 +40,6 @@ export function createRandomStream(seed: number): () => number {
     state >>>= 0;
     return state / 0xffffffff;
   };
-}
-
-export function ringContains(ring: readonly MapPointMm[], point: MapPointMm): boolean {
-  let inside = false;
-  for (let index = 0; index < ring.length; index += 1) {
-    const a = ring[index] as MapPointMm;
-    const b = ring[(index + 1) % ring.length] as MapPointMm;
-    if (a.z > point.z === b.z > point.z) {
-      continue;
-    }
-    const intersectX = a.x + ((point.z - a.z) * (b.x - a.x)) / (b.z - a.z);
-    if (point.x < intersectX) {
-      inside = !inside;
-    }
-  }
-  return inside;
-}
-
-export function convexContains(vertices: readonly MapPointMm[], point: MapPointMm): boolean {
-  for (let index = 0; index < vertices.length; index += 1) {
-    const a = vertices[index] as MapPointMm;
-    const b = vertices[(index + 1) % vertices.length] as MapPointMm;
-    if ((b.x - a.x) * (point.z - a.z) - (b.z - a.z) * (point.x - a.x) < 0) {
-      return false;
-    }
-  }
-  return true;
 }
 
 interface RoadSegmentMm {
@@ -109,6 +88,16 @@ const LANDMARK_CLEARANCES: readonly LandmarkClearanceMm[] = [
     z: elite.position.z,
     radiusMm: 11_000,
   })),
+  ...MAP_SPAWN_POINTS.map((spawn) => ({
+    x: spawn.position.x,
+    z: spawn.position.z,
+    radiusMm: 2_400,
+  })),
+  ...MAP_CHESTS.map((chest) => ({
+    x: chest.position.x,
+    z: chest.position.z,
+    radiusMm: 1_600,
+  })),
 ];
 
 /** True when the point sits on a road ribbon plus the given verge margin. */
@@ -139,17 +128,30 @@ export function isOnRoad(point: MapPointMm, vergeMm: number): boolean {
   return false;
 }
 
-function isNearLandmark(point: MapPointMm): boolean {
+function isNearLandmark(point: MapPointMm, clearanceScale: number): boolean {
   return LANDMARK_CLEARANCES.some((landmark) => {
     const dx = point.x - landmark.x;
     const dz = point.z - landmark.z;
-    return dx * dx + dz * dz <= landmark.radiusMm * landmark.radiusMm;
+    const radiusMm = landmark.radiusMm * clearanceScale;
+    return dx * dx + dz * dz <= radiusMm * radiusMm;
   });
 }
 
 export interface SampleOptions {
   /** Extra keep-out margin around road ribbons; negative skips the road test. */
   readonly roadVergeMm?: number;
+  /**
+   * Multiplier for landmark keep-out radii. The default preserves the
+   * conservative clearance used by gameplay dressing; foliage can use a
+   * smaller value so legal ground around a structure does not read barren.
+   */
+  readonly landmarkClearanceScale?: number;
+  /**
+   * Accept points inside BOUND wall footprints. Those walls are drawn as rocky
+   * massifs, and vegetation placed there stands on the massif surface through
+   * `dressingSurfaceMeters`; gameplay dressing keeps the default keep-out.
+   */
+  readonly includeBoundMassifs?: boolean;
 }
 
 const BOUNDS = (() => {
@@ -200,50 +202,27 @@ export function sampleOpenGround(
  */
 export function isOpenGround(point: MapPointMm, options: SampleOptions = {}): boolean {
   const roadVergeMm = options.roadVergeMm ?? 1_500;
+  const landmarkClearanceScale = Math.max(0, options.landmarkClearanceScale ?? 1);
   return (
     ringContains(MAP_BOUNDARY, point) &&
-    !MAP_WALL_PIECES.some(
-      (piece) => piece.wallClass === 'BOUND' && convexContains(piece.vertices, point),
-    ) &&
+    (options.includeBoundMassifs === true || !isInsideBoundWall(point)) &&
     !MAP_COURTS.some((court) => convexContains(court.hexVertices, point)) &&
-    !isNearLandmark(point) &&
+    !isNearLandmark(point, landmarkClearanceScale) &&
     (roadVergeMm < 0 || !isOnRoad(point, roadVergeMm))
   );
 }
 
-const MM_PER_METER = 1_000;
-
 /**
- * Top surface of the plateau a point stands on, or null on open terrain.
- *
- * The three 高台 are drawn as separate raised geometry sitting on the terrain,
- * so `terrainHeightMeters` still reports the ground *under* the table. Dressing
- * placed by that height inside a plateau footprint ends up buried beneath it,
- * which is why the highlands read as bare rock while the lowland around them
- * carries grass.
- */
-export function highlandTopMeters(point: MapPointMm): number | null {
-  for (const highland of MAP_HIGHLANDS) {
-    if (ringContains(highland.vertices, point)) {
-      return highland.topHeightMm / MM_PER_METER;
-    }
-  }
-  return null;
-}
-
-/**
- * Height to place visual ground dressing at: the plateau top where there is
- * one, the terrain surface everywhere else. Render-only; the simulation keeps
- * using its own height field.
+ * Height to place visual ground dressing at: the massif rock over a BOUND
+ * wall, the plateau top where there is one, the terrain surface everywhere
+ * else. Render-only; the simulation keeps using its own height field.
  */
 export function dressingSurfaceMeters(point: MapPointMm): number {
-  const terrain = terrainHeightMeters(point.x / MM_PER_METER, point.z / MM_PER_METER);
-  const top = highlandTopMeters(point);
-  // Whichever surface is actually on top. A plateau usually stands above the
-  // ground carrying it, but the terrain rises through the table in part of at
-  // least one footprint, and there the plateau is the buried one — taking the
-  // plateau unconditionally would plant that dressing inside the hillside.
-  return top === null ? terrain : Math.max(top, terrain);
+  const ground = groundSurfaceMeters(point);
+  const massif = massifSurfaceMeters(point);
+  // A massif foot dips 0.3 m below ground so its skirt never floats; dressing
+  // there still belongs on the ground, not in the dip.
+  return massif === null ? ground : Math.max(massif, ground);
 }
 
 /**

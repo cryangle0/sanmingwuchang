@@ -1023,6 +1023,7 @@ export class ArenaRenderer {
         this.previousAtmosphereSeconds === null
           ? 0
           : Math.max(0, Math.min(0.05, elapsedSeconds - this.previousAtmosphereSeconds)),
+        this.camera.position,
       );
       this.previousAtmosphereSeconds = elapsedSeconds;
       this.occlusionFocus.set(
@@ -1328,6 +1329,8 @@ export class ArenaRenderer {
         legacyFloraInstances: 0,
         legacyScatterInstances: 0,
         legacyGlobalSceneVegetationInstances: 0,
+        autumnFlowerInstances: 0,
+        autumnLeafLitterInstances: 0,
       }
     );
   }

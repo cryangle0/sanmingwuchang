@@ -1,6 +1,6 @@
 {
   "schema": "jwgb.grassworks-vegetation.v1",
-  "generatedAt": "2026-09-01T15:15:14.754Z",
+  "generatedAt": "2026-09-03T06:53:25.597Z",
   "source": {
     "project": "grassworks-webgpu-demo-webrip-main",
     "treeFile": "grass-webgpu/Assets/terrain2.glb",
@@ -11,7 +11,7 @@
       "file": "grass-webgpu/Assets/grass-atlas5.png",
       "sha256": "81d9368a7785dbbcde6936f5447dc2abee0fbf0f53ccec02bc15777247493d0b",
       "included": true,
-      "reason": "Demo 2x2 clump atlas. Runtime UV rectangles are inset from cell corners to avoid pngtree marks."
+      "reason": "Demo 2x2 clump atlas. Only the two whole top-row clumps are repacked for runtime; pngtree marks are removed and the clipped bottom-row cells are dropped."
     }
   },
   "runtime": {
@@ -19,14 +19,64 @@
     "treeBytes": 3921468,
     "treeSha256": "308e783301254abb13efc06dc2ed7ed3ccb45678bc98ea92da0977c1bcb9e0db",
     "grassAtlas": "models/grassworks/grass-atlas5.png",
-    "grassAtlasBytes": 316180,
-    "grassAtlasSha256": "81d9368a7785dbbcde6936f5447dc2abee0fbf0f53ccec02bc15777247493d0b",
-    "grassAtlasWidth": 1000,
-    "grassAtlasHeight": 1000,
+    "grassAtlasBytes": 266077,
+    "grassAtlasSha256": "2a707fac66ebdf811123af3e8f2044c57f8bd3bb10b82b0c227f309c48d358d4",
+    "grassAtlasWidth": 1024,
+    "grassAtlasHeight": 512,
+    "grassAtlasSourceWidth": 1000,
+    "grassAtlasSourceHeight": 1000,
     "grassAtlasSource": "grass-webgpu/Assets/grass-atlas5.png",
     "grassAtlasSourceSha256": "81d9368a7785dbbcde6936f5447dc2abee0fbf0f53ccec02bc15777247493d0b",
     "grassAtlasLicense": "No license file was present in the user-provided source directory.",
-    "grassAtlasPolicy": "Demo 2x2 photographic clumps; UV rectangles inset from cell corners to avoid pngtree marks.",
+    "grassAtlasEdgeBleedRadiusPixels": 12,
+    "grassAtlasWatermarkDilationRadiusPixels": 2,
+    "grassAtlasRemovedWatermarkPixels": 16808,
+    "grassAtlasRects": [
+      {
+        "x": 0,
+        "y": 0,
+        "width": 512,
+        "height": 444
+      },
+      {
+        "x": 512,
+        "y": 0,
+        "width": 512,
+        "height": 325
+      }
+    ],
+    "grassAtlasRectOrigin": "bottom-left pixel units (THREE flipY)",
+    "grassAtlasTufts": [
+      {
+        "id": "dense-seeded",
+        "sourceCell": {
+          "column": 0,
+          "row": 0
+        },
+        "sourceBox": {
+          "x": 0,
+          "y": 72,
+          "width": 500,
+          "height": 428
+        },
+        "slot": 0
+      },
+      {
+        "id": "wide-fine",
+        "sourceCell": {
+          "column": 1,
+          "row": 0
+        },
+        "sourceBox": {
+          "x": 500,
+          "y": 191,
+          "width": 500,
+          "height": 309
+        },
+        "slot": 1
+      }
+    ],
+    "grassAtlasPolicy": "Two whole photographic clumps from the demo atlas, each repacked into its own slot with transparent margins so no sampling rectangle edge crosses a blade. The clipped bottom-left clump and the broad-blade bottom-right clump are excluded; watermark and antialiased fringe removed; transparent RGB edge bleed prevents black filtering fringes.",
     "lodPolicy": "near source high-detail branch-cluster leaf cards; medium-distance source canopy billboards; chunk culling",
     "grassPolicy": "25 m tiles, source four-band LOD density, instanced clumps with GPU wind and interaction bending",
     "leafPolicy": "Keep the terrain2.glb photographic leaf-cluster cards and tree billboards. MASK cutouts match the demo (0.5 near, 0.35 far). Do not replace them with the demo falling-leaf teardrop sprites.",

@@ -19,6 +19,7 @@ deterministic, performance, network, and three-platform gates.
 - `docs/Unity迁移规划.md`
 - `docs/开发规划.md`
 - `docs/开发进度.md`
+- `docs/服务器与部署.md`
 - `docs/M0工程基线验收报告_2026-07-23.md`
 - `docs/M1战斗机制阶段验收报告_2026-07-23.md`
 

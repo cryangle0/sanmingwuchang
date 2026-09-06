@@ -35,6 +35,22 @@ const FADE_OUT_FACTOR = 0.22;
 const FADE_IN_FACTOR = 0.16;
 const OPACITY_EPSILON = 0.006;
 const BOUNDS_PADDING = 0.12;
+/** Plan distance from the camera within which a tall tree fades out of the frame. */
+const NEAR_CAMERA_FADE_METERS = 16;
+/** A tree this far below the lens is a bush in the foreground, not a curtain. */
+const NEAR_CAMERA_FADE_DROP_METERS = 4;
+/**
+ * A crown beside the lens is not a landmark the player needs to keep reading,
+ * so unlike a blocker between camera and player it fades almost all the way
+ * out; layered leaves at 30 % still add up to a wall.
+ */
+const NEAR_CAMERA_TREE_OPACITY = 0.04;
+/**
+ * Summed opacity the stacked blockers between camera and player may reach.
+ * Two crowns keep the full 30 %; ten share 6 % each, which still veils the
+ * player by about half instead of hiding them behind a solid canopy.
+ */
+const STACKED_BLOCKER_OPACITY_BUDGET = 0.6;
 
 interface SourcePartState {
   readonly source: FloraTreeOccluderPart;
@@ -46,6 +62,8 @@ interface TreeOccluderState {
   readonly target: FloraTreeOccluderTarget;
   readonly parts: readonly SourcePartState[];
   occluded: boolean;
+  /** Opacity the ghost settles at while occluded; blockers stay readable, camera crowders vanish. */
+  occludedOpacity: number;
   sourceHidden: boolean;
   alpha: number;
 }
@@ -110,6 +128,7 @@ export class FloraOcclusionController {
           ghost: null,
         })),
         occluded: false,
+        occludedOpacity: OCCLUDED_TREE_OPACITY,
         sourceHidden: false,
         alpha: 1,
       };
@@ -148,7 +167,7 @@ export class FloraOcclusionController {
     for (const state of this.states) {
       if (state.occluded) {
         this.hideSource(state);
-        state.alpha = THREE.MathUtils.lerp(state.alpha, OCCLUDED_TREE_OPACITY, FADE_OUT_FACTOR);
+        state.alpha = THREE.MathUtils.lerp(state.alpha, state.occludedOpacity, FADE_OUT_FACTOR);
         this.applyGhostAlpha(state);
         continue;
       }
@@ -219,21 +238,57 @@ export class FloraOcclusionController {
       const dz = target.z - focusPosition.z;
       const radius = Math.hypot(target.halfWidth, target.halfDepth);
       const span = reach + radius;
+      // A crown right beside the camera fills the edge of the frame even when
+      // it never crosses the line to the player. Trees stand taller than the
+      // chase camera, so a tree next to the lens — or one the lens is inside —
+      // is a curtain of leaves; it fades harder than a mid-field blocker.
+      const cameraDx = target.x - cameraPosition.x;
+      const cameraDz = target.z - cameraPosition.z;
+      const cameraPlanDistanceSquared = cameraDx * cameraDx + cameraDz * cameraDz;
+      const nearCameraSpan = radius + NEAR_CAMERA_FADE_METERS;
+      const insideCrown =
+        cameraPosition.y <= target.topY &&
+        Math.abs(cameraDx) <= target.halfWidth &&
+        Math.abs(cameraDz) <= target.halfDepth;
+      const crowdsCamera =
+        insideCrown ||
+        (target.topY >= cameraPosition.y - NEAR_CAMERA_FADE_DROP_METERS &&
+          cameraPlanDistanceSquared <= nearCameraSpan * nearCameraSpan);
+      state.occludedOpacity = crowdsCamera ? NEAR_CAMERA_TREE_OPACITY : OCCLUDED_TREE_OPACITY;
       state.occluded =
-        dx * dx + dz * dz <= span * span &&
-        occluderSegmentHitsBox(
-          target.x,
-          target.z,
-          target.halfWidth,
-          target.halfDepth,
-          target.topY,
-          focusPosition.x,
-          focusPosition.y,
-          focusPosition.z,
-          cameraPosition.x,
-          cameraPosition.y,
-          cameraPosition.z,
-        );
+        crowdsCamera ||
+        (dx * dx + dz * dz <= span * span &&
+          occluderSegmentHitsBox(
+            target.x,
+            target.z,
+            target.halfWidth,
+            target.halfDepth,
+            target.topY,
+            focusPosition.x,
+            focusPosition.y,
+            focusPosition.z,
+            cameraPosition.x,
+            cameraPosition.y,
+            cameraPosition.z,
+          ));
+    }
+
+    // Inside a grove the line to the player crosses a dozen crowns at once.
+    // Fifteen ghosts at 30 % stack to an opaque roof, so the blockers share a
+    // fixed opacity budget: the deeper the stack, the fainter each crown.
+    let blockers = 0;
+    for (const state of this.states) {
+      if (state.occluded && state.occludedOpacity === OCCLUDED_TREE_OPACITY) {
+        blockers += 1;
+      }
+    }
+    if (blockers > 0) {
+      const shared = Math.min(OCCLUDED_TREE_OPACITY, STACKED_BLOCKER_OPACITY_BUDGET / blockers);
+      for (const state of this.states) {
+        if (state.occluded && state.occludedOpacity === OCCLUDED_TREE_OPACITY) {
+          state.occludedOpacity = shared;
+        }
+      }
     }
   }
 

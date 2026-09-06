@@ -1,0 +1,85 @@
+{
+  "schema": "jwgb.spawn-options.v1",
+  "sheets": {
+    "upgrade2": {
+      "file": "sheets/upgrade2.png",
+      "frames": 22,
+      "columns": 5,
+      "rows": 5,
+      "frameWidth": 192,
+      "frameHeight": 224
+    },
+    "upgrade3": {
+      "file": "sheets/upgrade3.png",
+      "frames": 15,
+      "columns": 4,
+      "rows": 4,
+      "frameWidth": 160,
+      "frameHeight": 256
+    },
+    "teleport": {
+      "file": "sheets/teleport.png",
+      "frames": 17,
+      "columns": 5,
+      "rows": 4,
+      "frameWidth": 256,
+      "frameHeight": 256
+    },
+    "jump": {
+      "file": "sheets/jump.png",
+      "frames": 21,
+      "columns": 5,
+      "rows": 5,
+      "frameWidth": 256,
+      "frameHeight": 160
+    },
+    "array": {
+      "file": "sheets/array.png",
+      "frames": 20,
+      "columns": 5,
+      "rows": 4,
+      "frameWidth": 256,
+      "frameHeight": 256
+    },
+    "pillar": {
+      "file": "sheets/pillar.png",
+      "frames": 12,
+      "columns": 4,
+      "rows": 3,
+      "frameWidth": 256,
+      "frameHeight": 256
+    },
+    "charge": {
+      "file": "sheets/charge.png",
+      "frames": 7,
+      "columns": 3,
+      "rows": 3,
+      "frameWidth": 256,
+      "frameHeight": 160
+    },
+    "burst": {
+      "file": "sheets/burst.png",
+      "frames": 8,
+      "columns": 3,
+      "rows": 3,
+      "frameWidth": 256,
+      "frameHeight": 256
+    },
+    "rise": {
+      "file": "sheets/rise.png",
+      "frames": 13,
+      "columns": 4,
+      "rows": 4,
+      "frameWidth": 96,
+      "frameHeight": 256
+    },
+    "stars": {
+      "file": "sheets/stars.png",
+      "frames": 16,
+      "columns": 4,
+      "rows": 4,
+      "frameWidth": 160,
+      "frameHeight": 160
+    }
+  }
+}

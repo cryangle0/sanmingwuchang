@@ -35,19 +35,27 @@ export const WORLD_SCALE_PROFILE = {
     },
   },
   map: {
+    /**
+     * Heroes stand 3.3–3.75 m on screen (2.2–2.5 m models × 1.5). Buildings
+     * are sized against that figure, not against a real 1.75 m person: a house
+     * five heroes tall, a gate court eight. The east-asia hall sits on open
+     * ground so it can keep most of its native height; citadel and mountain
+     * gate stay a step under native so their footprints still fit the
+     * authored plateaus.
+     */
     landmarkWorldHeights: {
-      'wuxia-gate-court': 15,
-      'wuxia-citadel': 12,
-      'wuxia-east-asia-hall': 10,
-      'wuxia-mountain-gate': 12,
-      'lowpoly-asian-village': 12,
-      'lowpoly-asian-house': 8.5,
-      'lowpoly-torii': 7.5,
-      'lowpoly-rock-formation': 4.7,
-      'free-pagoda-niko313': 16,
-      'free-stone-cart': 2.866,
-      'free-stone-lion': 1.8,
-      'free-pagoda-ruin': 14,
+      'wuxia-gate-court': 30,
+      'wuxia-citadel': 22,
+      'wuxia-east-asia-hall': 24,
+      'wuxia-mountain-gate': 24,
+      'lowpoly-asian-village': 24,
+      'lowpoly-asian-house': 18,
+      'lowpoly-torii': 16,
+      'lowpoly-rock-formation': 9,
+      'free-pagoda-niko313': 30,
+      'free-stone-cart': 5.2,
+      'free-stone-lion': 3.5,
+      'free-pagoda-ruin': 24,
     },
     rockMinWorldHeight: 1.45,
     rockMaxWorldHeight: 4.25,

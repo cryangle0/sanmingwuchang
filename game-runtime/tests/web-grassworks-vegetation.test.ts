@@ -9,7 +9,15 @@ import {
   GRASSWORKS_VEGETATION_ASSET_PATHS,
   sampleGrassworksGrassPoints,
   sampleGrassworksTreePoints,
+  sampleHillTreePoints,
+  sampleMassifTreePoints,
 } from '../apps/web/src/render/map/grassworks-vegetation';
+import {
+  dressingSurfaceMeters,
+  groundSurfaceMeters,
+  isInsideBoundWall,
+  isInsideVaultWall,
+} from '../apps/web/src/render/map/map-sampling';
 
 const repositoryRoot = resolve(import.meta.dirname, '..');
 const assetRoot = resolve(repositoryRoot, 'apps/web/public');
@@ -41,6 +49,13 @@ describe('web Grassworks vegetation', () => {
         readonly grassAtlasHeight: number;
         readonly grassAtlasSource: string;
         readonly grassAtlasLicense: string;
+        readonly grassAtlasRects: readonly {
+          readonly x: number;
+          readonly y: number;
+          readonly width: number;
+          readonly height: number;
+        }[];
+        readonly grassAtlasTufts: readonly { readonly id: string; readonly slot: number }[];
         readonly leafPolicy: string;
         readonly billboardSprites: number;
         readonly leafSprites: {
@@ -63,8 +78,19 @@ describe('web Grassworks vegetation', () => {
     expect(manifest.source.excludedGrassAtlas.included).toBe(true);
     expect(manifest.source.excludedGrassAtlas.reason).toContain('pngtree');
     expect(manifest.runtime.grassAtlasSource).toContain('grass-atlas5.png');
-    expect(manifest.runtime.grassAtlasWidth).toBe(1_000);
-    expect(manifest.runtime.grassAtlasHeight).toBe(1_000);
+    expect(manifest.runtime.grassAtlasWidth).toBe(GRASSWORKS_SOURCE_PROFILE.runtimeAtlas.width);
+    expect(manifest.runtime.grassAtlasHeight).toBe(GRASSWORKS_SOURCE_PROFILE.runtimeAtlas.height);
+    // The runtime samples exactly the slots the import tool packed; a stale
+    // rect would cut through a clump and bring the straight-edged blades back.
+    expect(manifest.runtime.grassAtlasRects).toEqual(GRASSWORKS_SOURCE_PROFILE.runtimeAtlas.rects);
+    expect(manifest.runtime.grassAtlasTufts.map((tuft) => tuft.id)).toEqual([
+      'dense-seeded',
+      'wide-fine',
+    ]);
+    for (const rect of manifest.runtime.grassAtlasRects) {
+      expect(rect.x + rect.width).toBeLessThanOrEqual(manifest.runtime.grassAtlasWidth);
+      expect(rect.y + rect.height).toBeLessThanOrEqual(manifest.runtime.grassAtlasHeight);
+    }
     expect(manifest.runtime.leafPolicy).toContain('photographic');
     expect(manifest.runtime.leafPolicy).toContain('billboard');
     expect(manifest.runtime.leafPolicy).toContain('Do not replace');
@@ -90,18 +116,34 @@ describe('web Grassworks vegetation', () => {
     ]);
   });
 
-  it('keeps whole-map grass placement deterministic', () => {
+  it('keeps whole-map grass placement deterministic and climbs the massifs', () => {
     const first = sampleGrassworksGrassPoints(0x08b3d5a4);
     const second = sampleGrassworksGrassPoints(0x08b3d5a4);
     expect(second).toEqual(first);
     expect(first.length).toBeGreaterThan(250_000);
+    const onMassifs = first.filter((point) => isInsideBoundWall(point));
+    expect(onMassifs.length).toBeGreaterThan(5_000);
   });
 
-  it('scatters trees across the whole walkable map', () => {
+  it('scatters trees across the whole walkable map and woods the BOUND massifs', () => {
     const first = sampleGrassworksTreePoints(0x08b3d5a4);
     const second = sampleGrassworksTreePoints(0x08b3d5a4);
     expect(second).toEqual(first);
-    expect(first).toHaveLength(1_800);
+    const massif = sampleMassifTreePoints(0x08b3d5a4);
+    const hill = sampleHillTreePoints(0x08b3d5a4);
+    expect(massif.length).toBeGreaterThan(500);
+    expect(hill.length).toBeGreaterThan(80);
+    expect(massif.every((point) => isInsideBoundWall(point))).toBe(true);
+    expect(hill.every((point) => isInsideVaultWall(point))).toBe(true);
+    expect(first.length).toBeGreaterThanOrEqual(1_500 + massif.length);
+    expect(first.filter((point) => isInsideBoundWall(point))).toHaveLength(massif.length);
+    expect(first.filter((point) => isInsideVaultWall(point)).length).toBeGreaterThan(80);
+
+    // Massif trees stand on the drawn rock, not on the ground buried inside it.
+    const lifted = massif.filter(
+      (point) => dressingSurfaceMeters(point) - groundSurfaceMeters(point) > 1,
+    );
+    expect(lifted.length).toBeGreaterThan(massif.length / 2);
 
     const xs = first.map((point) => point.x / 1_000);
     const zs = first.map((point) => point.z / 1_000);
@@ -140,8 +182,11 @@ describe('web Grassworks vegetation', () => {
       runtimeMaxDistanceMeters: 180,
       runtimeReducedMaxDistanceMeters: 108,
       runtimeRoadVergeMm: -1,
-      runtimeTreeCount: 1_800,
+      runtimeTreeCount: 1_500,
       runtimeTreePlacement: 'whole-map clustered woodland',
+      runtimeTreeHeightMeters: { min: 16, max: 22 },
+      runtimeMassifTreeSpacingMeters: 4.2,
+      runtimeHillTreeSpacingMeters: 5.6,
       runtimeTreeHighDistanceMeters: 150,
       runtimeTreeLowDistanceMeters: 260,
       runtimeReducedTreeLowDistanceMeters: 208,

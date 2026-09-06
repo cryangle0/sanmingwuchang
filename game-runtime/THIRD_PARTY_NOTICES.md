@@ -27,7 +27,7 @@ PavingStones046 系列来自 ambientCG，CC0 1.0。
 
 - 树模型衍生自来源目录中的 `grass-webgpu/Assets/terrain2.glb`。
 - 近景叶子卡保留来源 GLB 的摄影树枝簇贴图（MASK 0.5）；远景广告牌保留来源树形剪影（MASK 0.35）。演示里的 `leaf-green.png` / `leaf-yellow.png` / `leaf-whites.png` 是飘落叶光效，不再贴到树卡上，否则会变成可见纸片。
-- 运行时 `models/grassworks/grass-atlas5.png` 使用同一来源的 `grass-atlas5.png`；采样矩形从单元格边角内缩，避开 pngtree 水印。
+- 运行时 `models/grassworks/grass-atlas5.png` 由同一来源的 `grass-atlas5.png` 重新打包：去除 pngtree 水印后，只保留上排两簇完整草丛，各占一个带透明边距的 512 px 槽位；被图边裁切的左下簇和宽叶片的右下簇不再使用。
 - 来源目录内未发现许可证文件，因此不得将这些树模型视为已确认可商用素材。
 
 ## 角色诞生特效贴图

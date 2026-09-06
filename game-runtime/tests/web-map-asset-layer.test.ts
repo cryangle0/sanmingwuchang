@@ -81,7 +81,7 @@ describe('web imported map asset layer', () => {
     const house = first.find((placement) => placement.id === 'imported-landmark-west-house');
     expect(house).toBeDefined();
     const houseCatalog = MAP_ASSET_CATALOG.find((entry) => entry.id === house?.assetId);
-    expect(house?.worldHeight).toBe(8.5);
+    expect(house?.worldHeight).toBe(18);
     expect(houseCatalog?.targetHeight).toBe(12);
     expect(house?.scale).toBeCloseTo((house?.worldHeight ?? 0) / (houseCatalog?.targetHeight ?? 1));
     expect(Math.hypot((house?.x ?? 0) + 330.7, (house?.z ?? 0) + 82)).toBeGreaterThan(24);

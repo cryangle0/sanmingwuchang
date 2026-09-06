@@ -9,3 +9,5 @@
 - `项目深度审计_2026-07-23/` — 项目审计
 
 > 构建产物（Unity Builds/Library、node_modules、artifacts、migration）不纳入版本控制，见 `.gitignore`。
+>
+> 线上服务器与发版步骤：`game-runtime/docs/服务器与部署.md`。

@@ -564,7 +564,7 @@ function renderMapAtlas(): MapAtlas {
   for (const piece of MAP_WALL_PIECES) {
     traceRing(context, projection, piece.vertices);
     context.fillStyle =
-      piece.wallClass === 'BOUND' ? 'rgba(56, 55, 50, 0.96)' : 'rgba(91, 82, 67, 0.94)';
+      piece.wallClass === 'BOUND' ? 'rgba(44, 92, 108, 0.94)' : 'rgba(91, 82, 67, 0.94)';
     context.fill();
     context.lineWidth = 1;
     context.strokeStyle = 'rgba(210, 194, 158, 0.28)';
@@ -581,12 +581,13 @@ function renderMapAtlas(): MapAtlas {
   }
   context.restore();
 
+  // The rim is a river going over a fall: a broad water band, foam-lit edge.
   traceRing(context, projection, MAP_BOUNDARY);
-  context.lineWidth = 4;
-  context.strokeStyle = 'rgba(202, 190, 155, 0.66)';
+  context.lineWidth = 7;
+  context.strokeStyle = 'rgba(58, 132, 148, 0.82)';
   context.stroke();
-  context.lineWidth = 1;
-  context.strokeStyle = 'rgba(245, 228, 184, 0.42)';
+  context.lineWidth = 2;
+  context.strokeStyle = 'rgba(214, 236, 234, 0.6)';
   context.stroke();
   return { canvas, projection };
 }
