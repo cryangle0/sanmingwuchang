@@ -9,8 +9,8 @@
 export const AUTUMN_STORM = {
   weather: 'rain' as const,
   rainIntensity: 0.58,
-  fogDensity: 0.00175,
-  fogColor: 0x6b7980,
+  fogDensity: 0.00152,
+  fogColor: 0x71838a,
   sunIntensity: 1.42,
   sunColor: 0xe0e7e9,
   hemiSky: 0xb2c5cd,
@@ -26,7 +26,9 @@ export const AUTUMN_STORM = {
   wetness: 0.66,
   frost: 0,
   canopyTint: 0xd08a38,
-  leafEmissive: { r: 0.22, g: 0.11, b: 0.03 },
+  // Neutral warm glow: the canopy carries its own hue per instance now, and
+  // an orange emissive under a green crown read as rust.
+  leafEmissive: { r: 0.14, g: 0.13, b: 0.09 },
   leafEmissiveHigh: 0.12,
   leafEmissiveLow: 0.06,
   windLeafHigh: 0.045,

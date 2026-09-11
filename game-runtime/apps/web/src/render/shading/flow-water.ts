@@ -16,15 +16,15 @@ import { windTimeUniform } from './wind';
  */
 
 export const FLOW_WATER_PALETTE = {
-  deep: 0x1c4f5e,
-  shallow: 0x4d8f96,
-  foam: 0xd6e6e3,
-  fallDark: 0x7ea8b4,
-  fallLight: 0xf2f7f8,
-  mist: 0xc6d1d3,
+  deep: 0x16586a,
+  shallow: 0x5cb0b0,
+  foam: 0xe4f0ec,
+  fallDark: 0x8eb8c2,
+  fallLight: 0xf6fafb,
+  mist: 0xd0dcde,
 } as const;
 
-const NOISE_GLSL = /* glsl */ `
+export const FLOW_NOISE_GLSL = /* glsl */ `
 float fwHash(vec2 p) {
   p = fract(p * vec2(123.34, 456.21));
   p += dot(p, p + 45.32);
@@ -81,7 +81,7 @@ uniform vec3 uMist;
 varying vec2 vFlow;
 varying float vKind;
 #include <fog_pars_fragment>
-${NOISE_GLSL}
+${FLOW_NOISE_GLSL}
 void main() {
   float t = uTime;
   vec3 colour;

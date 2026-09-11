@@ -14,10 +14,12 @@ import * as THREE from 'three';
 import {
   createHeroSkillVisual,
   createHeroSkillZoneSigil,
-  placeHeroSkillVisual,
   type HeroSkillVfxProfile,
   heroSkillSigilMaterials,
   heroSkillVfxProfile,
+  placeHeroSkillVisual,
+  softDisc,
+  softRing,
   updateHeroSkillVisual,
 } from './hero-skill-vfx';
 import {
@@ -277,7 +279,11 @@ export function combatEffectProfileForHero(heroId: HeroId): {
   };
 }
 
-function createGlowMaterial(color: number, opacity: number): THREE.MeshBasicMaterial {
+function createGlowMaterial(
+  color: number,
+  opacity: number,
+  map: THREE.Texture | null = null,
+): THREE.MeshBasicMaterial {
   const material = new THREE.MeshBasicMaterial({
     color,
     transparent: true,
@@ -286,6 +292,9 @@ function createGlowMaterial(color: number, opacity: number): THREE.MeshBasicMate
     depthWrite: false,
     side: THREE.DoubleSide,
     blending: THREE.AdditiveBlending,
+    // See hero-skill-vfx: additive light must skip filmic tone mapping.
+    toneMapped: false,
+    ...(map ? { map } : {}),
   });
   material.userData.baseOpacity = opacity;
   return material;
@@ -627,11 +636,7 @@ export class CombatEffectsLayer {
   ): void {
     const x = worldMeters(projectile.position.x);
     const z = worldMeters(projectile.position.z);
-    visual.group.position.set(
-      x,
-      this.surfaceHeightAt(x, z) + 1.05,
-      z,
-    );
+    visual.group.position.set(x, this.surfaceHeightAt(x, z) + 1.05, z);
     visual.group.rotation.y = Math.atan2(projectile.direction.x, projectile.direction.z);
     const pulse = 0.94 + Math.sin(elapsedSeconds * 18 + Number(projectile.entityId)) * 0.08;
     visual.group.scale.setScalar(pulse);
@@ -866,12 +871,7 @@ export class CombatEffectsLayer {
         this.activeTargetEffectVisuals.set(effect.key, visual);
       }
 
-      placeHeroSkillVisual(
-        visual.group,
-        position.x,
-        position.surfaceY + 0.06,
-        position.z,
-      );
+      placeHeroSkillVisual(visual.group, position.x, position.surfaceY + 0.06, position.z);
       visual.group.userData.baseScale = profile.scale * (0.68 + Math.min(effect.stacks, 6) * 0.045);
       updateHeroSkillVisual(visual.group, 0.5, elapsedSeconds);
       const remainingRatio =
@@ -1002,7 +1002,11 @@ export class CombatEffectsLayer {
       visual.group.userData.baseRotationY = Math.atan2(hazard.direction.x, hazard.direction.z);
       const span = Math.max(0.08, hazard.expiresAtTick - hazard.createdAtTick);
       const progress = Math.max(0, Math.min(1, (tick - hazard.createdAtTick) / span));
-      updateMonsterSkillVisual(visual.group, warning ? 0.35 + progress * 0.3 : 0.55, elapsedSeconds);
+      updateMonsterSkillVisual(
+        visual.group,
+        warning ? 0.35 + progress * 0.3 : 0.55,
+        elapsedSeconds,
+      );
     }
   }
 
@@ -1189,28 +1193,63 @@ export class CombatEffectsLayer {
       return;
     }
 
+    // A slash, not a floor ring: the arc sits at chest height, tilts with the
+    // swing, and turns through it over its lifetime. Two arcs — a wide soft
+    // one in the element colour and a thin white-hot core — read as a blade
+    // trail rather than as a range indicator.
     const group = new THREE.Group();
     group.name = `melee-sweep-${player.heroId}`;
     const x = worldMeters(player.position.x);
     const z = worldMeters(player.position.z);
-    group.position.set(x, this.surfaceHeightAt(x, z) + 0.48, z);
-    group.rotation.y = Math.atan2(player.facing.x, player.facing.z);
-    const material = createGlowMaterial(profile.color, 0.78);
-    const outerRadius = Math.min(2.4, Math.max(1.25, worldMeters(player.attackRangeMm) * 0.36));
+    group.position.set(x, this.surfaceHeightAt(x, z) + 1.15, z);
+    const yaw = Math.atan2(player.facing.x, player.facing.z);
+    group.rotation.y = yaw - 0.55;
+    group.userData.baseYaw = yaw;
+    group.userData.swingRadians = 1.25;
+    const material = createGlowMaterial(profile.color, 0.95, softRing());
+    const coreMaterial = createGlowMaterial(0xfff6dc, 1);
+    const flashMaterial = createGlowMaterial(0xfff4dc, 0.9, softDisc());
+    const outerRadius = Math.min(2.9, Math.max(1.55, worldMeters(player.attackRangeMm) * 0.46));
+    const segments = this.graphicsTier === 'reduced' ? 20 : 32;
     const sweep = new THREE.Mesh(
       new THREE.RingGeometry(
-        outerRadius * 0.48,
+        outerRadius * 0.32,
         outerRadius,
-        this.graphicsTier === 'reduced' ? 20 : 30,
+        segments,
         1,
-        -Math.PI * 0.86,
-        Math.PI * 0.72,
+        -Math.PI * 0.48,
+        Math.PI * 0.96,
       ),
       material,
     );
-    sweep.rotation.x = -Math.PI / 2;
-    group.add(sweep);
-    this.addTransientEffect('melee-sweep', group, [material], elapsedSeconds, 0.3);
+    sweep.rotation.x = -Math.PI / 2 + 0.48;
+    const core = new THREE.Mesh(
+      new THREE.RingGeometry(
+        outerRadius * 0.84,
+        outerRadius * 0.98,
+        segments,
+        1,
+        -Math.PI * 0.4,
+        Math.PI * 0.8,
+      ),
+      coreMaterial,
+    );
+    core.rotation.x = -Math.PI / 2 + 0.48;
+    core.position.y = 0.03;
+    const blade = new THREE.Mesh(new THREE.PlaneGeometry(0.28, outerRadius * 1.7), flashMaterial);
+    blade.rotation.set(-0.35, 0, 0.85);
+    blade.position.set(0.15, 0.2, outerRadius * 0.35);
+    const bladeB = blade.clone();
+    bladeB.rotation.z = 1.05;
+    bladeB.position.x = -0.12;
+    group.add(sweep, core, blade, bladeB);
+    this.addTransientEffect(
+      'melee-sweep',
+      group,
+      [material, coreMaterial, flashMaterial],
+      elapsedSeconds,
+      0.36,
+    );
   }
 
   private spawnMuzzleEffect(player: PlayerSnapshot, color: number, elapsedSeconds: number): void {
@@ -1220,15 +1259,28 @@ export class CombatEffectsLayer {
     const z = worldMeters(player.position.z);
     group.position.set(x, this.surfaceHeightAt(x, z) + 1.05, z);
     group.rotation.y = Math.atan2(player.facing.x, player.facing.z);
-    const coreMaterial = createGlowMaterial(color, 0.9);
-    const flareMaterial = createGlowMaterial(0xffe5ad, 0.66);
+    const coreMaterial = createGlowMaterial(color, 0.95);
+    const flareMaterial = createGlowMaterial(0xffe5ad, 0.7);
+    const flashMaterial = createGlowMaterial(0xfff4dc, 0.85, softDisc());
     const core = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 8), coreMaterial);
     core.position.z = 0.95;
     const flare = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.8, 10), flareMaterial);
     flare.rotation.x = Math.PI / 2;
     flare.position.z = 1.22;
-    group.add(core, flare);
-    this.addTransientEffect('muzzle', group, [coreMaterial, flareMaterial], elapsedSeconds, 0.18);
+    // Crossed soft cards so the flash reads from any camera angle.
+    const flashA = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 1.3), flashMaterial);
+    flashA.position.z = 0.95;
+    const flashB = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 1.3), flashMaterial);
+    flashB.position.z = 0.95;
+    flashB.rotation.y = Math.PI / 2;
+    group.add(core, flare, flashA, flashB);
+    this.addTransientEffect(
+      'muzzle',
+      group,
+      [coreMaterial, flareMaterial, flashMaterial],
+      elapsedSeconds,
+      0.2,
+    );
   }
 
   private spawnHeroSkillCastEffect(
@@ -1261,12 +1313,7 @@ export class CombatEffectsLayer {
     scaleMultiplier = 1,
   ): void {
     const visual = createHeroSkillVisual(profile, 'impact', this.graphicsTier === 'reduced');
-    placeHeroSkillVisual(
-      visual.group,
-      position.x,
-      position.surfaceY + 0.07,
-      position.z,
-    );
+    placeHeroSkillVisual(visual.group, position.x, position.surfaceY + 0.07, position.z);
     visual.group.userData.baseScale = profile.scale * scaleMultiplier;
     this.heroSkillImpactsSpawned += 1;
     this.lastSkillHeroId = profile.heroId;
@@ -1331,34 +1378,59 @@ export class CombatEffectsLayer {
     group.name = critical ? 'critical-impact' : 'damage-impact';
     group.position.set(position.x, position.y, position.z);
     const color = critical ? 0xffd36b : 0xff8566;
-    const coreMaterial = createGlowMaterial(color, critical ? 0.96 : 0.76);
-    const ringMaterial = createGlowMaterial(critical ? 0xfff1a8 : 0xffc29b, critical ? 0.88 : 0.58);
+    const coreMaterial = createGlowMaterial(color, critical ? 0.98 : 0.86);
+    const ringMaterial = createGlowMaterial(
+      critical ? 0xfff1a8 : 0xffc29b,
+      critical ? 0.92 : 0.66,
+      softRing(),
+    );
+    const flashMaterial = createGlowMaterial(0xfff6e4, critical ? 0.95 : 0.7, softDisc());
     const core = new THREE.Mesh(
       critical ? new THREE.OctahedronGeometry(0.48, 1) : new THREE.IcosahedronGeometry(0.34, 1),
       coreMaterial,
     );
     const ring = new THREE.Mesh(
-      new THREE.RingGeometry(0.34, critical ? 0.9 : 0.68, critical ? 28 : 20),
+      new THREE.RingGeometry(0.2, critical ? 0.95 : 0.72, critical ? 28 : 20),
       ringMaterial,
     );
     ring.rotation.x = -Math.PI / 2;
     ring.position.y = position.surfaceY + 0.13 - position.y;
-    group.add(core, ring);
+    // Hit star: thin shards radiating from the point of contact, the mark
+    // every action game leaves where a blow lands.
+    const shardCount = critical ? 6 : 4;
+    const shardLength = critical ? 1.5 : 1.0;
+    for (let index = 0; index < shardCount; index += 1) {
+      const shard = new THREE.Mesh(
+        new THREE.BoxGeometry(0.06, 0.06, shardLength),
+        index % 2 === 0 ? flashMaterial : coreMaterial,
+      );
+      const angle = (index / shardCount) * Math.PI * 2 + (critical ? 0.3 : 0.55);
+      shard.rotation.set(Math.cos(angle) * 0.9, angle, 0);
+      shard.position.set(
+        Math.sin(angle) * shardLength * 0.35,
+        Math.cos(angle) * shardLength * 0.2,
+        Math.cos(angle) * shardLength * 0.35,
+      );
+      group.add(shard);
+    }
+    const flashA = new THREE.Mesh(
+      new THREE.PlaneGeometry(critical ? 2.6 : 1.7, critical ? 2.6 : 1.7),
+      flashMaterial,
+    );
+    const flashB = flashA.clone();
+    flashB.rotation.y = Math.PI / 2;
+    group.add(core, ring, flashA, flashB);
     this.impactEffectsSpawned += 1;
     this.addTransientEffect(
       critical ? 'critical' : 'impact',
       group,
-      [coreMaterial, ringMaterial],
+      [coreMaterial, ringMaterial, flashMaterial],
       elapsedSeconds,
       critical ? 0.5 : 0.34,
     );
   }
 
-  private spawnCastEffect(
-    position: EffectPosition,
-    color: number,
-    elapsedSeconds: number,
-  ): void {
+  private spawnCastEffect(position: EffectPosition, color: number, elapsedSeconds: number): void {
     const group = new THREE.Group();
     group.name = 'active-cast-pulse';
     group.position.set(position.x, position.surfaceY + 0.13, position.z);
@@ -1373,10 +1445,7 @@ export class CombatEffectsLayer {
     this.addTransientEffect('cast', group, [ringMaterial, coreMaterial], elapsedSeconds, 0.52);
   }
 
-  private spawnHealEffect(
-    position: EffectPosition,
-    elapsedSeconds: number,
-  ): void {
+  private spawnHealEffect(position: EffectPosition, elapsedSeconds: number): void {
     const group = new THREE.Group();
     group.name = 'heal-pulse';
     group.position.set(position.x, position.surfaceY + 0.14, position.z);
@@ -1439,23 +1508,30 @@ export class CombatEffectsLayer {
         updateMonsterSkillVisual(effect.group, progress, elapsedSeconds);
       }
       const authored = effect.kind === 'hero-skill' || effect.kind === 'monster-skill';
-      const scale =
-        authored
-          ? 1
-          : effect.kind === 'melee-sweep'
-            ? 0.88 + progress * 0.32
-            : effect.kind === 'muzzle'
-              ? 0.72 + progress * 0.7
-              : effect.kind === 'critical'
-                ? 0.58 + progress * 1.45
-                : effect.kind === 'cast' || effect.kind === 'heal'
-                  ? 0.62 + progress * 1.25
-                  : 0.68 + progress;
+      const scale = authored
+        ? 1
+        : effect.kind === 'melee-sweep'
+          ? 0.88 + progress * 0.32
+          : effect.kind === 'muzzle'
+            ? 0.72 + progress * 0.7
+            : effect.kind === 'critical'
+              ? 0.58 + progress * 1.45
+              : effect.kind === 'cast' || effect.kind === 'heal'
+                ? 0.62 + progress * 1.25
+                : 0.68 + progress;
       if (!authored) {
         effect.group.scale.setScalar(scale);
       }
       if (authored) {
         continue;
+      }
+      if (effect.kind === 'melee-sweep') {
+        const baseYaw = Number(effect.group.userData.baseYaw ?? effect.group.rotation.y);
+        const swing = Number(effect.group.userData.swingRadians ?? 0);
+        // Fast out of the gate, easing to a stop: the swing has already been
+        // committed by the time the event arrives, so the trail decelerates.
+        const eased = 1 - (1 - progress) ** 2.2;
+        effect.group.rotation.y = baseYaw - swing * 0.5 + swing * eased;
       }
       for (const material of effect.materials) {
         const baseOpacity =

@@ -28,3 +28,4 @@ unity/*.suo
 unity/*.tmp
 unity/*.user
 unity/*.userprefs
+deploy/ssh-private-key.txt

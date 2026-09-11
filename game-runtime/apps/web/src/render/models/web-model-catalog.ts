@@ -92,7 +92,11 @@ export const WEB_HERO_MODELS: readonly WebModelDefinition[] = [
     format: 'glb',
     assetPath: 'models/characters/H004/model.glb',
   }),
-  hero('H005', '多目怪'),
+  hero('H005', '多目怪', 2.2, {
+    assetBase: 'web',
+    format: 'glb',
+    assetPath: 'models/characters/H005/model.glb',
+  }),
   hero('H006', '九头虫', 2.4, {
     assetBase: 'web',
     format: 'glb',
@@ -128,7 +132,11 @@ export const WEB_HERO_MODELS: readonly WebModelDefinition[] = [
     format: 'glb',
     assetPath: 'models/characters/H012/model.glb',
   }),
-  hero('H013', '大鹏雕', 2.5),
+  hero('H013', '大鹏雕', 2.5, {
+    assetBase: 'web',
+    format: 'glb',
+    assetPath: 'models/characters/H013/model.glb',
+  }),
   hero('H014', '白骨精', 2.2, {
     assetBase: 'web',
     format: 'glb',
@@ -144,7 +152,11 @@ export const WEB_HERO_MODELS: readonly WebModelDefinition[] = [
     format: 'glb',
     assetPath: 'models/characters/H016/model.glb',
   }),
-  hero('H017', '青狮精'),
+  hero('H017', '青狮精', 2.2, {
+    assetBase: 'web',
+    format: 'glb',
+    assetPath: 'models/characters/H017/model.glb',
+  }),
   hero('H018', '牛魔王', 2.2, {
     assetBase: 'web',
     format: 'glb',
@@ -163,19 +175,35 @@ export const WEB_HERO_MODELS: readonly WebModelDefinition[] = [
     format: 'glb',
     assetPath: 'models/characters/H023/model.glb',
   }),
-  hero('H024', '虎力大仙'),
-  hero('H025', '鹿力大仙'),
+  hero('H024', '虎力大仙', 2.2, {
+    assetBase: 'web',
+    format: 'glb',
+    assetPath: 'models/characters/H024/model.glb',
+  }),
+  hero('H025', '鹿力大仙', 2.2, {
+    assetBase: 'web',
+    format: 'glb',
+    assetPath: 'models/characters/H025/model.glb',
+  }),
   hero('H026', '文殊菩萨'),
   hero('H027', '普贤菩萨'),
   hero('H028', '镇元大仙'),
-  hero('H029', '如来'),
+  hero('H029', '如来', 2.2, {
+    assetBase: 'web',
+    format: 'glb',
+    assetPath: 'models/characters/H029/model.glb',
+  }),
   hero('H030', '观音菩萨'),
   hero('H031', '托塔李天王', 2.2, {
     assetBase: 'web',
     format: 'glb',
     assetPath: 'models/characters/H031/model.glb',
   }),
-  hero('H032', '唐僧'),
+  hero('H032', '唐僧', 2.2, {
+    assetBase: 'web',
+    format: 'glb',
+    assetPath: 'models/characters/H032/model.glb',
+  }),
   hero('H033', '沙和尚', 2.2, {
     assetBase: 'web',
     format: 'glb',
@@ -186,9 +214,21 @@ export const WEB_HERO_MODELS: readonly WebModelDefinition[] = [
     format: 'glb',
     assetPath: 'models/characters/H034/model.glb',
   }),
-  hero('H035', '白象精'),
-  hero('H036', '灵感大王'),
-  hero('H037', '羊力大仙'),
+  hero('H035', '白象精', 2.2, {
+    assetBase: 'web',
+    format: 'glb',
+    assetPath: 'models/characters/H035/model.glb',
+  }),
+  hero('H036', '灵感大王', 2.2, {
+    assetBase: 'web',
+    format: 'glb',
+    assetPath: 'models/characters/H036/model.glb',
+  }),
+  hero('H037', '羊力大仙', 2.2, {
+    assetBase: 'web',
+    format: 'glb',
+    assetPath: 'models/characters/H037/model.glb',
+  }),
   hero('H038', '赛太岁', 2.2, {
     assetBase: 'web',
     format: 'glb',

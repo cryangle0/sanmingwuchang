@@ -32,6 +32,20 @@ export const ANIMATED_CHARACTER_CONFIGS = [
     },
   },
   {
+    modelId: 'H005',
+    displayName: '多目怪',
+    sourceDirectory:
+      process.env.JWGB_H005_ANIMATION_SOURCE?.trim() || join(sourceRoot, '多目怪_FBX'),
+    targetHeight: 2.2,
+    expectedBones: 33,
+    clipPatterns: {
+      Idle: null,
+      Move: null,
+      Attack: null,
+      Spell: null,
+    },
+  },
+  {
     modelId: 'H006',
     displayName: '九头虫',
     sourceDirectory:
@@ -129,6 +143,27 @@ export const ANIMATED_CHARACTER_CONFIGS = [
     },
   },
   {
+    modelId: 'H013',
+    displayName: '大鹏雕',
+    sourceDirectory:
+      process.env.JWGB_H013_ANIMATION_SOURCE?.trim() || join(sourceRoot, '大鹏雕_FBX'),
+    targetHeight: 2.5,
+    expectedBones: 8,
+    requiresSeparateWeapon: false,
+    sourceFileNames: {
+      Idle: '01_待机_idle.fbx',
+      Move: '02_移动_move.fbx',
+      Attack: '03_攻击_attack.fbx',
+      Spell: '04_施法_cast.fbx',
+    },
+    clipPatterns: {
+      Idle: null,
+      Move: null,
+      Attack: null,
+      Spell: null,
+    },
+  },
+  {
     modelId: 'H015',
     displayName: '猪八戒',
     sourceDirectory:
@@ -169,6 +204,21 @@ export const ANIMATED_CHARACTER_CONFIGS = [
       Move: null,
       Attack: null,
       Spell: null,
+    },
+  },
+  {
+    modelId: 'H017',
+    displayName: '青狮精',
+    sourceDirectory:
+      process.env.JWGB_H017_ANIMATION_SOURCE?.trim() || join(sourceRoot, '青狮精_FBX'),
+    targetHeight: 2.2,
+    expectedBones: 41,
+    requiresSeparateWeapon: false,
+    clipPatterns: {
+      Idle: 'QingShi_Idle',
+      Move: 'biped:run',
+      Attack: 'QingShi_Attack',
+      Spell: 'QingShi_Cast',
     },
   },
   {
@@ -214,6 +264,64 @@ export const ANIMATED_CHARACTER_CONFIGS = [
     },
   },
   {
+    modelId: 'H024',
+    displayName: '虎力大仙',
+    sourceDirectory:
+      process.env.JWGB_H024_ANIMATION_SOURCE?.trim() || join(sourceRoot, '虎力大仙_FBX'),
+    targetHeight: 2.2,
+    expectedBones: 41,
+    requiresSeparateWeapon: false,
+    clipPatterns: {
+      Idle: null,
+      Move: null,
+      Attack: null,
+      Spell: null,
+    },
+  },
+  {
+    modelId: 'H025',
+    displayName: '鹿力大仙',
+    sourceDirectory:
+      process.env.JWGB_H025_ANIMATION_SOURCE?.trim() || join(sourceRoot, '鹿力大仙_FBX'),
+    targetHeight: 2.2,
+    expectedBones: 41,
+    requiresSeparateWeapon: false,
+    clipPatterns: {
+      Idle: null,
+      Move: null,
+      Attack: null,
+      Spell: null,
+    },
+  },
+  {
+    modelId: 'H029',
+    displayName: '如来',
+    sourceDirectory: process.env.JWGB_H029_ANIMATION_SOURCE?.trim() || join(sourceRoot, '如来_FBX'),
+    targetHeight: 2.2,
+    expectedBones: 41,
+    requiresSeparateWeapon: false,
+    clipPatterns: {
+      Idle: 'RuLai_Idle',
+      Move: 'RuLai_Run',
+      Attack: 'RuLai_Attack',
+      Spell: 'RuLai_Cast',
+    },
+  },
+  {
+    modelId: 'H032',
+    displayName: '唐僧',
+    sourceDirectory: process.env.JWGB_H032_ANIMATION_SOURCE?.trim() || join(sourceRoot, '唐僧_FBX'),
+    targetHeight: 2.2,
+    expectedBones: 41,
+    requiresSeparateWeapon: false,
+    clipPatterns: {
+      Idle: null,
+      Move: null,
+      Attack: null,
+      Spell: null,
+    },
+  },
+  {
     modelId: 'H031',
     displayName: '托塔李天王',
     sourceDirectory:
@@ -243,6 +351,36 @@ export const ANIMATED_CHARACTER_CONFIGS = [
     },
   },
   {
+    modelId: 'H036',
+    displayName: '灵感大王',
+    sourceDirectory:
+      process.env.JWGB_H036_ANIMATION_SOURCE?.trim() || join(sourceRoot, '灵感大王_FBX'),
+    targetHeight: 2.2,
+    expectedBones: 41,
+    requiresSeparateWeapon: false,
+    clipPatterns: {
+      Idle: null,
+      Move: null,
+      Attack: null,
+      Spell: null,
+    },
+  },
+  {
+    modelId: 'H037',
+    displayName: '羊力大仙',
+    sourceDirectory:
+      process.env.JWGB_H037_ANIMATION_SOURCE?.trim() || join(sourceRoot, '羊力大仙_FBX'),
+    targetHeight: 2.2,
+    expectedBones: 41,
+    requiresSeparateWeapon: false,
+    clipPatterns: {
+      Idle: null,
+      Move: null,
+      Attack: null,
+      Spell: null,
+    },
+  },
+  {
     modelId: 'H034',
     displayName: '黑熊精',
     sourceDirectory:
@@ -254,6 +392,21 @@ export const ANIMATED_CHARACTER_CONFIGS = [
       Move: 'biped:run',
       Attack: 'biped:cast_a_spell_retimed',
       Spell: 'biped:cheer',
+    },
+  },
+  {
+    modelId: 'H035',
+    displayName: '白象精',
+    sourceDirectory:
+      process.env.JWGB_H035_ANIMATION_SOURCE?.trim() || join(sourceRoot, '白象精_FBX'),
+    targetHeight: 2.2,
+    expectedBones: 41,
+    requiresSeparateWeapon: true,
+    clipPatterns: {
+      Idle: 'BaiXiang_Idle',
+      Move: 'biped:run',
+      Attack: 'BaiXiang_Attack',
+      Spell: 'BaiXiang_Cast',
     },
   },
   {

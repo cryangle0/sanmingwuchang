@@ -122,11 +122,16 @@ export class FloraOcclusionController {
       seenIds.add(target.id);
       return {
         target,
-        parts: target.parts.map((source) => ({
-          source,
-          hiddenMatrix: collapsedInstanceMatrix(source.matrix),
-          ghost: null,
-        })),
+        // Trunks are stable world geometry and must never change opacity as a
+        // player approaches. Only crowns and ground shadows participate in
+        // camera occlusion so the character remains visible in dense woods.
+        parts: target.parts
+          .filter((source) => source.id !== 'trunk')
+          .map((source) => ({
+            source,
+            hiddenMatrix: collapsedInstanceMatrix(source.matrix),
+            ghost: null,
+          })),
         occluded: false,
         occludedOpacity: OCCLUDED_TREE_OPACITY,
         sourceHidden: false,

@@ -271,6 +271,7 @@ async function main(): Promise<void> {
   const animatedHeroes = [
     ['红孩儿（火娃模型）', 'H002'],
     ['蝎子精', 'H004'],
+    ['多目怪', 'H005'],
     ['九头虫', 'H006'],
     ['黄风怪', 'H007'],
     ['太上老君', 'H008'],
@@ -278,15 +279,24 @@ async function main(): Promise<void> {
     ['二郎神', 'H010'],
     ['哪吒', 'H011'],
     ['六耳猕猴', 'H012'],
+    ['大鹏雕', 'H013'],
     ['白骨精', 'H014'],
     ['猪八戒', 'H015'],
     ['白龙马（小白龙模型）', 'H016'],
+    ['青狮精', 'H017'],
     ['牛魔王', 'H018'],
     ['独角兕大王', 'H019'],
     ['黄袍怪', 'H023'],
+    ['虎力大仙', 'H024'],
+    ['鹿力大仙', 'H025'],
+    ['如来', 'H029'],
     ['托塔李天王', 'H031'],
+    ['唐僧', 'H032'],
     ['沙和尚', 'H033'],
     ['黑熊精', 'H034'],
+    ['白象精', 'H035'],
+    ['灵感大王', 'H036'],
+    ['羊力大仙', 'H037'],
     ['赛太岁', 'H038'],
   ] as const;
   for (const [name, id] of animatedHeroes) {
@@ -296,7 +306,7 @@ async function main(): Promise<void> {
       'HEAD',
     );
   }
-  await assertHttp('legacy hero FBX', `${modelBase}heroes/H017/model.fbx`, 'HEAD');
+  await assertHttp('legacy hero FBX', `${modelBase}heroes/H001/model.fbx`, 'HEAD');
   await assertHttp('monster model', `${modelBase}monsters/M027/model.fbx`, 'HEAD');
   const packagedMapAssets = [
     ['wuxia landmark', 'models/map-assets/wuxia-gate-court.glb'],
@@ -362,11 +372,7 @@ async function main(): Promise<void> {
     if (!entry.atlasPath) {
       throw new Error(`online skill VFX manifest has no atlas path for ${key}`);
     }
-    await assertHttp(
-      `skill VFX ${key}`,
-      new URL(entry.atlasPath, cdnBase).toString(),
-      'HEAD',
-    );
+    await assertHttp(`skill VFX ${key}`, new URL(entry.atlasPath, cdnBase).toString(), 'HEAD');
   }
   await assertHttp(
     'same-origin hero portrait',

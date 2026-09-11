@@ -29,6 +29,10 @@ export interface MapMaterialLibrary {
   readonly ground: THREE.MeshStandardMaterial;
   readonly boundaryCliff: THREE.MeshStandardMaterial;
   readonly boundaryCliffFace: THREE.MeshStandardMaterial;
+  /** Grass shelf outside the boundary polygon, coloured from the district palette. */
+  readonly riverBank: THREE.MeshStandardMaterial;
+  /** BOUND massifs: rock that blends to turf on its gentler facets (per-vertex `aVeg`). */
+  readonly massif: THREE.MeshStandardMaterial;
   readonly vaultWall: THREE.MeshStandardMaterial;
   readonly wallTrim: THREE.MeshStandardMaterial;
   readonly highland: THREE.MeshStandardMaterial;
@@ -350,6 +354,65 @@ float jwgbGroundNoise(vec2 point) {
   };
 }
 
+/**
+ * Rock-to-turf blend for the BOUND massifs.
+ *
+ * Every facet carries an `aVeg` weight: 0 is bare rock, 1 is turf. The
+ * interior-ridges builder derives it from the facet's steepness, its height
+ * on the range and a deterministic patch noise, and pre-mixes the vertex
+ * colour to match, so here only the texture and normal detail switch. Turf
+ * uses the same grass albedo as the ground so a massif's foot reads as the
+ * hillside rising out of the meadow rather than as a rock dropped onto it.
+ */
+function applyMassifVegetationBlend(
+  material: THREE.MeshStandardMaterial,
+  grassTexture: THREE.Texture,
+): void {
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.uJwgbMassifGrass = { value: grassTexture };
+    shader.vertexShader = shader.vertexShader
+      .replace(
+        '#include <common>',
+        `#include <common>
+attribute float aVeg;
+varying float vJwgbVeg;
+varying vec2 vJwgbMassifXZ;`,
+      )
+      .replace(
+        '#include <begin_vertex>',
+        `#include <begin_vertex>
+vJwgbVeg = aVeg;
+vJwgbMassifXZ = (modelMatrix * vec4(transformed, 1.0)).xz;`,
+      );
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        '#include <common>',
+        `#include <common>
+uniform sampler2D uJwgbMassifGrass;
+varying float vJwgbVeg;
+varying vec2 vJwgbMassifXZ;`,
+      )
+      .replace(
+        '#include <map_fragment>',
+        `#ifdef USE_MAP
+  vec4 jwgbRock = texture2D(map, vMapUv);
+  vec3 jwgbGrass = texture2D(uJwgbMassifGrass, vJwgbMassifXZ / 7.5).rgb;
+  vec3 jwgbGrassFine = texture2D(uJwgbMassifGrass, vJwgbMassifXZ / 2.6 + vec2(0.37, 0.61)).rgb;
+  jwgbGrass = mix(jwgbGrass, jwgbGrassFine, 0.35);
+  float jwgbVeg = smoothstep(0.1, 0.58, vJwgbVeg);
+  diffuseColor *= vec4(mix(jwgbRock.rgb, jwgbGrass, jwgbVeg), 1.0);
+#endif`,
+      )
+      .replace(
+        '#include <normal_fragment_maps>',
+        `#include <normal_fragment_maps>
+  // Turf is soft: fade the rock strata normal map out where grass takes over.
+  normal = normalize(mix(normal, nonPerturbedNormal, smoothstep(0.1, 0.58, vJwgbVeg) * 0.74));`,
+      );
+  };
+  material.customProgramCacheKey = () => 'jwgb-massif-vegetation-blend-v2';
+}
+
 function createMapAssetTextures(): {
   texture(file: string, repeatX: number, repeatY?: number): THREE.Texture;
   dispose(): void;
@@ -447,8 +510,11 @@ export function createMapMaterials(
 
   // Escarpment face. Vertex colour carries the crest-to-abyss gradient, so the
   // albedo stays neutral and the same material covers 60 m of drop.
-  const boundaryCliffFace = standard(tiled(surfaces.cliff, 13), {
-    map: assetTextures.texture('Rock026_Color.jpg', 1 / 13),
+  // Face UVs are authored in tiles (world metres / TEXTURE_METERS), so the
+  // textures repeat once per UV unit. Dividing again here stretched one rock
+  // tile over 150 m of cliff and left every face a flat smear.
+  const boundaryCliffFace = standard(tiled(surfaces.cliff, 1), {
+    map: assetTextures.texture('Rock026_Color.jpg', 1),
     color: 0xffffff,
     vertexColors: true,
     roughness: 1,
@@ -456,6 +522,29 @@ export function createMapMaterials(
     normalScale: new THREE.Vector2(0.85, 0.85),
     side: THREE.DoubleSide,
   });
+
+  const riverBank = standard(tiled(surfaces.ground, 1), {
+    map: assetTextures.texture('Grass001_Stylized.jpg', 1),
+    color: 0xffffff,
+    vertexColors: true,
+    roughness: 1,
+    metalness: 0.02,
+    normalScale: new THREE.Vector2(0.3, 0.3),
+    side: THREE.DoubleSide,
+  });
+
+  // Massif rock with turf on the gentler facets. The vertex colour carries the
+  // pre-mixed rock/turf tint; the shader picks the matching texture by `aVeg`.
+  const massif = standard(tiled(surfaces.cliff, 1), {
+    map: assetTextures.texture('Rock026_Color.jpg', 1),
+    color: 0xffffff,
+    vertexColors: true,
+    roughness: 1,
+    metalness: 0.03,
+    normalScale: new THREE.Vector2(0.7, 0.7),
+    side: THREE.DoubleSide,
+  });
+  applyMassifVegetationBlend(massif, groundGrassTexture);
 
   const vaultWall = standard(tiled(surfaces.masonry, 6), {
     color: 0x918f86,
@@ -853,6 +942,8 @@ export function createMapMaterials(
     ground,
     boundaryCliff,
     boundaryCliffFace,
+    riverBank,
+    massif,
     vaultWall,
     wallTrim,
     highland,
@@ -908,6 +999,8 @@ export function createMapMaterials(
     ground,
     boundaryCliff,
     boundaryCliffFace,
+    riverBank,
+    massif,
     vaultWall,
     wallTrim,
     highland,

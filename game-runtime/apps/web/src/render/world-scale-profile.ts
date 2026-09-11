@@ -61,6 +61,27 @@ export const WORLD_SCALE_PROFILE = {
     rockMaxWorldHeight: 4.25,
     rockBaseWorldHeight: 2.05,
     rockVariationWorldHeight: 1.25,
+    /**
+     * The procedural 唐宋 buildings are authored at metric scale, so these
+     * world heights are each model's own height (a scale of 1). Districts keep
+     * real proportions against a 3.3–3.75 m hero: a house is three heroes
+     * tall, a pagoda six, a gate tower three.
+     */
+    structureWorldHeights: {
+      'tang-hall': 10.29,
+      'tang-pagoda': 20,
+      'tang-paifang': 6.49,
+      'tang-gate-tower': 11.64,
+      'tang-inn': 9.59,
+      'tang-teahouse': 5.14,
+      'tang-shrine': 4.09,
+      'tang-drum-tower': 10.8,
+      'tang-corridor': 4.69,
+      'tang-scripture-pillar': 7.36,
+      'tang-stele': 3.77,
+      'tang-lantern-post': 4.29,
+      'tang-well': 3.99,
+    } as Readonly<Record<string, number>>,
   },
   flora: {
     treeTargetHeights: {

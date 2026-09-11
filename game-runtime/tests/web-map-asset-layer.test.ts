@@ -13,12 +13,18 @@ const repositoryRoot = resolve(import.meta.dirname, '..');
 
 describe('web imported map asset layer', () => {
   it('keeps the delivery catalog relative, optimized, and source-free', () => {
-    expect(MAP_ASSET_CATALOG.length).toBe(36);
+    expect(MAP_ASSET_CATALOG.length).toBe(49);
     expect(MAP_ASSET_CATALOG.every((entry) => entry.fileName.endsWith('.glb'))).toBe(true);
     expect(MAP_ASSET_CATALOG.every((entry) => !entry.fileName.includes('\\'))).toBe(true);
     expect(MAP_ASSET_CATALOG.every((entry) => !entry.fileName.includes(':'))).toBe(true);
     expect(MAP_ASSET_CATALOG.filter((entry) => entry.kind === 'landmark')).toHaveLength(12);
     expect(MAP_ASSET_CATALOG.filter((entry) => entry.kind === 'rock')).toHaveLength(24);
+    expect(MAP_ASSET_CATALOG.filter((entry) => entry.kind === 'structure')).toHaveLength(13);
+    expect(
+      MAP_ASSET_CATALOG.filter(
+        (entry) => entry.kind === 'structure' && !entry.id.startsWith('tang-'),
+      ),
+    ).toHaveLength(0);
     expect(MAP_ASSET_CATALOG.filter((entry) => entry.id.startsWith('stylized-rock-'))).toHaveLength(
       9,
     );
@@ -60,12 +66,18 @@ describe('web imported map asset layer', () => {
     }
   });
 
-  it('builds a deterministic plan with authored landmark and rock budgets', () => {
+  it('builds a deterministic landmark plan without placeholder rocks', () => {
     const first = createMapAssetPlacementPlan(0x08b3d5a4);
     const second = createMapAssetPlacementPlan(0x08b3d5a4);
     expect(first).toEqual(second);
-    expect(first.filter((placement) => placement.kind === 'landmark')).toHaveLength(12);
-    expect(first.filter((placement) => placement.kind === 'rock')).toHaveLength(24);
+    expect(first.filter((placement) => placement.kind === 'landmark')).toHaveLength(10);
+    expect(first.some((placement) => placement.assetId === 'wuxia-citadel')).toBe(false);
+    expect(first.some((placement) => placement.assetId === 'wuxia-gate-court')).toBe(false);
+    expect(first.filter((placement) => placement.kind === 'rock')).toHaveLength(0);
+    const buildings = first.filter((placement) => placement.kind === 'structure');
+    expect(buildings.length).toBeGreaterThanOrEqual(60);
+    expect(buildings.every((placement) => placement.assetId.startsWith('tang-'))).toBe(true);
+    expect(buildings.every((placement) => placement.maxDistance > 0)).toBe(true);
     expect(
       first.every(
         (placement) =>
@@ -85,19 +97,6 @@ describe('web imported map asset layer', () => {
     expect(houseCatalog?.targetHeight).toBe(12);
     expect(house?.scale).toBeCloseTo((house?.worldHeight ?? 0) / (houseCatalog?.targetHeight ?? 1));
     expect(Math.hypot((house?.x ?? 0) + 330.7, (house?.z ?? 0) + 82)).toBeGreaterThan(24);
-
-    const rocks = first.filter((placement) => placement.kind === 'rock');
-    expect(Math.min(...rocks.map((placement) => placement.worldHeight))).toBeGreaterThanOrEqual(
-      1.45,
-    );
-    expect(Math.max(...rocks.map((placement) => placement.worldHeight))).toBeLessThanOrEqual(4.25);
-    for (const placement of rocks) {
-      const catalog = MAP_ASSET_CATALOG.find((entry) => entry.id === placement.assetId);
-      expect(catalog).toBeDefined();
-      expect(placement.scale).toBeCloseTo(
-        placement.worldHeight / (catalog?.targetHeight ?? Number.NaN),
-      );
-    }
   });
 
   it('grounds each optimized citadel pavilion at its original source-terrain step', () => {

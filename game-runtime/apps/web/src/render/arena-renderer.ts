@@ -33,6 +33,8 @@ import {
 } from './camera-controls';
 import { type CameraFollowState, updateCameraFollowState } from './camera-follow';
 import { CombatEffectsLayer, effectColorForElement } from './combat-effects';
+import { CombatTextLayer, formatCombatNumber } from './combat-text';
+import { softDisc } from './hero-skill-vfx';
 import { activePresentationRange, type CombatRangePreviewMode } from './combat-range-preview';
 import { createMapAtmosphere, type MapAtmosphere } from './map/atmosphere';
 import { AUTUMN_STORM } from './map/autumn-storm';
@@ -97,6 +99,55 @@ interface WindWallVisual {
 interface ProjectileVisual {
   readonly mesh: THREE.Mesh;
   readonly material: THREE.MeshBasicMaterial;
+}
+
+/**
+ * Projectile dressing shared by every basic shot: one glow card geometry, one
+ * trail cone, and one cached material per element colour. Sharing keeps the
+ * per-projectile disposal in the frame loop exact (it only owns the head
+ * sphere and its material) while a bare sphere becomes a lit bolt with a tail.
+ */
+const PROJECTILE_CARD_GEOMETRY = new THREE.PlaneGeometry(1, 1);
+const PROJECTILE_TRAIL_GEOMETRY = new THREE.ConeGeometry(1, 1, 8, 1, true);
+const projectileGlowMaterials = new Map<number, THREE.MeshBasicMaterial>();
+const projectileTrailMaterials = new Map<number, THREE.MeshBasicMaterial>();
+
+function projectileGlowMaterial(color: number): THREE.MeshBasicMaterial {
+  let material = projectileGlowMaterials.get(color);
+  if (!material) {
+    const map = softDisc();
+    material = new THREE.MeshBasicMaterial({
+      color,
+      transparent: true,
+      opacity: 0.55,
+      depthTest: true,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+      toneMapped: false,
+      ...(map ? { map } : {}),
+    });
+    projectileGlowMaterials.set(color, material);
+  }
+  return material;
+}
+
+function projectileTrailMaterial(color: number): THREE.MeshBasicMaterial {
+  let material = projectileTrailMaterials.get(color);
+  if (!material) {
+    material = new THREE.MeshBasicMaterial({
+      color,
+      transparent: true,
+      opacity: 0.42,
+      depthTest: true,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+      toneMapped: false,
+    });
+    projectileTrailMaterials.set(color, material);
+  }
+  return material;
 }
 
 interface MonsterVisual {
@@ -395,6 +446,18 @@ export class ArenaRenderer {
   private adaptiveSamplingStarted = false;
   private previousCameraSeconds: number | null = null;
   private localEntityId: EntityId | null = null;
+  /** Floating damage/heal numbers over the canvas; null outside a DOM. */
+  private readonly combatText: CombatTextLayer | null;
+  /** Entities struck this instant, for the flash and punch on their models. */
+  private readonly hitFeedback = new Map<EntityId, { at: number; strength: number }>();
+  private readonly combatTextSeen = new Set<string>();
+  private shakeTrauma = 0;
+  private previousShakeSeconds = 0;
+  private readonly shakeOffset = new THREE.Vector3();
+  private readonly reducedMotion =
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   private cameraSnapRequested = true;
   private cameraViewMode: CameraViewMode = 'standard';
   private cameraOrbitYaw = DEFAULT_CAMERA_ORBIT.yaw;
@@ -459,6 +522,7 @@ export class ArenaRenderer {
       this.graphicsTier,
       (xMeters, zMeters) => (this.mapEnvironment ? standingSurfaceMeters(xMeters, zMeters) : 0),
     );
+    this.combatText = typeof document === 'undefined' ? null : new CombatTextLayer(canvas);
     this.resize();
 
     window.addEventListener('resize', this.resize);
@@ -502,6 +566,210 @@ export class ArenaRenderer {
     this.graphicsPreference = preference;
     this.resetAdaptiveQualitySampling();
     this.applyGraphicsTier(this.resolveGraphicsTier(preference));
+  }
+
+  /**
+   * Hit feedback from this frame's authoritative events: a flash and punch on
+   * the struck model, a floating number over it, and camera trauma when the
+   * local player deals or takes the blow. Presentation only — the numbers are
+   * the sim's, never estimated here.
+   */
+  private collectHitFeedback(
+    snapshot: WorldSnapshot,
+    events: readonly SimEvent[],
+    elapsedSeconds: number,
+  ): void {
+    for (const [entityId, hit] of this.hitFeedback) {
+      if (elapsedSeconds - hit.at > 0.4) {
+        this.hitFeedback.delete(entityId);
+      }
+    }
+    if (events.length === 0) {
+      return;
+    }
+    this.combatTextSeen.clear();
+    const local = this.localEntityId;
+    const localPlayer =
+      local === null
+        ? null
+        : (snapshot.players.find((player) => player.entityId === local) ?? null);
+    const anchorOf = (entityId: EntityId): { x: number; y: number; z: number } | null => {
+      const player = snapshot.players.find((candidate) => candidate.entityId === entityId);
+      if (player) {
+        return {
+          x: worldMeters(player.position.x),
+          y: this.footingMeters(player.position.x, player.position.z) + 3.4,
+          z: worldMeters(player.position.z),
+        };
+      }
+      const monster = snapshot.monsters.find((candidate) => candidate.entityId === entityId);
+      if (monster) {
+        return {
+          x: worldMeters(monster.position.x),
+          y:
+            this.footingMeters(monster.position.x, monster.position.z) +
+            Math.max(2.4, worldMeters(monster.collisionRadiusMm) * 2.8),
+          z: worldMeters(monster.position.z),
+        };
+      }
+      const summon = snapshot.summons.find((candidate) => candidate.entityId === entityId);
+      if (summon) {
+        return {
+          x: worldMeters(summon.position.x),
+          y: this.footingMeters(summon.position.x, summon.position.z) + 2,
+          z: worldMeters(summon.position.z),
+        };
+      }
+      return null;
+    };
+    const show = (
+      kind: 'damage' | 'critical' | 'heal' | 'shield' | 'local-damage',
+      amount: number,
+      entityId: EntityId,
+      key: string,
+    ): void => {
+      if (amount <= 0 || !this.combatText || this.combatTextSeen.has(key)) {
+        return;
+      }
+      const anchor = anchorOf(entityId);
+      if (!anchor) {
+        return;
+      }
+      if (
+        localPlayer &&
+        Math.hypot(
+          anchor.x - worldMeters(localPlayer.position.x),
+          anchor.z - worldMeters(localPlayer.position.z),
+        ) > 55
+      ) {
+        return;
+      }
+      this.combatTextSeen.add(key);
+      this.combatText.push(
+        { kind, text: `${kind === 'heal' ? '+' : ''}${formatCombatNumber(amount)}`, ...anchor },
+        elapsedSeconds,
+      );
+    };
+    const addTrauma = (amount: number): void => {
+      this.shakeTrauma = Math.min(1, this.shakeTrauma + amount);
+    };
+    for (const event of events) {
+      switch (event.type) {
+        case 'damage': {
+          if (event.hpDamage + event.shieldDamage <= 0) {
+            break;
+          }
+          const key = `${event.tick}:${event.targetEntityId}`;
+          const isLocalTarget = event.targetEntityId === local;
+          this.hitFeedback.set(event.targetEntityId, {
+            at: elapsedSeconds,
+            strength: event.isCritical ? 1.5 : 1,
+          });
+          show(
+            isLocalTarget ? 'local-damage' : event.isCritical ? 'critical' : 'damage',
+            event.hpDamage,
+            event.targetEntityId,
+            `${key}:hp`,
+          );
+          show('shield', event.shieldDamage, event.targetEntityId, `${key}:shield`);
+          if (isLocalTarget) {
+            addTrauma(event.isCritical ? 0.42 : 0.26);
+          } else if (event.sourceEntityId === local) {
+            addTrauma(event.isCritical ? 0.22 : 0.09);
+          }
+          break;
+        }
+        case 'monster-damaged': {
+          if (event.amount <= 0) {
+            break;
+          }
+          this.hitFeedback.set(event.targetEntityId, { at: elapsedSeconds, strength: 1 });
+          show(
+            'damage',
+            event.amount,
+            event.targetEntityId,
+            `${event.tick}:${event.targetEntityId}:hp`,
+          );
+          if (event.sourceEntityId === local) {
+            addTrauma(0.08);
+          }
+          break;
+        }
+        case 'active-world-damaged': {
+          if (event.amount <= 0) {
+            break;
+          }
+          this.hitFeedback.set(event.targetEntityId, { at: elapsedSeconds, strength: 1.2 });
+          show(
+            'damage',
+            event.amount,
+            event.targetEntityId,
+            `${event.tick}:${event.targetEntityId}:hp`,
+          );
+          if (event.sourceEntityId === local) {
+            addTrauma(0.12);
+          }
+          break;
+        }
+        case 'active-heal':
+          show(
+            'heal',
+            event.amount,
+            event.targetEntityId,
+            `${event.tick}:${event.targetEntityId}:heal`,
+          );
+          break;
+        default:
+          break;
+      }
+    }
+  }
+
+  /** 1 at the instant of a hit, fading to 0 over 160 ms; scaled by crit strength. */
+  private hitFlashStrength(entityId: EntityId, elapsedSeconds: number): number {
+    const hit = this.hitFeedback.get(entityId);
+    if (!hit) {
+      return 0;
+    }
+    const age = elapsedSeconds - hit.at;
+    return age > 0.16 ? 0 : Math.max(0, 1 - age / 0.16) * hit.strength;
+  }
+
+  /** Brief scale punch on the whole visual: the model, its bar and ring jump together. */
+  private applyHitPunch(group: THREE.Object3D, entityId: EntityId, elapsedSeconds: number): void {
+    const hit = this.hitFeedback.get(entityId);
+    const age = hit ? elapsedSeconds - hit.at : 1;
+    const punch = hit && age < 0.2 ? Math.sin((age / 0.2) * Math.PI) * 0.09 * hit.strength : 0;
+    group.scale.setScalar(1 + punch);
+  }
+
+  /**
+   * Trauma-driven camera shake: hits add trauma, trauma decays fast, and the
+   * offset is trauma squared so small hits nudge while a critical lands hard.
+   * Applied after lookAt as a pure translation, so the framing never re-aims.
+   */
+  private applyCameraShake(elapsedSeconds: number): void {
+    const dt = Math.max(0, Math.min(0.1, elapsedSeconds - this.previousShakeSeconds));
+    this.previousShakeSeconds = elapsedSeconds;
+    if (this.shakeTrauma <= 0) {
+      return;
+    }
+    this.shakeTrauma = Math.max(0, this.shakeTrauma - dt * 2.6);
+    if (this.reducedMotion) {
+      return;
+    }
+    const amount = this.shakeTrauma * this.shakeTrauma * 0.32;
+    if (amount < 0.001) {
+      return;
+    }
+    this.shakeOffset
+      .set(
+        Math.sin(elapsedSeconds * 61.3) * amount,
+        Math.cos(elapsedSeconds * 47.7) * amount * 0.6,
+        0,
+      )
+      .applyQuaternion(this.camera.quaternion);
+    this.camera.position.add(this.shakeOffset);
   }
 
   private footingMeters(xMm: number, zMm: number): number {
@@ -734,6 +1002,7 @@ export class ArenaRenderer {
   render(snapshot: WorldSnapshot, elapsedSeconds: number, events: readonly SimEvent[] = []): void {
     this.recordRenderFrame(elapsedSeconds);
     const animationTriggers = collectModelAnimationEventTriggers(events);
+    this.collectHitFeedback(snapshot, events, elapsedSeconds);
     if (this.environmentKind === 'none') {
       if (snapshot.mapGeometryHash !== null) {
         this.mapEnvironment = buildMapEnvironment(this.renderer, this.graphicsTier);
@@ -1015,6 +1284,7 @@ export class ArenaRenderer {
       this.camera.position.copy(this.cameraTarget).add(this.cameraOffset);
       this.keepCameraAboveMapSurface();
       this.camera.lookAt(this.cameraTarget);
+      this.applyCameraShake(elapsedSeconds);
       setWindCameraPosition(this.camera.position);
       this.mapAtmosphere?.update(
         this.cameraTarget.x,
@@ -1070,6 +1340,7 @@ export class ArenaRenderer {
     }
 
     tickWind(elapsedSeconds);
+    this.combatText?.update(this.camera, elapsedSeconds);
     this.renderer.render(this.scene, this.camera);
     this.maybeReduceGraphicsLoad(elapsedSeconds);
   }
@@ -1331,6 +1602,9 @@ export class ArenaRenderer {
         legacyGlobalSceneVegetationInstances: 0,
         autumnFlowerInstances: 0,
         autumnLeafLitterInstances: 0,
+        understoryInstances: 0,
+        visibleUnderstoryInstances: 0,
+        understoryStatus: 'disabled',
       }
     );
   }
@@ -1346,6 +1620,9 @@ export class ArenaRenderer {
         visibleLandmarkInstances: 0,
         rockInstances: 0,
         visibleRockInstances: 0,
+        structureInstances: 0,
+        visibleStructureInstances: 0,
+        structures: [],
         instancedBatches: 0,
         triangles: 0,
         drawCalls: 0,
@@ -1545,6 +1822,7 @@ export class ArenaRenderer {
     this.stormWall.geometry.dispose();
     this.stormWall.material.dispose();
     this.combatEffects.dispose();
+    this.combatText?.dispose();
     this.modelLibrary.dispose();
     this.renderer.dispose();
   }
@@ -2128,18 +2406,22 @@ export class ArenaRenderer {
                 ? 0x5d4210
                 : 0x000000,
     );
+    const playerHit = this.hitFlashStrength(player.entityId, elapsedSeconds);
     visual.model?.setEffects(
       isSoul ? 0.42 : 1,
-      player.iceCoffinTicks > 0
-        ? 0x216d82
-        : player.invulnerableTicks > 0
-          ? 0x155b67
-          : player.b20ReviveBuffTicks > 0
-            ? 0x1f5b32
-            : player.whirlwindTicks > 0
-              ? 0x6e2e0d
-              : 0x000000,
+      playerHit > 0
+        ? 0xffb489
+        : player.iceCoffinTicks > 0
+          ? 0x216d82
+          : player.invulnerableTicks > 0
+            ? 0x155b67
+            : player.b20ReviveBuffTicks > 0
+              ? 0x1f5b32
+              : player.whirlwindTicks > 0
+                ? 0x6e2e0d
+                : 0x000000,
     );
+    this.applyHitPunch(visual.group, player.entityId, elapsedSeconds);
     const moving = !isSoul && (player.intent.movement.x !== 0 || player.intent.movement.z !== 0);
     const attackIntentStarted = player.intent.attack && !visual.previousAttackIntent;
     const trigger =
@@ -2555,14 +2837,18 @@ export class ArenaRenderer {
           ? 0x3d2415
           : 0x000000,
     );
+    const monsterHit = this.hitFlashStrength(monster.entityId, elapsedSeconds);
     visual.model?.setEffects(
       1,
-      monster.invulnerableTicks > 0
-        ? 0x31536a
-        : monster.targetEntityId !== null
-          ? 0x3d2415
-          : 0x000000,
+      monsterHit > 0
+        ? 0xffb489
+        : monster.invulnerableTicks > 0
+          ? 0x31536a
+          : monster.targetEntityId !== null
+            ? 0x3d2415
+            : 0x000000,
     );
+    this.applyHitPunch(visual.group, monster.entityId, elapsedSeconds);
     const moved =
       Math.abs(monster.position.x - visual.previousPositionX) > 4 ||
       Math.abs(monster.position.z - visual.previousPositionZ) > 4;
@@ -2937,19 +3223,34 @@ export class ArenaRenderer {
   }
 
   private createProjectileVisual(projectile: ProjectileSnapshot): ProjectileVisual {
+    const color =
+      projectile.kind === 'cold-arrow' ? 0x9ce7ff : effectColorForElement(projectile.sourceElement);
     const material = new THREE.MeshBasicMaterial({
-      color:
-        projectile.kind === 'cold-arrow'
-          ? 0x9ce7ff
-          : effectColorForElement(projectile.sourceElement),
+      color,
       transparent: true,
-      opacity: 0.96,
+      opacity: 0.98,
       depthTest: true,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
+      toneMapped: false,
     });
     const radius = Math.max(0.12, worldMeters(projectile.collisionRadiusMm));
-    const mesh = new THREE.Mesh(new THREE.SphereGeometry(radius, 12, 8), material);
+    // Hot core, soft crossed glow cards, and a tapered tail behind the heading.
+    // Children ride on the head, so the frame loop's remove/dispose of the head
+    // still takes the whole bolt; their geometry and materials are shared.
+    const mesh = new THREE.Mesh(new THREE.SphereGeometry(radius * 0.72, 12, 8), material);
+    const glow = new THREE.Mesh(PROJECTILE_CARD_GEOMETRY, projectileGlowMaterial(color));
+    glow.scale.setScalar(radius * 7.5);
+    const glowCross = new THREE.Mesh(PROJECTILE_CARD_GEOMETRY, projectileGlowMaterial(color));
+    glowCross.scale.setScalar(radius * 7.5);
+    glowCross.rotation.y = Math.PI / 2;
+    const trail = new THREE.Mesh(PROJECTILE_TRAIL_GEOMETRY, projectileTrailMaterial(color));
+    trail.rotation.x = -Math.PI / 2;
+    trail.position.z = -0.6;
+    trail.scale.set(radius * 2.2, 1.6, radius * 2.2);
+    mesh.add(glow, glowCross, trail);
+    mesh.userData.previousX = worldMeters(projectile.position.x);
+    mesh.userData.previousZ = worldMeters(projectile.position.z);
     this.scene.add(mesh);
     const visual = { mesh, material };
     this.projectileVisuals.set(projectile.entityId, visual);
@@ -2967,11 +3268,21 @@ export class ArenaRenderer {
     if (!visible) {
       return;
     }
+    const x = worldMeters(projectile.position.x);
+    const z = worldMeters(projectile.position.z);
     visual.mesh.position.set(
-      worldMeters(projectile.position.x),
+      x,
       this.footingMeters(projectile.position.x, projectile.position.z) + 1.15,
-      worldMeters(projectile.position.z),
+      z,
     );
+    const previousX = Number(visual.mesh.userData.previousX ?? x);
+    const previousZ = Number(visual.mesh.userData.previousZ ?? z);
+    if (Math.hypot(x - previousX, z - previousZ) > 0.02) {
+      // Tail trails the heading the sim actually moved the bolt along.
+      visual.mesh.rotation.y = Math.atan2(x - previousX, z - previousZ);
+      visual.mesh.userData.previousX = x;
+      visual.mesh.userData.previousZ = z;
+    }
     const pulse = 0.92 + Math.sin(elapsedSeconds * 18 + Number(projectile.entityId)) * 0.08;
     visual.mesh.scale.setScalar(pulse);
   }

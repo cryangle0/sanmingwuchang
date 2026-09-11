@@ -32,9 +32,9 @@ const PARTIAL_CELL_MARGIN_METERS = 0.025;
  * the map edge filling the playfield.
  */
 const MAX_BASIN_CELLS = 260;
-const WATER_SHALLOW = new THREE.Color(0x2f9ca2);
-const WATER_DEEP = new THREE.Color(0x0d5974);
-const WATER_FOAM = new THREE.Color(0x86cfc2);
+const WATER_SHALLOW = new THREE.Color(0x38b0a8);
+const WATER_DEEP = new THREE.Color(0x0c4e68);
+const WATER_FOAM = new THREE.Color(0x9ad8cc);
 
 interface WaterSolve {
   readonly bounds: { minX: number; maxX: number; minZ: number; maxZ: number };

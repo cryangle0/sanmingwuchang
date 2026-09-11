@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { Logger, NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
 import {
+  compactPrimitive,
   dedup,
   inspect,
   meshopt,
@@ -24,6 +25,8 @@ import { repositoryRoot, selectedAnimatedCharacterConfigs } from './animated-cha
 const browserPath =
   process.env.JWGB_BROWSER_EXECUTABLE?.trim() ||
   [
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
     'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
     'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
   ].find((candidate) => existsSync(candidate));
@@ -84,6 +87,42 @@ function primitiveTriangles(primitive) {
   return Math.floor(elementCount / 3);
 }
 
+function simplifyPrimitiveToRatio(primitive, ratio, error) {
+  const positions = primitive.getAttribute('POSITION');
+  const srcIndices = primitive.getIndices();
+  if (!positions || !srcIndices) {
+    simplifyPrimitive(primitive, {
+      simplifier: MeshoptSimplifier,
+      ratio,
+      error,
+      lockBorder: false,
+    });
+    return;
+  }
+  let positionArray = positions.getArray();
+  let indicesArray = srcIndices.getArray();
+  if (!positionArray || !indicesArray) {
+    return;
+  }
+  if (!(positionArray instanceof Float32Array)) {
+    positionArray = new Float32Array(positionArray);
+  }
+  if (!(indicesArray instanceof Uint32Array)) {
+    indicesArray = new Uint32Array(indicesArray);
+  }
+  const targetCount = Math.max(3, Math.floor((ratio * indicesArray.length) / 3) * 3);
+  const [dstIndicesArray] = MeshoptSimplifier.simplify(
+    indicesArray,
+    positionArray,
+    3,
+    targetCount,
+    error,
+    ['Permissive'],
+  );
+  srcIndices.setArray(dstIndicesArray);
+  compactPrimitive(primitive);
+}
+
 function meshTriangles(mesh) {
   return mesh.listPrimitives().reduce((sum, primitive) => sum + primitiveTriangles(primitive), 0);
 }
@@ -106,21 +145,23 @@ function meshGroupTriangles(meshes) {
 
 function tightenMeshGroupToBudget(meshes, budget, error) {
   let currentTriangles = meshGroupTriangles(meshes);
-  for (let pass = 0; pass < 4 && currentTriangles > budget; pass += 1) {
-    const ratio = Math.max(0.01, Math.min(0.9, (budget / Math.max(currentTriangles, 1)) * 0.78));
+  let stalled = 0;
+  for (let pass = 0; pass < 12 && currentTriangles > budget; pass += 1) {
+    const ratio = Math.max(0.01, Math.min(0.85, (budget / Math.max(currentTriangles, 1)) * 0.7));
     for (const mesh of meshes) {
       for (const primitive of mesh.listPrimitives()) {
-        simplifyPrimitive(primitive, {
-          simplifier: MeshoptSimplifier,
-          ratio,
-          error: error * (1 + pass * 0.2),
-        });
+        simplifyPrimitiveToRatio(primitive, ratio, Math.min(1, error * (1 + pass * 0.45)));
       }
     }
     const nextTriangles = meshGroupTriangles(meshes);
     if (nextTriangles >= currentTriangles) {
-      break;
+      stalled += 1;
+      if (stalled >= 3) {
+        break;
+      }
+      continue;
     }
+    stalled = 0;
     currentTriangles = nextTriangles;
   }
   return currentTriangles;
@@ -159,11 +200,7 @@ async function optimizeGlb(inputPath, outputPath, config) {
       continue;
     }
     for (const primitive of mesh.listPrimitives()) {
-      simplifyPrimitive(primitive, {
-        simplifier: MeshoptSimplifier,
-        ratio,
-        error: meshIsSkinned(mesh) ? 0.045 : 0.035,
-      });
+      simplifyPrimitiveToRatio(primitive, ratio, meshIsSkinned(mesh) ? 1 : 0.035);
     }
   }
   tightenMeshGroupToBudget(meshes.filter(meshIsSkinned), config.bodyTriangleBudget, 0.045);

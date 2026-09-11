@@ -9,6 +9,7 @@ import {
   sampleRim,
 } from '../apps/web/src/render/map/boundary-river';
 import { ringContains } from '../apps/web/src/render/map/map-sampling';
+import { buildOcean } from '../apps/web/src/render/map/ocean';
 import { isInSpawnPond, spawnPonds } from '../apps/web/src/render/map/spawn-ponds';
 import { createFlowWaterMaterial } from '../apps/web/src/render/shading/flow-water';
 import { windTimeUniform } from '../apps/web/src/render/shading/wind';
@@ -29,10 +30,11 @@ describe('boundary river and waterfall', () => {
     }
   });
 
-  it('builds bank, river sheet and mist as animated flow water', () => {
+  it('builds grass bank, rock faces, river sheet and both mists', () => {
     const group = new THREE.Group();
     const materials = {
       boundaryCliffFace: new THREE.MeshStandardMaterial(),
+      riverBank: new THREE.MeshStandardMaterial(),
     } as unknown as Parameters<typeof buildBoundaryRiver>[1];
     const tracked: THREE.BufferGeometry[] = [];
     buildBoundaryRiver(group, materials, (geometry) => {
@@ -41,11 +43,16 @@ describe('boundary river and waterfall', () => {
     });
     const names = group.children.map((child) => child.name);
     expect(names).toEqual([
+      'boundary-river-bank-top',
       'boundary-river-bank',
       'boundary-river-cliff',
       'boundary-river',
       'boundary-river-mist',
+      'boundary-river-plunge-mist',
     ]);
+    const bankTop = group.getObjectByName('boundary-river-bank-top') as THREE.Mesh;
+    expect(bankTop.material).toBe(materials.riverBank);
+    expect(bankTop.geometry.getAttribute('color')).toBeDefined();
     const river = group.getObjectByName('boundary-river') as THREE.Mesh;
     expect(river.geometry.getAttribute('aFlow')).toBeDefined();
     expect(river.geometry.getAttribute('aKind')).toBeDefined();
@@ -62,6 +69,26 @@ describe('boundary river and waterfall', () => {
     expect(material.uniforms.uTime).toBe(windTimeUniform());
     expect(material.fragmentShader).toContain('uTime');
     material.dispose();
+  });
+});
+
+describe('sea beyond the falls', () => {
+  it('builds a swell sheet, wet apron, coastal rocks and far isles', () => {
+    const group = new THREE.Group();
+    const tracked: THREE.BufferGeometry[] = [];
+    const mesh = buildOcean(group, (geometry) => {
+      tracked.push(geometry);
+      return geometry;
+    });
+    expect(mesh?.name).toBe('beyond-ocean');
+    expect(group.getObjectByName('beyond-ocean-apron')).toBeDefined();
+    expect(group.getObjectByName('beyond-ocean-skerries')).toBeDefined();
+    expect(group.getObjectByName('beyond-horizon-isles')).toBeDefined();
+    const sea = mesh as THREE.Mesh;
+    expect(sea.geometry.getAttribute('aSea')).toBeDefined();
+    for (const geometry of tracked) {
+      geometry.dispose();
+    }
   });
 });
 

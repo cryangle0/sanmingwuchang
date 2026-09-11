@@ -3,7 +3,6 @@ import {
   MAP_COURTS,
   MAP_GEOMETRY_HASH,
   MAP_HIGHLANDS,
-  MAP_ROCKS,
   MAP_SPAWN_POINTS,
   type MapPointMm,
   terrainHeightMeters,
@@ -20,7 +19,11 @@ import {
 import { buildGroundGeometry } from './ground';
 import { buildInteriorRidges } from './interior-ridges';
 import { buildMapLandmarks } from './landmarks';
-import { buildMapAssetLayer, type MapAssetLayerDiagnostics } from './map-asset-layer';
+import {
+  buildMapAssetLayer,
+  configureMapBuildingClearings,
+  type MapAssetLayerDiagnostics,
+} from './map-asset-layer';
 import {
   MapOcclusionController,
   type MapOcclusionDiagnostics,
@@ -59,6 +62,9 @@ export function buildMapEnvironment(
   // per compiled map, and any geometry change repaints the world with it.
   const surfaceSeed = Number.parseInt(MAP_GEOMETRY_HASH.slice(0, 8), 16) >>> 0 || 1;
   const materials = createMapMaterials(surfaceSeed, graphicsTier);
+  // Vegetation must know the building footprints before it scatters, so the
+  // clearing discs are pinned to this build's seed once, up front.
+  configureMapBuildingClearings(surfaceSeed);
   const group = new THREE.Group();
   group.name = 'map-environment';
   const geometries: THREE.BufferGeometry[] = [];
@@ -136,12 +142,10 @@ export function buildMapEnvironment(
   });
   buildBoundaryRiver(beyond, materials, track);
   buildBeyond(beyond, materials, track, surfaceSeed);
-  const proceduralRockMarkers = props.getObjectByName('map-procedural-rock-markers');
   const importedAssetLayer = buildMapAssetLayer(importedAssets, {
     renderer,
     graphicsTier,
     seed: surfaceSeed,
-    ...(proceduralRockMarkers ? { fallbackRockGroup: proceduralRockMarkers } : {}),
   });
   const globalSceneLayer = buildGlobalSceneLayer(globalScenes, {
     // The previous three scene packs contained their own trees and foliage.
@@ -347,24 +351,6 @@ function buildProps(
     0.25,
   );
   group.add(chests);
-
-  const rockGeometry = track(new THREE.CylinderGeometry(1.08, 1.22, 0.26, 10));
-  const rocks = new THREE.InstancedMesh(rockGeometry, materials.rock, MAP_ROCKS.length);
-  rocks.name = 'map-procedural-rock-markers';
-  rocks.castShadow = true;
-  const rockMatrix = new THREE.Matrix4();
-  MAP_ROCKS.forEach((record, index) => {
-    const radius = record.radiusMm / MM;
-    rockMatrix.makeScale(radius, 1, radius);
-    rockMatrix.setPosition(
-      record.position.x / MM,
-      terrainHeightMeters(record.position.x / MM, record.position.z / MM) + 0.13,
-      record.position.z / MM,
-    );
-    rocks.setMatrixAt(index, rockMatrix);
-  });
-  rocks.instanceMatrix.needsUpdate = true;
-  group.add(rocks);
 }
 
 function placeInstances(

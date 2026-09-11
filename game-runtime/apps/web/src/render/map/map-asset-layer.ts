@@ -1,18 +1,27 @@
-import { MAP_HIGHLANDS, MAP_ROCKS, type MapPointMm, terrainHeightMeters } from '@jwgb/content';
+import {
+  MAP_CHESTS,
+  MAP_HIGHLANDS,
+  MAP_SPAWN_POINTS,
+  type MapPointMm,
+  terrainHeightMeters,
+} from '@jwgb/content';
 import * as THREE from 'three';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { appendAssetVersion, webAssetUrl } from '../../runtime/asset-url';
 import { normalizedAssetScale, WORLD_SCALE_PROFILE } from '../world-scale-profile';
 import { yawToward } from './dressing/prop-kit';
-import { regionAt } from './map-regions';
+import { type RegionId, regionAt } from './map-regions';
+import { createRandomStream, type ExclusionZone, sampleOpenGround } from './map-sampling';
 
 const MM = 1_000;
 const ASSET_DIR = 'models/map-assets/';
 const LANDMARK_CULL_DISTANCE = 210;
 const ROCK_CULL_DISTANCE = 165;
+const STRUCTURE_CULL_DISTANCE = 195;
 const LANDMARK_PREFETCH_DISTANCE = LANDMARK_CULL_DISTANCE + 34;
 const ROCK_PREFETCH_DISTANCE = ROCK_CULL_DISTANCE + 24;
+const STRUCTURE_PREFETCH_DISTANCE = STRUCTURE_CULL_DISTANCE + 30;
 const OCCLUSION_UPDATE_INTERVAL_FRAMES = 3;
 
 export type MapAssetGraphicsTier = 'balanced' | 'reduced';
@@ -20,7 +29,7 @@ export type MapAssetGraphicsTier = 'balanced' | 'reduced';
 export interface MapAssetCatalogEntry {
   readonly id: string;
   readonly fileName: string;
-  readonly kind: 'landmark' | 'rock';
+  readonly kind: 'landmark' | 'rock' | 'structure';
   readonly targetHeight: number;
   readonly source: string;
 }
@@ -106,6 +115,97 @@ export const MAP_ASSET_CATALOG: readonly MapAssetCatalogEntry[] = [
     kind: 'landmark',
     targetHeight: 1.8,
     source: 'free-assets-3d/_converted/stone-lion-fpan.glb',
+  },
+  {
+    id: 'tang-hall',
+    fileName: 'tang-hall.glb',
+    kind: 'structure',
+    targetHeight: 10.29,
+    source: 'procedural 唐宋建筑族 / 重檐大殿',
+  },
+  {
+    id: 'tang-pagoda',
+    fileName: 'tang-pagoda.glb',
+    kind: 'structure',
+    targetHeight: 20,
+    source: 'procedural 唐宋建筑族 / 八角宝塔',
+  },
+  {
+    id: 'tang-paifang',
+    fileName: 'tang-paifang.glb',
+    kind: 'structure',
+    targetHeight: 6.49,
+    source: 'procedural 唐宋建筑族 / 牌坊',
+  },
+  {
+    id: 'tang-gate-tower',
+    fileName: 'tang-gate-tower.glb',
+    kind: 'structure',
+    targetHeight: 11.64,
+    source: 'procedural 唐宋建筑族 / 城门楼',
+  },
+  {
+    id: 'tang-inn',
+    fileName: 'tang-inn.glb',
+    kind: 'structure',
+    targetHeight: 9.591,
+    source: 'procedural 唐宋建筑族 / 客栈',
+  },
+  {
+    id: 'tang-teahouse',
+    fileName: 'tang-teahouse.glb',
+    kind: 'structure',
+    targetHeight: 5.14,
+    source: 'procedural 唐宋建筑族 / 茶棚',
+  },
+  {
+    id: 'tang-shrine',
+    fileName: 'tang-shrine.glb',
+    kind: 'structure',
+    targetHeight: 4.09,
+    source: 'procedural 唐宋建筑族 / 土地庙',
+  },
+  {
+    id: 'tang-drum-tower',
+    fileName: 'tang-drum-tower.glb',
+    kind: 'structure',
+    targetHeight: 10.8,
+    source: 'procedural 唐宋建筑族 / 钟鼓楼',
+  },
+  {
+    id: 'tang-corridor',
+    fileName: 'tang-corridor.glb',
+    kind: 'structure',
+    targetHeight: 4.689,
+    source: 'procedural 唐宋建筑族 / 回廊',
+  },
+  {
+    id: 'tang-scripture-pillar',
+    fileName: 'tang-scripture-pillar.glb',
+    kind: 'structure',
+    targetHeight: 7.355,
+    source: 'procedural 唐宋建筑族 / 经幢',
+  },
+  {
+    id: 'tang-stele',
+    fileName: 'tang-stele.glb',
+    kind: 'structure',
+    targetHeight: 3.77,
+    source: 'procedural 唐宋建筑族 / 石碑',
+  },
+  {
+    id: 'tang-lantern-post',
+    fileName: 'tang-lantern-post.glb',
+    kind: 'structure',
+    targetHeight: 4.295,
+    source: 'procedural 唐宋建筑族 / 灯柱',
+  },
+  {
+    id: 'tang-well',
+    fileName: 'tang-well.glb',
+    kind: 'structure',
+    targetHeight: 3.99,
+    source: 'procedural 唐宋建筑族 / 井亭',
   },
   {
     id: 'free-pagoda-ruin',
@@ -285,12 +385,8 @@ export const MAP_ASSET_CATALOG: readonly MapAssetCatalogEntry[] = [
 ] as const;
 
 const CATALOG_BY_ID = new Map(MAP_ASSET_CATALOG.map((entry) => [entry.id, entry]));
-const ROCK_ASSET_IDS = MAP_ASSET_CATALOG.filter((entry) => entry.kind === 'rock').map(
-  (entry) => entry.id,
-);
 const REDUCED_LANDMARK_ASSET_IDS = [
   'lowpoly-asian-village',
-  'wuxia-gate-court',
   'free-pagoda-niko313',
   'free-pagoda-ruin',
 ] as const;
@@ -303,7 +399,16 @@ const REDUCED_ROCK_ASSET_IDS = [
   'stylized-rock-04',
   'stylized-rock-07',
 ] as const;
+/** The reduced tier keeps only the silhouette-defining buildings per district. */
+const REDUCED_STRUCTURE_ASSET_IDS = [
+  'tang-hall',
+  'tang-pagoda',
+  'tang-gate-tower',
+  'tang-inn',
+  'tang-shrine',
+] as const;
 const REDUCED_LANDMARK_ASSET_SET = new Set<string>(REDUCED_LANDMARK_ASSET_IDS);
+const REDUCED_STRUCTURE_ASSET_SET = new Set<string>(REDUCED_STRUCTURE_ASSET_IDS);
 const CITADEL_ITEM_SOURCE_GROUND_Y = 4.475;
 const CITADEL_PLATEAU_TARGET_Y = -0.45;
 
@@ -340,7 +445,7 @@ const CITADEL_GROUND_SITES: readonly CitadelGroundSite[] = [
 export interface MapAssetPlacement {
   readonly id: string;
   readonly assetId: string;
-  readonly kind: 'landmark' | 'rock';
+  readonly kind: 'landmark' | 'rock' | 'structure';
   readonly x: number;
   readonly y: number;
   readonly z: number;
@@ -359,9 +464,23 @@ export interface MapAssetLayerDiagnostics {
   readonly visibleLandmarkInstances: number;
   readonly rockInstances: number;
   readonly visibleRockInstances: number;
+  readonly structureInstances: number;
+  readonly visibleStructureInstances: number;
+  /** Nearest structures to the last visibility reference, capped for size. */
+  readonly structures: readonly MapAssetStructureDiagnostics[];
   readonly instancedBatches: number;
   readonly triangles: number;
   readonly drawCalls: number;
+  readonly visible: boolean;
+}
+
+export interface MapAssetStructureDiagnostics {
+  readonly id: string;
+  readonly assetId: string;
+  readonly position: readonly [number, number, number];
+  readonly worldHeight: number;
+  readonly scale: number;
+  readonly distance: number;
   readonly visible: boolean;
 }
 
@@ -460,32 +579,196 @@ function landmarkPlacement(
   yaw: number,
   lift = 0.08,
 ): MapAssetPlacement {
+  return assetPlacement(id, assetId, point, worldHeight, yaw, 'landmark', lift);
+}
+
+function assetPlacement(
+  id: string,
+  assetId: string,
+  point: { readonly x: number; readonly z: number },
+  worldHeight: number,
+  yaw: number,
+  kind: 'landmark' | 'structure',
+  lift: number,
+  scaleMultiplier = 1,
+): MapAssetPlacement {
   const targetHeight = catalogEntry(assetId).targetHeight;
   return {
     id,
     assetId,
-    kind: 'landmark',
+    kind,
     x: point.x,
     y: terrainHeightMeters(point.x, point.z) + lift,
     z: point.z,
     yaw,
     worldHeight,
-    scale: normalizedAssetScale(targetHeight, worldHeight),
-    maxDistance: LANDMARK_CULL_DISTANCE,
+    scale: normalizedAssetScale(targetHeight, worldHeight) * scaleMultiplier,
+    maxDistance: kind === 'structure' ? STRUCTURE_CULL_DISTANCE : LANDMARK_CULL_DISTANCE,
   };
 }
 
 /**
- * Places imported scenery on authored highland/edge anchors instead of
- * walkable combat lanes. The plan is render-only and never enters collision.
+ * Themed building mix per district. Every list is ordered so that the scatter
+ * cycles through the whole family before repeating, which keeps a district from
+ * filling up with one silhouette.
+ */
+const DISTRICT_BUILDING_MIX: Readonly<Record<RegionId, readonly string[]>> = {
+  duanjin: ['tang-inn', 'tang-teahouse', 'tang-paifang', 'tang-lantern-post', 'tang-stele'],
+  zhusi: ['tang-shrine', 'tang-stele', 'tang-scripture-pillar', 'tang-lantern-post', 'tang-well'],
+  longji: ['tang-scripture-pillar', 'tang-pagoda', 'tang-drum-tower', 'tang-stele', 'tang-well'],
+  baizu: [
+    'tang-hall',
+    'tang-gate-tower',
+    'tang-pagoda',
+    'tang-drum-tower',
+    'tang-corridor',
+    'tang-lantern-post',
+  ],
+  jinshui: ['tang-inn', 'tang-teahouse', 'tang-paifang', 'tang-lantern-post', 'tang-well'],
+  mihun: ['tang-shrine', 'tang-teahouse', 'tang-well', 'tang-stele', 'tang-scripture-pillar'],
+  santing: ['tang-hall', 'tang-pagoda', 'tang-paifang', 'tang-drum-tower', 'tang-corridor'],
+};
+
+/** Buildings placed per district, tuned against the instanced draw budget. */
+const DISTRICT_BUILDING_TARGETS: Readonly<Record<RegionId, number>> = {
+  duanjin: 12,
+  zhusi: 10,
+  longji: 10,
+  baizu: 14,
+  jinshui: 12,
+  mihun: 10,
+  santing: 6,
+};
+
+const BUILDING_SPACING_METERS = 26;
+/** Imported landmarks are authored scenic anchors; keep buildings off them. */
+const BUILDING_LANDMARK_CLEAR_METERS = 30;
+/** Radius the vegetation layers keep clear around each building site, mm. */
+const BUILDING_CLEARING_MM = 13_000;
+/**
+ * Clearances are measured from the site anchor, so they must cover the largest
+ * footprint (a 14 m gate tower at up to +8% scale) plus room to walk past it.
+ */
+const BUILDING_ROAD_VERGE_MM = 9_000;
+const BUILDING_CHEST_CLEAR_MM = 9_000;
+const BUILDING_SPAWN_CLEAR_MM = 15_000;
+
+function buildingSites(
+  seed: number,
+  landmarkSites: readonly { readonly x: number; readonly z: number }[],
+): readonly {
+  readonly region: RegionId;
+  readonly x: number;
+  readonly z: number;
+  readonly yaw: number;
+}[] {
+  const nextRandom = createRandomStream(seed ^ 0x5bf03635);
+  const sampled = sampleOpenGround(2_400, 26_000, nextRandom, {
+    roadVergeMm: BUILDING_ROAD_VERGE_MM,
+  });
+  const buckets = new Map<RegionId, { x: number; z: number; yaw: number }[]>();
+  for (const point of sampled) {
+    const xMeters = point.x / MM;
+    const zMeters = point.z / MM;
+    if (nearBuildingBlocker(point.x, point.z)) {
+      continue;
+    }
+    if (
+      landmarkSites.some(
+        (landmark) =>
+          Math.hypot(landmark.x - xMeters, landmark.z - zMeters) < BUILDING_LANDMARK_CLEAR_METERS,
+      )
+    ) {
+      continue;
+    }
+    const region = regionAt(xMeters, zMeters);
+    const bucket = buckets.get(region.id) ?? [];
+    if (bucket.length >= DISTRICT_BUILDING_TARGETS[region.id]) {
+      continue;
+    }
+    const spaced = bucket.every((site) => {
+      const dx = site.x - xMeters;
+      const dz = site.z - zMeters;
+      return dx * dx + dz * dz >= BUILDING_SPACING_METERS * BUILDING_SPACING_METERS;
+    });
+    if (!spaced) {
+      continue;
+    }
+    bucket.push({ x: xMeters, z: zMeters, yaw: nextRandom() * Math.PI * 2 });
+    buckets.set(region.id, bucket);
+  }
+  return [...buckets.entries()].flatMap(([region, sites]) =>
+    sites.map((site) => ({ region, ...site })),
+  );
+}
+
+function nearBuildingBlocker(xMm: number, zMm: number): boolean {
+  for (const chest of MAP_CHESTS) {
+    const dx = chest.position.x - xMm;
+    const dz = chest.position.z - zMm;
+    if (dx * dx + dz * dz < BUILDING_CHEST_CLEAR_MM * BUILDING_CHEST_CLEAR_MM) {
+      return true;
+    }
+  }
+  for (const spawn of MAP_SPAWN_POINTS) {
+    const dx = spawn.position.x - xMm;
+    const dz = spawn.position.z - zMm;
+    if (dx * dx + dz * dz < BUILDING_SPAWN_CLEAR_MM * BUILDING_SPAWN_CLEAR_MM) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Clearings the vegetation layers must keep free so every building stands in
+ * the open instead of under the canopy. Pure and seed-stable, so the flora,
+ * grass and understory passes agree with the placement plan without sharing
+ * mutable state.
+ */
+export function configureMapBuildingClearings(seed: number): readonly ExclusionZone[] {
+  if (buildingClearingsCache?.seed !== seed) {
+    const landmarks = importedLandmarkPlacements();
+    buildingClearingsCache = {
+      seed,
+      zones: buildingSites(seed, landmarks).map((site) => ({
+        x: Math.round(site.x * MM),
+        z: Math.round(site.z * MM),
+        radiusMm: BUILDING_CLEARING_MM,
+      })),
+    };
+  }
+  return buildingClearingsCache.zones;
+}
+
+/**
+ * Clearings for the map build that is currently being assembled. The map
+ * environment configures the seed once; every vegetation pass then reads the
+ * same discs, so no sampler can plant a tree inside a hall.
+ */
+export function mapBuildingClearanceZones(): readonly ExclusionZone[] {
+  return buildingClearingsCache?.zones ?? configureMapBuildingClearings(1);
+}
+
+let buildingClearingsCache: { seed: number; zones: readonly ExclusionZone[] } | null = null;
+
+/**
+ * Places imported scenery on authored highland/edge anchors plus the
+ * procedural building family in every district, instead of walkable combat
+ * lanes. The plan is render-only and never enters collision.
  */
 export function createMapAssetPlacementPlan(seed = 1): readonly MapAssetPlacement[] {
-  const highlandEast = averagePoint(MAP_HIGHLANDS[0]?.vertices ?? []);
+  return [...importedLandmarkPlacements(), ...buildingPlacements(seed)];
+}
+
+/** The authored imported landmarks, before the procedural buildings. */
+export function importedLandmarkPlacements(): readonly MapAssetPlacement[] {
   const highlandCentral = averagePoint(MAP_HIGHLANDS[1]?.vertices ?? []);
   const highlandNorth = averagePoint(MAP_HIGHLANDS[2]?.vertices ?? []);
-  // Keep the large compounds on authored plateaus, but bring one gate into
-  // the western approach so the first viewport has an architectural anchor.
-  const eastHighlandSite = { x: highlandEast.x - 5, z: highlandEast.z - 4 };
+  // The converted wuxia citadel and gate court are not placed. Their source
+  // scenes authored buildings and props on separate terrain steps; after that
+  // terrain was stripped, the surviving nodes read as shattered, floating
+  // compounds when viewed from the eastern and western map rims.
   const centralHallSite = { x: -70, z: -56 };
   const northHighlandSite = { x: highlandNorth.x + 4, z: highlandNorth.z - 5 };
   const westVillageSite = { x: -342, z: -68 };
@@ -497,13 +780,6 @@ export function createMapAssetPlacementPlan(seed = 1): readonly MapAssetPlacemen
   const freeStoneCartSite = { x: westVillageSite.x + 22, z: westVillageSite.z + 13 };
 
   const landmarks: MapAssetPlacement[] = [
-    landmarkPlacement(
-      'imported-landmark-east-highland',
-      'wuxia-citadel',
-      eastHighlandSite,
-      WORLD_SCALE_PROFILE.map.landmarkWorldHeights['wuxia-citadel'],
-      yawToward(eastHighlandSite.x, eastHighlandSite.z, highlandEast.x, highlandEast.z) + 0.12,
-    ),
     landmarkPlacement(
       'imported-landmark-central-hall',
       'wuxia-east-asia-hall',
@@ -525,13 +801,6 @@ export function createMapAssetPlacementPlan(seed = 1): readonly MapAssetPlacemen
       westVillageSite,
       WORLD_SCALE_PROFILE.map.landmarkWorldHeights['lowpoly-asian-village'],
       yawToward(westVillageSite.x, westVillageSite.z, -330.7, -82) + 0.12,
-    ),
-    landmarkPlacement(
-      'imported-landmark-west-gate',
-      'wuxia-gate-court',
-      westGateSite,
-      WORLD_SCALE_PROFILE.map.landmarkWorldHeights['wuxia-gate-court'],
-      yawToward(westGateSite.x, westGateSite.z, 0, 0),
     ),
     landmarkPlacement(
       'imported-landmark-west-house',
@@ -590,42 +859,50 @@ export function createMapAssetPlacementPlan(seed = 1): readonly MapAssetPlacemen
     ),
   ];
 
-  const rocks = MAP_ROCKS.map((record): MapAssetPlacement => {
-    const x = record.position.x / MM;
-    const z = record.position.z / MM;
-    const assetId = ROCK_ASSET_IDS[
-      Math.floor(hashAt(record.position.x, record.position.z, 17, seed) * ROCK_ASSET_IDS.length)
-    ] as string;
-    return {
-      id: `imported-rock-${record.id}`,
-      assetId,
-      kind: 'rock',
-      x,
-      y: terrainHeightMeters(x, z) + 0.04,
-      z,
-      yaw: hashAt(record.position.x, record.position.z, 19, seed) * Math.PI * 2,
-      worldHeight: Math.min(
-        WORLD_SCALE_PROFILE.map.rockMaxWorldHeight,
-        Math.max(
-          WORLD_SCALE_PROFILE.map.rockMinWorldHeight,
-          WORLD_SCALE_PROFILE.map.rockBaseWorldHeight +
-            (record.radiusMm / MM - 2) * 0.22 +
-            hashAt(record.position.x, record.position.z, 23, seed) *
-              WORLD_SCALE_PROFILE.map.rockVariationWorldHeight,
-        ),
+  // Imported MAP_ROCKS were visibly faceted, pale low-poly placeholders in
+  // the forest. Keep their catalog entries for asset provenance, but do not
+  // place either the imported meshes or their procedural fallback markers.
+  return landmarks;
+}
+
+/**
+ * Scatters the 唐宋 building family across every district so the maze reads as
+ * an inhabited city instead of an empty arena. Sites come from the shared open
+ * ground sampler, so buildings never block a road, chest or spawn pad.
+ */
+function buildingPlacements(seed: number): readonly MapAssetPlacement[] {
+  const placements: MapAssetPlacement[] = [];
+  const usedPerAsset = new Map<string, number>();
+  const sites = buildingSites(seed, importedLandmarkPlacements());
+  const perRegionCount = new Map<RegionId, number>();
+  for (const site of sites) {
+    const mix = DISTRICT_BUILDING_MIX[site.region];
+    const index = perRegionCount.get(site.region) ?? 0;
+    perRegionCount.set(site.region, index + 1);
+    const assetId = mix[index % mix.length] as string;
+    const height = WORLD_SCALE_PROFILE.map.structureWorldHeights[assetId];
+    if (!height) {
+      throw new Error(`map assets: no structure world height for ${assetId}`);
+    }
+    const ordinal = (usedPerAsset.get(assetId) ?? 0) + 1;
+    usedPerAsset.set(assetId, ordinal);
+    // A small deterministic scale spread keeps rows of the same building from
+    // reading as exact clones.
+    const scaleMultiplier = 0.92 + ((ordinal * 37) % 17) / 100;
+    placements.push(
+      assetPlacement(
+        `building-${site.region}-${assetId}-${ordinal}`,
+        assetId,
+        site,
+        height,
+        site.yaw,
+        'structure',
+        0.04,
+        scaleMultiplier,
       ),
-      scale: 1,
-      maxDistance: ROCK_CULL_DISTANCE,
-    };
-  });
-  const normalizedRocks = rocks.map((placement) => ({
-    ...placement,
-    scale: normalizedAssetScale(
-      catalogEntry(placement.assetId).targetHeight,
-      placement.worldHeight,
-    ),
-  }));
-  return [...landmarks, ...normalizedRocks];
+    );
+  }
+  return placements;
 }
 
 function assetUrl(assetId: string): string {
@@ -851,6 +1128,22 @@ function colorForRock(placement: MapAssetPlacement): THREE.Color {
   return tempColour.clone();
 }
 
+function makeStructureMatrix(placement: MapAssetPlacement): THREE.Matrix4 {
+  // Buildings stay upright: only a tiny deterministic yaw jitter so repeated
+  // models do not line up, never a tilt that would lift a corner off the ground.
+  tempEuler.set(0, placement.yaw + (hashAt(placement.x, placement.z, 61, 1) - 0.5) * 0.14, 0);
+  tempQuaternion.setFromEuler(tempEuler);
+  tempScale.setScalar(placement.scale);
+  tempPosition.set(placement.x, placement.y, placement.z);
+  tempMatrix.compose(tempPosition, tempQuaternion, tempScale);
+  return tempMatrix.clone();
+}
+
+/** Buildings carry their colour in the mesh, so instance tint stays neutral. */
+function colorForStructure(): THREE.Color {
+  return tempColour.setRGB(1, 1, 1).clone();
+}
+
 function makeRockMatrix(placement: MapAssetPlacement): THREE.Matrix4 {
   tempEuler.set(
     (hashAt(placement.x, placement.z, 47, 1) - 0.5) * 0.12,
@@ -870,12 +1163,18 @@ function placementsForTier(
 ): {
   readonly landmarks: readonly MapAssetPlacement[];
   readonly rocks: readonly MapAssetPlacement[];
+  readonly structures: readonly MapAssetPlacement[];
 } {
   const landmarks = placements.filter(
     (placement) =>
       placement.kind === 'landmark' &&
       (tier === 'balanced' || REDUCED_LANDMARK_ASSET_SET.has(placement.assetId)),
   );
+  const structures = placements
+    .filter((placement) => placement.kind === 'structure')
+    .filter(
+      (placement) => tier === 'balanced' || REDUCED_STRUCTURE_ASSET_SET.has(placement.assetId),
+    );
   const rockPlacements = placements
     .filter((placement) => placement.kind === 'rock')
     .filter((_, index) => tier === 'balanced' || index % 2 === 0);
@@ -895,7 +1194,7 @@ function placementsForTier(
             scale: normalizedAssetScale(catalogEntry(assetId).targetHeight, placement.worldHeight),
           };
         });
-  return { landmarks, rocks };
+  return { landmarks, rocks, structures };
 }
 
 function createLoader(): GLTFLoader {
@@ -918,9 +1217,11 @@ export function buildMapAssetLayer(
   group.visible = false;
   const landmarkGroup = new THREE.Group();
   landmarkGroup.name = 'map-imported-landmarks';
+  const structureGroup = new THREE.Group();
+  structureGroup.name = 'map-imported-buildings';
   const rockGroup = new THREE.Group();
   rockGroup.name = 'map-imported-rocks';
-  group.add(landmarkGroup, rockGroup);
+  group.add(landmarkGroup, structureGroup, rockGroup);
   parent.add(group);
 
   let tier = options.graphicsTier;
@@ -929,7 +1230,9 @@ export function buildMapAssetLayer(
   let frameCounter = OCCLUSION_UPDATE_INTERVAL_FRAMES - 1;
   let visibleLandmarkInstances = 0;
   let visibleRockInstances = 0;
+  let visibleStructureInstances = 0;
   let batches: RockBatch[] = [];
+  let structureBatches: RockBatch[] = [];
   let landmarkRuntimes: LandmarkRuntime[] = [];
   const templates = new Map<string, AssetTemplate>();
   const failedAssets: string[] = [];
@@ -1049,6 +1352,54 @@ export function buildMapAssetLayer(
         });
       }
     }
+
+    // The 唐宋 building family reuses the rock instancing path: one
+    // InstancedMesh per (asset, part) keeps the whole family inside a handful
+    // of draw calls while individual buildings are culled in the same loop.
+    const byStructureAsset = new Map<string, MapAssetPlacement[]>();
+    for (const placement of selected.structures) {
+      const list = byStructureAsset.get(placement.assetId);
+      if (list) {
+        list.push(placement);
+      } else {
+        byStructureAsset.set(placement.assetId, [placement]);
+      }
+    }
+    for (const [assetId, list] of byStructureAsset) {
+      const template = templates.get(assetId);
+      if (!template) {
+        continue;
+      }
+      for (const [partIndex, part] of template.parts.entries()) {
+        const mesh = new THREE.InstancedMesh(part.geometry, part.material, list.length);
+        mesh.name = `map-imported-building-${assetId}-${partIndex}`;
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        mesh.frustumCulled = true;
+        const matrices = list.map((placement) => makeStructureMatrix(placement));
+        const colours = list.map(() => colorForStructure());
+        for (const [index, matrix] of matrices.entries()) {
+          mesh.setMatrixAt(index, matrix);
+          mesh.setColorAt(index, colours[index] as THREE.Color);
+        }
+        mesh.count = 0;
+        mesh.visible = false;
+        mesh.instanceMatrix.needsUpdate = true;
+        if (mesh.instanceColor) {
+          mesh.instanceColor.needsUpdate = true;
+        }
+        structureGroup.add(mesh);
+        structureBatches.push({
+          mesh,
+          geometry: part.geometry,
+          material: part.material,
+          trianglesPerInstance: part.triangles,
+          placements: list,
+          matrices,
+          colours,
+        });
+      }
+    }
     const hasRocks = batches.length > 0;
     group.visible = landmarkRuntimes.length > 0 || hasRocks;
     const reference = visibilityReference ?? new THREE.Vector3();
@@ -1093,14 +1444,20 @@ export function buildMapAssetLayer(
 
   const placementsForRequest = (reference: THREE.Vector3): readonly MapAssetPlacement[] => {
     const selected = placementsForTier(placements, tier);
-    return [...selected.landmarks, ...selected.rocks].filter((placement) => {
-      const dx = placement.x - reference.x;
-      const dz = placement.z - reference.z;
-      const distanceSquared = dx * dx + dz * dz;
-      const prefetchDistance =
-        placement.kind === 'landmark' ? LANDMARK_PREFETCH_DISTANCE : ROCK_PREFETCH_DISTANCE;
-      return distanceSquared <= prefetchDistance * prefetchDistance;
-    });
+    return [...selected.landmarks, ...selected.rocks, ...selected.structures].filter(
+      (placement) => {
+        const dx = placement.x - reference.x;
+        const dz = placement.z - reference.z;
+        const distanceSquared = dx * dx + dz * dz;
+        const prefetchDistance =
+          placement.kind === 'landmark'
+            ? LANDMARK_PREFETCH_DISTANCE
+            : placement.kind === 'structure'
+              ? STRUCTURE_PREFETCH_DISTANCE
+              : ROCK_PREFETCH_DISTANCE;
+        return distanceSquared <= prefetchDistance * prefetchDistance;
+      },
+    );
   };
 
   const loadForFocus = (reference: THREE.Vector3): Promise<void> => {
@@ -1198,7 +1555,10 @@ export function buildMapAssetLayer(
       }
     }
     const visibleRockPlacementIds = new Set<string>();
-    for (const batch of batches) {
+    const visibleStructurePlacementIds = new Set<string>();
+    for (const batch of [...batches, ...structureBatches]) {
+      const isStructure = structureBatches.includes(batch);
+      const visibleIds = isStructure ? visibleStructurePlacementIds : visibleRockPlacementIds;
       const visibleIndices: number[] = [];
       for (const [index, placement] of batch.placements.entries()) {
         const dx = placement.x - reference.x;
@@ -1207,7 +1567,7 @@ export function buildMapAssetLayer(
           group.visible && dx * dx + dz * dz <= placement.maxDistance * placement.maxDistance;
         if (visible) {
           visibleIndices.push(index);
-          visibleRockPlacementIds.add(placement.id);
+          visibleIds.add(placement.id);
         }
       }
       for (const [slot, sourceIndex] of visibleIndices.entries()) {
@@ -1231,7 +1591,9 @@ export function buildMapAssetLayer(
       }
     }
     visibleRockInstances = visibleRockPlacementIds.size;
+    visibleStructureInstances = visibleStructurePlacementIds.size;
     landmarkGroup.visible = visibleLandmarkInstances > 0;
+    structureGroup.visible = visibleStructureInstances > 0;
     rockGroup.visible = visibleRockInstances > 0;
     updateFallbackRocks(reference);
   }
@@ -1256,7 +1618,9 @@ export function buildMapAssetLayer(
       }
     },
     diagnostics(): MapAssetLayerDiagnostics {
-      const visibleBatches = batches.filter((batch) => batch.mesh.visible && batch.mesh.count > 0);
+      const visibleBatches = [...batches, ...structureBatches].filter(
+        (batch) => batch.mesh.visible && batch.mesh.count > 0,
+      );
       const visibleLandmarks = landmarkRuntimes.filter((runtime) => runtime.group.visible);
       const triangles =
         visibleBatches.reduce(
@@ -1314,7 +1678,36 @@ export function buildMapAssetLayer(
         visibleLandmarkInstances,
         rockInstances: new Set(batches.flatMap((batch) => batch.placements.map((p) => p.id))).size,
         visibleRockInstances,
-        instancedBatches: batches.length,
+        structureInstances: new Set(
+          structureBatches.flatMap((batch) => batch.placements.map((p) => p.id)),
+        ).size,
+        visibleStructureInstances,
+        structures: [
+          ...new Map(
+            structureBatches
+              .flatMap((batch) => batch.placements)
+              .map((placement) => [placement.id, placement] as const),
+          ).values(),
+        ]
+          .map((placement) => ({
+            id: placement.id,
+            assetId: placement.assetId,
+            position: [placement.x, placement.y, placement.z] as const,
+            worldHeight: placement.worldHeight,
+            scale: placement.scale,
+            distance: Math.hypot(
+              placement.x - (visibilityReference?.x ?? 0),
+              placement.z - (visibilityReference?.z ?? 0),
+            ),
+            visible:
+              Math.hypot(
+                placement.x - (visibilityReference?.x ?? 0),
+                placement.z - (visibilityReference?.z ?? 0),
+              ) <= placement.maxDistance,
+          }))
+          .sort((first, second) => first.distance - second.distance)
+          .slice(0, 12),
+        instancedBatches: batches.length + structureBatches.length,
         triangles,
         drawCalls,
         visible: group.visible,
@@ -1331,7 +1724,9 @@ export function buildMapAssetLayer(
         runtime.group.removeFromParent();
       }
       disposeRockBatches(batches);
+      disposeRockBatches(structureBatches);
       batches = [];
+      structureBatches = [];
       for (const template of templates.values()) {
         disposeTemplate(template);
       }

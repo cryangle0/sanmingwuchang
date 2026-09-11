@@ -223,21 +223,31 @@ four-action FBX exports for:
 
 - `H002` 红孩儿（火娃模型）
 - `H004` 蝎子精
+- `H005` 多目怪
 - `H006` 九头虫
 - `H007` 黄风怪
 - `H008` 太上老君
 - `H010` 二郎神
 - `H011` 哪吒
 - `H012` 六耳猕猴
+- `H013` 大鹏雕
 - `H014` 白骨精
 - `H015` 猪八戒
 - `H016` 白龙马（小白龙模型）
+- `H017` 青狮精
 - `H018` 牛魔王
 - `H019` 独角兕大王
 - `H023` 黄袍怪
+- `H024` 虎力大仙
+- `H025` 鹿力大仙
+- `H029` 如来
 - `H031` 托塔李天王
+- `H032` 唐僧
 - `H033` 沙和尚
 - `H034` 黑熊精
+- `H035` 白象精
+- `H036` 灵感大王
+- `H037` 羊力大仙
 - `H038` 赛太岁
 
 Each delivery contains `Idle`, `Move`, `Attack`, and `Spell` source files. The
@@ -252,26 +262,37 @@ The optimized derivatives are delivered as:
 
 - `models/characters/H002/model.glb`
 - `models/characters/H004/model.glb`
+- `models/characters/H005/model.glb`
 - `models/characters/H006/model.glb`
 - `models/characters/H007/model.glb`
 - `models/characters/H008/model.glb`
 - `models/characters/H010/model.glb`
 - `models/characters/H011/model.glb`
 - `models/characters/H012/model.glb`
+- `models/characters/H013/model.glb`
 - `models/characters/H014/model.glb`
 - `models/characters/H015/model.glb`
 - `models/characters/H016/model.glb`
+- `models/characters/H017/model.glb`
 - `models/characters/H018/model.glb`
 - `models/characters/H019/model.glb`
 - `models/characters/H023/model.glb`
+- `models/characters/H024/model.glb`
+- `models/characters/H025/model.glb`
+- `models/characters/H029/model.glb`
 - `models/characters/H031/model.glb`
+- `models/characters/H032/model.glb`
 - `models/characters/H033/model.glb`
 - `models/characters/H034/model.glb`
+- `models/characters/H035/model.glb`
+- `models/characters/H036/model.glb`
+- `models/characters/H037/model.glb`
 - `models/characters/H038/model.glb`
 
 The original FBX files remain outside the Web bundle. Runtime presentation
-normalizes each model to its catalog height: 2.4 metres for H006 and H007,
-and 2.2 metres for the other delivered animated heroes in this section.
+normalizes each model to its catalog height: 2.5 metres for H013, 2.4 metres
+for H006 and H007, and 2.2 metres for the other delivered animated heroes in
+this section.
 
 The 2026-08-30 delivery adds the following source-specific files and validated
 skeletal layouts:
@@ -285,6 +306,34 @@ skeletal layouts:
 Each of these three deliveries contains four exported clips named
 `Idle`, `Move`, `Attack`, and `Spell`. H006 is fully skinned; H007 retains
 its separate Cloud and Weapon meshes; H015 retains its separate Weapon mesh.
+
+The 2026-09-07 delivery adds five fully skinned 41-bone packs. The unnamed
+`FBX交付包.zip` is Tang Seng. Each archive contains the standard four files
+`01_待机_idle.fbx`, `02_跑步_run.fbx`, `03_攻击_attack.fbx`, and
+`04_施法_cast.fbx`. Geometry is fully skinned; there is no separate weapon
+mesh.
+
+| Model | Source animation directory | Move source file | Bones | Web output |
+| --- | --- | --- | ---: | --- |
+| H024 虎力大仙 | `素材/虎力大仙_FBX` | `02_跑步_run.fbx` | 41 | `models/characters/H024/model.glb` |
+| H025 鹿力大仙 | `素材/鹿力大仙_FBX` | `02_跑步_run.fbx` | 41 | `models/characters/H025/model.glb` |
+| H032 唐僧 | `素材/唐僧_FBX` | `02_跑步_run.fbx` | 41 | `models/characters/H032/model.glb` |
+| H036 灵感大王 | `素材/灵感大王_FBX` | `02_跑步_run.fbx` | 41 | `models/characters/H036/model.glb` |
+| H037 羊力大仙 | `素材/羊力大仙_FBX` | `02_跑步_run.fbx` | 41 | `models/characters/H037/model.glb` |
+
+The 2026-09-08 delivery adds five more animation packs. 大鹏雕 uses
+`02_移动_move.fbx` instead of a run file. 如来 is a high-density source
+(~890k triangles, 126 skinned meshes) simplified to the 40k ceiling with
+permissive Meshopt collapse. 青狮精 and 白象精 FBX files embed extra takes;
+conversion selects the named `QingShi_*` / `BaiXiang_*` clips.
+
+| Model | Source animation directory | Move source file | Bones | Web output |
+| --- | --- | --- | ---: | --- |
+| H005 多目怪 | `素材/多目怪_FBX` | `02_跑步_run.fbx` | 33 | `models/characters/H005/model.glb` |
+| H013 大鹏雕 | `素材/大鹏雕_FBX` | `02_移动_move.fbx` | 8 | `models/characters/H013/model.glb` |
+| H017 青狮精 | `素材/青狮精_FBX` | `02_跑步_run.fbx` | 41 | `models/characters/H017/model.glb` |
+| H029 如来 | `素材/如来_FBX` | `02_跑步_run.fbx` | 41 | `models/characters/H029/model.glb` |
+| H035 白象精 | `素材/白象精_FBX` | `02_跑步_run.fbx` | 41 | `models/characters/H035/model.glb` |
 
 ## Shop NPC Models
 

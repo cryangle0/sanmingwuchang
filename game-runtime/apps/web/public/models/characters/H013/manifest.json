@@ -1,0 +1,311 @@
+{
+  "schema": "jwgb.animated-character-model.v1",
+  "generatedAt": "2026-09-08T02:20:01.817Z",
+  "modelId": "H013",
+  "displayName": "大鹏雕",
+  "deliveryPath": "models/characters/H013/model.glb",
+  "targetHeight": 2.5,
+  "sources": [
+    {
+      "name": "Idle",
+      "selectedClip": "Armature|DaPeng_Idle",
+      "fileName": "01_待机_idle.fbx",
+      "bytes": 7295180,
+      "sha256": "BC48D1CADA101478467441138E960BEF9C2EBB7D927B8022AA2911AFC916039D"
+    },
+    {
+      "name": "Move",
+      "selectedClip": "Armature|DaPeng_Move",
+      "fileName": "02_移动_move.fbx",
+      "bytes": 7295180,
+      "sha256": "E86993009C98EAF35C3DF05CA05AD70245D7CE3900F8737B736B0B8F8B45D31D"
+    },
+    {
+      "name": "Attack",
+      "selectedClip": "Armature|DaPeng_Attack",
+      "fileName": "03_攻击_attack.fbx",
+      "bytes": 7294748,
+      "sha256": "C455B180B4054B71B0A93B55D50A6E2FA4CBAB8BB12AB9986870F842C395C941"
+    },
+    {
+      "name": "Spell",
+      "selectedClip": "Armature|DaPeng_Cast",
+      "fileName": "04_施法_cast.fbx",
+      "bytes": 7296060,
+      "sha256": "0DD86E8BF97B6A705774BC1F1A3C4213ADA875849855FE49179CC25CE025CC2F"
+    }
+  ],
+  "conversion": {
+    "clipPatterns": {
+      "Idle": null,
+      "Move": null,
+      "Attack": null,
+      "Spell": null
+    },
+    "sourceFileNames": {
+      "Idle": "01_待机_idle.fbx",
+      "Move": "02_移动_move.fbx",
+      "Attack": "03_攻击_attack.fbx",
+      "Spell": "04_施法_cast.fbx"
+    },
+    "requiresSeparateWeapon": false,
+    "allowAnimationBoneSetDifferences": false,
+    "sourceMetrics": [
+      {
+        "name": "Idle",
+        "selectedClip": "Armature|DaPeng_Idle",
+        "availableClips": [
+          "Armature|DaPeng_Idle"
+        ],
+        "meshes": 1,
+        "skinnedMeshes": 1,
+        "staticMeshes": 0,
+        "vertices": 360078,
+        "triangles": 120026,
+        "bones": [
+          "Body",
+          "Root",
+          "Wing_L_0",
+          "Wing_L_1",
+          "Wing_L_2",
+          "Wing_R_0",
+          "Wing_R_1",
+          "Wing_R_2"
+        ],
+        "meshRecords": [
+          {
+            "name": "Body",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 360078,
+            "triangles": 120026
+          }
+        ],
+        "duration": 0.5,
+        "tracks": 18,
+        "keyframes": 102,
+        "retargetedPositionTracks": 9,
+        "maximumRestPositionCorrection": 0,
+        "droppedTracks": 0,
+        "droppedTrackNames": []
+      },
+      {
+        "name": "Move",
+        "selectedClip": "Armature|DaPeng_Move",
+        "availableClips": [
+          "Armature|DaPeng_Move"
+        ],
+        "meshes": 1,
+        "skinnedMeshes": 1,
+        "staticMeshes": 0,
+        "vertices": 360078,
+        "triangles": 120026,
+        "bones": [
+          "Body",
+          "Root",
+          "Wing_L_0",
+          "Wing_L_1",
+          "Wing_L_2",
+          "Wing_R_0",
+          "Wing_R_1",
+          "Wing_R_2"
+        ],
+        "meshRecords": [
+          {
+            "name": "Body",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 360078,
+            "triangles": 120026
+          }
+        ],
+        "duration": 0.5,
+        "tracks": 18,
+        "keyframes": 102,
+        "retargetedPositionTracks": 9,
+        "maximumRestPositionCorrection": 3.8467236757278442,
+        "droppedTracks": 0,
+        "droppedTrackNames": []
+      },
+      {
+        "name": "Attack",
+        "selectedClip": "Armature|DaPeng_Attack",
+        "availableClips": [
+          "Armature|DaPeng_Attack"
+        ],
+        "meshes": 1,
+        "skinnedMeshes": 1,
+        "staticMeshes": 0,
+        "vertices": 360078,
+        "triangles": 120026,
+        "bones": [
+          "Body",
+          "Root",
+          "Wing_L_0",
+          "Wing_L_1",
+          "Wing_L_2",
+          "Wing_R_0",
+          "Wing_R_1",
+          "Wing_R_2"
+        ],
+        "meshRecords": [
+          {
+            "name": "Body",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 360078,
+            "triangles": 120026
+          }
+        ],
+        "duration": 0.4583333432674408,
+        "tracks": 18,
+        "keyframes": 95,
+        "retargetedPositionTracks": 9,
+        "maximumRestPositionCorrection": 54.939696953383184,
+        "droppedTracks": 0,
+        "droppedTrackNames": []
+      },
+      {
+        "name": "Spell",
+        "selectedClip": "Armature|DaPeng_Cast",
+        "availableClips": [
+          "Armature|DaPeng_Cast"
+        ],
+        "meshes": 1,
+        "skinnedMeshes": 1,
+        "staticMeshes": 0,
+        "vertices": 360078,
+        "triangles": 120026,
+        "bones": [
+          "Body",
+          "Root",
+          "Wing_L_0",
+          "Wing_L_1",
+          "Wing_L_2",
+          "Wing_R_0",
+          "Wing_R_1",
+          "Wing_R_2"
+        ],
+        "meshRecords": [
+          {
+            "name": "Body",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 360078,
+            "triangles": 120026
+          }
+        ],
+        "duration": 0.6666666865348816,
+        "tracks": 18,
+        "keyframes": 101,
+        "retargetedPositionTracks": 9,
+        "maximumRestPositionCorrection": 4.281124877968052,
+        "droppedTracks": 0,
+        "droppedTrackNames": []
+      }
+    ],
+    "retainedMesh": {
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "staticMeshes": 0,
+      "vertices": 360078,
+      "triangles": 120026,
+      "bones": [
+        "Body",
+        "Root",
+        "Wing_L_0",
+        "Wing_L_1",
+        "Wing_L_2",
+        "Wing_R_0",
+        "Wing_R_1",
+        "Wing_R_2"
+      ],
+      "meshRecords": [
+        {
+          "name": "H013-Body-01",
+          "parentName": "H013-大鹏雕-Animated",
+          "skinned": true,
+          "vertices": 360078,
+          "triangles": 120026
+        }
+      ]
+    },
+    "exportedClips": [
+      {
+        "name": "Idle",
+        "duration": 0.5,
+        "tracks": 18,
+        "keyframes": 102
+      },
+      {
+        "name": "Move",
+        "duration": 0.5,
+        "tracks": 18,
+        "keyframes": 102
+      },
+      {
+        "name": "Attack",
+        "duration": 0.4583333432674408,
+        "tracks": 18,
+        "keyframes": 95
+      },
+      {
+        "name": "Spell",
+        "duration": 0.6666666865348816,
+        "tracks": 18,
+        "keyframes": 101
+      }
+    ],
+    "bodyTriangleBudget": 28000,
+    "weaponTriangleBudget": 10000,
+    "bodySimplifyRatio": 0.23328278872910868,
+    "weaponSimplifyRatio": 1
+  },
+  "optimized": {
+    "bytes": 638668,
+    "vertices": 40128,
+    "triangles": 27996,
+    "meshes": 1,
+    "materials": 1,
+    "textures": 1,
+    "bodyTriangles": 27996,
+    "weaponTriangles": 0,
+    "animations": [
+      {
+        "name": "Idle",
+        "channels": 18,
+        "samplers": 18
+      },
+      {
+        "name": "Move",
+        "channels": 18,
+        "samplers": 18
+      },
+      {
+        "name": "Attack",
+        "channels": 18,
+        "samplers": 18
+      },
+      {
+        "name": "Spell",
+        "channels": 18,
+        "samplers": 18
+      }
+    ],
+    "skins": [
+      {
+        "name": "",
+        "joints": 8
+      }
+    ],
+    "meshRecords": [
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 27996
+      }
+    ]
+  },
+  "errors": [],
+  "status": "passed"
+}

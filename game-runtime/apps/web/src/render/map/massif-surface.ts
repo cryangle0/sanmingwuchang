@@ -44,9 +44,9 @@ const MAX_PEAK_METERS = 14;
 /** Fraction of the peak height a saddle between two summits drops to. */
 const SADDLE_DEPTH = 0.26;
 /** Facet size along a footprint edge. */
-const SLOPE_SEGMENT_METERS = 6;
+const SLOPE_SEGMENT_METERS = 4.5;
 /** Facet rows between foot and crest. */
-const SLOPE_STEPS = 5;
+const SLOPE_STEPS = 7;
 /** Spatial hash cell for facet lookup, in metres. */
 const INDEX_CELL_METERS = 4;
 
@@ -247,8 +247,8 @@ function slopePoint(
   const y = footY + (crest.y - footY) * climb;
   const taper = Math.sin(Math.PI * up);
   const rough =
-    (noise(x * 0.11, z * 0.11) - 0.5) * ridge.reliefMeters * 0.3 +
-    (noise(x * 0.31, z * 0.31) - 0.5) * ridge.reliefMeters * 0.12;
+    (noise(x * 0.11, z * 0.11) - 0.5) * ridge.reliefMeters * 0.32 +
+    (noise(x * 0.31, z * 0.31) - 0.5) * ridge.reliefMeters * 0.14;
   return { x, y: y + rough * taper, z, footY };
 }
 

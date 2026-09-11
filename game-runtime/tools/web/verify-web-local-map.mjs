@@ -313,8 +313,8 @@ await page.waitForFunction(
     return Boolean(
       assets?.status === 'ready' &&
         assets.failedAssets.length === 0 &&
-        assets.rockInstances > 0 &&
         assets.instancedBatches > 0 &&
+        assets.landmarkInstances + assets.structureInstances > 0 &&
         assets.visible === true,
     );
   },
@@ -1414,7 +1414,7 @@ const result = {
       REQUIRED_GRASSWORKS_ASSETS.every((asset) =>
         mobileRuntime.flora.loadedAssets.includes(asset),
       ) &&
-       mobileRuntime.flora.maxGrassDistanceMeters === 108 &&
+      mobileRuntime.flora.maxGrassDistanceMeters === 108 &&
       mobileRuntime.flora.legacyFloraInstances === 0 &&
       mobileRuntime.flora.legacyScatterInstances === 0 &&
       mobileRuntime.flora.legacyGlobalSceneVegetationInstances === 0 &&

@@ -19,7 +19,7 @@ function expectMatrixClose(actual: THREE.Matrix4, expected: THREE.Matrix4): void
 }
 
 describe('web flora occlusion', () => {
-  it('shows a translucent copy of only the blocking tree and restores its source', () => {
+  it('fades only a blocking crown while keeping its trunk opaque', () => {
     const parent = new THREE.Group();
     const trunkGeometry = new THREE.BoxGeometry(0.5, 4, 0.5);
     trunkGeometry.translate(0, 2, 0);
@@ -79,24 +79,18 @@ describe('web flora occlusion', () => {
     expect(blocked.activeTreeIds).toEqual(['near']);
     expect(blocked.treeOpacity).toBeGreaterThan(0);
     expect(blocked.treeOpacity).toBeLessThan(1);
-    expect(new THREE.Vector3().setFromMatrixScale(matrixAt(trunks, 0)).length()).toBe(0);
+    expectMatrixClose(matrixAt(trunks, 0), nearTrunkOriginal);
     expect(new THREE.Vector3().setFromMatrixScale(matrixAt(canopies, 0)).length()).toBe(0);
     expectMatrixClose(matrixAt(trunks, 1), farTrunkOriginal);
     expectMatrixClose(matrixAt(canopies, 1), farCanopyOriginal);
 
     const trunkGhost = parent.getObjectByName('flora-occlusion-ghost-near-trunk');
     const canopyGhost = parent.getObjectByName('flora-occlusion-ghost-near-canopy');
-    expect(trunkGhost).toBeInstanceOf(THREE.Mesh);
+    expect(trunkGhost).toBeUndefined();
     expect(canopyGhost).toBeInstanceOf(THREE.Mesh);
-    expect(trunkGhost?.visible).toBe(true);
     expect(canopyGhost?.visible).toBe(true);
-    const trunkGhostMesh = trunkGhost as THREE.InstancedMesh;
     const canopyGhostMesh = canopyGhost as THREE.InstancedMesh;
-    const trunkGhostMaterial = trunkGhostMesh.material as THREE.MeshStandardMaterial;
     const canopyGhostMaterial = canopyGhostMesh.material as THREE.MeshStandardMaterial;
-    expect(trunkGhostMaterial.transparent).toBe(true);
-    expect(trunkGhostMaterial.depthWrite).toBe(false);
-    expect(trunkGhostMaterial.opacity).toBeGreaterThan(0);
     expect(canopyGhostMaterial.opacity).toBeGreaterThan(0);
     expect(canopyGhostMaterial.alphaTest).toBeCloseTo(
       canopyMaterial.alphaTest * canopyGhostMaterial.opacity,
@@ -120,7 +114,6 @@ describe('web flora occlusion', () => {
     expect(clear.fadingTreeCount).toBe(0);
     expectMatrixClose(matrixAt(trunks, 0), nearTrunkOriginal);
     expectMatrixClose(matrixAt(canopies, 0), nearCanopyOriginal);
-    expect(trunkGhost?.visible).toBe(false);
     expect(canopyGhost?.visible).toBe(false);
 
     controller.dispose();

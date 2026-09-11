@@ -4836,10 +4836,10 @@ kbd {
 }
 
 .match-plaque {
-  top: 22%;
-  width: 350px;
-  min-height: 430px;
-  padding: 50px 32px 32px;
+  top: 18%;
+  width: 360px;
+  min-height: 0;
+  padding: 36px 28px 24px;
 }
 
 .lobby-nav {
@@ -5279,6 +5279,10 @@ kbd {
   .lobby-hero-stage {
     left: 4%;
     width: 56%;
+  }
+
+  .lobby-status-chip {
+    display: none;
   }
 
   .match-plaque {
@@ -5724,4 +5728,354 @@ kbd {
 .lobby-tools .flow-icon-button:focus-visible {
   border-color: #e8c66f;
   background: rgb(16 72 65 / 94%);
+}
+
+/* ==========================================================================
+   Combat text: floating damage / heal numbers projected over the canvas
+   ========================================================================== */
+.combat-text-layer {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.combat-text {
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: #fff6e2;
+  font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  font-size: 24px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.03em;
+  line-height: 1;
+  text-shadow:
+    0 0 8px rgb(0 0 0 / 92%),
+    0 2px 0 rgb(38 18 6 / 95%),
+    -1px 0 0 rgb(38 18 6 / 85%),
+    1px 0 0 rgb(38 18 6 / 85%);
+  white-space: nowrap;
+  will-change: transform, opacity;
+}
+
+.combat-text.is-critical {
+  color: #ffe066;
+  font-size: 36px;
+  text-shadow:
+    0 0 16px rgb(255 150 40 / 80%),
+    0 3px 0 rgb(72 30 4 / 95%),
+    -1px 0 0 rgb(72 30 4 / 85%),
+    1px 0 0 rgb(72 30 4 / 85%);
+}
+
+.combat-text.is-local-damage {
+  color: #ff7464;
+  font-size: 28px;
+}
+
+.combat-text.is-heal {
+  color: #8ef0a4;
+}
+
+.combat-text.is-shield {
+  color: #8fd8ff;
+  font-size: 18px;
+}
+
+/* ==========================================================================
+   Lobby: hierarchy, keyboard entry, and phone layouts
+   ========================================================================== */
+.lobby-hero-caption {
+  position: absolute;
+  bottom: 6%;
+  left: 50%;
+  display: grid;
+  gap: 3px;
+  padding: 8px 18px;
+  border: 1px solid rgb(223 204 151 / 26%);
+  border-radius: 4px;
+  background: rgb(6 34 33 / 62%);
+  backdrop-filter: blur(6px);
+  color: #f3e7c6;
+  text-align: center;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+.lobby-hero-caption b {
+  font-size: 16px;
+  letter-spacing: 0.1em;
+}
+
+.lobby-hero-caption small {
+  color: #cdb27b;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+}
+
+.match-steps {
+  display: grid;
+  gap: 7px;
+  margin: 14px 0 0;
+  padding: 12px 0 0;
+  border-top: 1px solid rgb(223 204 151 / 16%);
+  list-style: none;
+}
+
+.match-steps li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #dccfae;
+  font-size: 12px;
+}
+
+.match-steps i {
+  display: inline-grid;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border: 1px solid rgb(232 201 117 / 60%);
+  border-radius: 50%;
+  color: #e8c975;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 850;
+  place-items: center;
+}
+
+.start-hint {
+  display: block;
+  margin-top: 10px;
+  color: #a99772;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-align: center;
+}
+
+@media (pointer: coarse) {
+  .start-hint {
+    display: none;
+  }
+}
+
+/* The one action the screen exists for breathes; hover takes over the glow. */
+.start-match-button:not(:disabled) {
+  animation: start-pulse 2.6s ease-in-out infinite;
+}
+
+.start-match-button:hover,
+.start-match-button:focus-visible {
+  animation-play-state: paused;
+}
+
+@keyframes start-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 12px 28px rgb(92 59 9 / 40%),
+      inset 0 1px 0 rgb(255 251 231 / 88%),
+      inset 0 -2px 0 rgb(122 79 20 / 42%),
+      0 0 0 0 rgb(232 201 117 / 0%);
+  }
+
+  50% {
+    box-shadow:
+      0 14px 32px rgb(92 59 9 / 48%),
+      inset 0 1px 0 rgb(255 251 231 / 88%),
+      inset 0 -2px 0 rgb(122 79 20 / 42%),
+      0 0 0 9px rgb(232 201 117 / 14%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .start-match-button:not(:disabled) {
+    animation: none;
+  }
+}
+
+/* Phones held upright: hero art up top, the plaque as a bottom sheet, one
+   line per element. The shared rule set stacked the plaque as a 38vw column
+   down the left edge, which wrapped the title into two lines and the start
+   button into four. */
+@media (max-width: 620px) and (orientation: portrait) {
+  .lobby-hero-stage {
+    top: 8%;
+    right: 0;
+    bottom: auto;
+    left: 0;
+    width: 100%;
+    height: 40%;
+  }
+
+  .lobby-hero-stage img {
+    width: min(330px, 74%);
+    max-height: 100%;
+  }
+
+  .lobby-hero-caption {
+    bottom: 0;
+    padding: 6px 12px;
+  }
+
+  .match-plaque {
+    top: auto;
+    right: 12px;
+    bottom: calc(max(10px, env(safe-area-inset-bottom)) + 86px);
+    left: 12px;
+    width: auto;
+    min-height: 0;
+    padding: 14px 16px 12px;
+  }
+
+  .match-plaque .flow-eyebrow {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .match-plaque h1 {
+    margin-top: 2px;
+    font-size: 34px;
+    white-space: nowrap;
+  }
+
+  .plaque-divider {
+    margin: 8px 0;
+  }
+
+  .match-mode-copy {
+    font-size: 12px;
+  }
+
+  .start-match-button {
+    min-height: 54px;
+    margin-top: 10px;
+  }
+
+  .start-match-button > span:last-child {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    white-space: nowrap;
+  }
+
+  .start-match-button b {
+    font-size: 20px;
+  }
+
+  .match-tags {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin-top: 8px;
+    scrollbar-width: none;
+  }
+
+  .match-tags span {
+    white-space: nowrap;
+  }
+
+  .match-steps {
+    display: none;
+  }
+
+  .plaque-seal {
+    font-size: 88px;
+  }
+
+  .lobby-nav {
+    right: 12px;
+    bottom: max(8px, env(safe-area-inset-bottom));
+    left: 12px;
+    width: auto;
+    height: 74px;
+    padding: 5px;
+    transform: none;
+  }
+
+  .reconnect-card {
+    top: calc(max(8px, env(safe-area-inset-top)) + 62px);
+    right: 12px;
+    bottom: auto;
+    left: 12px;
+    width: auto;
+    transform: none;
+  }
+}
+
+/* Phones held sideways: 390 px tall. The plaque loses its tags and steps, the
+   nav moves under the hero art so the two never overlap. */
+@media (max-height: 620px) and (orientation: landscape) {
+  .lobby-hero-stage {
+    top: 12%;
+    bottom: 20%;
+    left: 2%;
+    width: 50%;
+  }
+
+  .lobby-hero-caption {
+    bottom: 2%;
+    padding: 5px 10px;
+  }
+
+  .lobby-hero-caption b {
+    font-size: 13px;
+  }
+
+  .match-plaque {
+    top: 13%;
+    right: max(3%, env(safe-area-inset-right));
+    width: 40vw;
+    min-height: 0;
+    padding: 12px 14px 10px;
+  }
+
+  .match-plaque h1 {
+    margin-top: 2px;
+    font-size: 26px;
+  }
+
+  .match-mode-copy {
+    font-size: 10px;
+  }
+
+  .start-match-button {
+    min-height: 46px;
+    margin-top: 8px;
+  }
+
+  .start-match-button b {
+    font-size: 16px;
+  }
+
+  .match-tags,
+  .match-steps,
+  .start-hint {
+    display: none;
+  }
+
+  .plaque-seal {
+    font-size: 64px;
+  }
+
+  .lobby-nav {
+    right: auto;
+    bottom: max(6px, env(safe-area-inset-bottom));
+    left: max(3%, env(safe-area-inset-left));
+    width: 48vw;
+    height: 56px;
+    padding: 4px;
+    transform: none;
+  }
+
+  .reconnect-card {
+    right: auto;
+    bottom: max(66px, calc(env(safe-area-inset-bottom) + 62px));
+    left: max(3%, env(safe-area-inset-left));
+    width: 48vw;
+    transform: none;
+  }
 }

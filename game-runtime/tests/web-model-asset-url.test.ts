@@ -4,14 +4,14 @@ import { heroModelDefinition } from '../apps/web/src/render/models/web-model-cat
 
 describe('web character model asset URLs', () => {
   it('keeps legacy FBX assets on the configured model CDN', () => {
-    const definition = heroModelDefinition('H017');
+    const definition = heroModelDefinition('H001');
     expect(definition).not.toBeNull();
     if (!definition) {
       return;
     }
 
     expect(characterModelAssetUrl(definition, 'https://models.example.test/v1/')).toBe(
-      'https://models.example.test/v1/heroes/H017/model.fbx',
+      'https://models.example.test/v1/heroes/H001/model.fbx',
     );
   });
 
@@ -20,6 +20,7 @@ describe('web character model asset URLs', () => {
     for (const id of [
       'H002',
       'H004',
+      'H005',
       'H006',
       'H007',
       'H008',
@@ -27,15 +28,24 @@ describe('web character model asset URLs', () => {
       'H010',
       'H011',
       'H012',
+      'H013',
       'H014',
       'H015',
       'H016',
+      'H017',
       'H018',
       'H019',
       'H023',
+      'H024',
+      'H025',
+      'H029',
       'H031',
+      'H032',
       'H033',
       'H034',
+      'H035',
+      'H036',
+      'H037',
       'H038',
     ]) {
       const definition = heroModelDefinition(id);

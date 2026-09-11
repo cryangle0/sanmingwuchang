@@ -15,6 +15,7 @@ import {
   type FloraTreeOccluderTarget,
   floraTreeOccluderTarget,
 } from './flora-occlusion';
+import { mapBuildingClearanceZones } from './map-asset-layer';
 import type { MapMaterialLibrary } from './map-palette';
 import { regionAt } from './map-regions';
 import {
@@ -88,7 +89,9 @@ export function buildFlora(
   group.add(proceduralTrees);
   const treeBuild = buildTrees(proceduralTrees, materials, track, treePoints, nextRandom);
 
+  const buildingClearings = mapBuildingClearanceZones();
   const bambooAnchors = sampleOpenGround(280, 7_000, nextRandom, {
+    exclusionZones: mapBuildingClearanceZones(),
     roadVergeMm: 2_400,
   }).filter((point) => {
     const regionId = regionAt(point.x / MM, point.z / MM).id;
@@ -219,6 +222,7 @@ function sampleClusteredOpenGround(
   minDistanceMeters = 0,
 ): MapPointMm[] {
   const anchors = sampleOpenGround(anchorCount, anchorCount * 18, nextRandom, {
+    exclusionZones: mapBuildingClearanceZones(),
     roadVergeMm: anchorRoadVergeMm,
   });
   return expandClusteredPoints(
@@ -248,7 +252,7 @@ function expandClusteredPoints(
   const points: MapPointMm[] = [];
   const minDistanceSquaredMm = (minDistanceMeters * MM) ** 2;
   const canPlace = (candidate: MapPointMm): boolean =>
-    isOpenGround(candidate, { roadVergeMm }) &&
+    isOpenGround(candidate, { roadVergeMm, exclusionZones: mapBuildingClearanceZones() }) &&
     (minDistanceSquaredMm <= 0 ||
       points.every((point) => {
         const dx = candidate.x - point.x;
@@ -338,7 +342,10 @@ function sampleModelDressing(nextRandom: () => number): readonly FloraModelDress
     return choice < 0.18 ? 'burdock' : choice < 0.6 ? 'bush' : choice < 0.92 ? 'fern' : 'mushroom';
   };
   const canPlace = (point: MapPointMm, roadVergeMm: number, minDistance: number): boolean => {
-    if (placements.length >= MODEL_DRESSING_MAX || !isOpenGround(point, { roadVergeMm })) {
+    if (
+      placements.length >= MODEL_DRESSING_MAX ||
+      !isOpenGround(point, { roadVergeMm, exclusionZones: mapBuildingClearanceZones() })
+    ) {
       return false;
     }
     const x = point.x / MM;
@@ -401,11 +408,17 @@ function sampleModelDressing(nextRandom: () => number): readonly FloraModelDress
 
   // Keep the open combat lanes readable, then reserve the remaining budget
   // for the wall-foot and landmark perimeter bands below.
-  for (const point of sampleOpenGround(150, 7_000, nextRandom, { roadVergeMm: 950 })) {
+  for (const point of sampleOpenGround(150, 7_000, nextRandom, {
+    roadVergeMm: 950,
+    exclusionZones: mapBuildingClearanceZones(),
+  })) {
     tryAddPlacement(point, false, 950, 3.2);
   }
   let regionalAdded = 0;
-  for (const point of sampleOpenGround(1_200, 18_000, nextRandom, { roadVergeMm: 700 })) {
+  for (const point of sampleOpenGround(1_200, 18_000, nextRandom, {
+    roadVergeMm: 700,
+    exclusionZones: mapBuildingClearanceZones(),
+  })) {
     const regionId = regionAt(point.x / MM, point.z / MM).id;
     if (
       (regionId === 'longji' || regionId === 'baizu' || regionId === 'jinshui') &&

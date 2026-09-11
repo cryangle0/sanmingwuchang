@@ -36,6 +36,10 @@ import {
 import { renderMetaScreen } from './meta-screens';
 
 type AuthoritativeHeroRecord = (typeof AUTHORITATIVE_HEROES)[number];
+
+function lobbyHeroName(id: string): string {
+  return AUTHORITATIVE_HEROES.find((hero) => hero.id === id)?.name ?? id;
+}
 /** Seats in an authoritative room; the lobby reports the shortfall, not a guess. */
 const MATCH_ROOM_CAPACITY = 30;
 
@@ -171,6 +175,7 @@ export class GameShell {
       passive: true,
     });
     window.addEventListener('keydown', this.handleAudioUnlock, true);
+    window.addEventListener('keydown', this.handleFlowKeydown);
     window.__JWGB_FLOW__ = {
       getState: () => this.state,
       getRuntimeCreationCount: () => this.runtimeCreationCount,
@@ -196,6 +201,7 @@ export class GameShell {
     cancelAnimationFrame(this.animationFrame);
     window.removeEventListener('pointerdown', this.handleAudioUnlock, true);
     window.removeEventListener('keydown', this.handleAudioUnlock, true);
+    window.removeEventListener('keydown', this.handleFlowKeydown);
     this.disposeMatchmaking();
     this.destroyGameRuntime();
     this.disposeFlowServices();
@@ -332,6 +338,9 @@ export class GameShell {
           <button class="lobby-identity" type="button" aria-label="查看个人档案" title="个人档案">
             <img src="${heroPortraitUrl('H009')}" alt="" />
             <span><b>无常客${escapeHtml(identityTag)}</b><small>${escapeHtml(identityLine)}</small></span>
+            <i class="lobby-status-chip ${this.matchmakingPlayerId ? 'is-online' : 'is-offline'}">${
+              this.matchmakingPlayerId ? '在线' : '练习'
+            }</i>
           </button>
           <div class="lobby-tools">
             <button class="flow-icon-button lobby-help" type="button" aria-label="玩法帮助" title="玩法帮助">
@@ -345,6 +354,7 @@ export class GameShell {
         <div class="lobby-hero-stage" aria-hidden="true">
           <span class="lobby-hero-halo"></span>
           <img src="${flowAssetUrl('lobby-wukong')}" alt="" />
+          <span class="lobby-hero-caption"><b>${lobbyHeroName('H009')}</b><small>齐天大圣 · 百眼迷城</small></span>
         </div>
         <article class="match-plaque flow-panel">
           <span class="plaque-seal" aria-hidden="true">命</span>
@@ -354,9 +364,19 @@ export class GameShell {
           <p class="match-mode-copy">三条命。搜集技能与装备，活到最后。</p>
           <button class="flow-primary-button start-match-button" type="button" ${matching ? 'disabled' : ''}>
             <span class="start-match-icon"></span>
-            <span><b>开始对战</b><small>30 人单排</small></span>
+            <span><b>开始对战</b><small>30 人单排 · 在线同池</small></span>
           </button>
-          <div class="match-tags"><span>三命制</span><span>无组队</span><span>无文字社交</span><span>权威服务器</span></div>
+          <button class="practice-match-button" type="button" ${matching ? 'disabled' : ''}>
+            <span class="practice-match-icon"></span>
+            <span>本地练习</span>
+          </button>
+          <div class="match-tags"><span>三命制</span><span>无组队</span><span>无文字社交</span></div>
+          <ol class="match-steps" aria-label="对局流程">
+            <li><i>1</i><span>三选一</span></li>
+            <li><i>2</i><span>搜技能装备</span></li>
+            <li><i>3</i><span>活到最后</span></li>
+          </ol>
+          <small class="start-hint">回车 开始对战 · P 本地练习 · Esc 取消匹配</small>
         </article>
         <button
           class="reconnect-card flow-panel"
@@ -414,11 +434,17 @@ export class GameShell {
       .querySelector('.start-match-icon')
       ?.append(createElement(Play, { width: 23, height: 23 }));
     this.flowLayer
+      .querySelector('.practice-match-icon')
+      ?.append(createElement(Swords, { width: 16, height: 16 }));
+    this.flowLayer
       .querySelector('.cancel-match-icon')
       ?.append(createElement(X, { width: 17, height: 17 }));
     this.flowLayer
       .querySelector<HTMLButtonElement>('.start-match-button')
       ?.addEventListener('click', this.startMatch);
+    this.flowLayer
+      .querySelector<HTMLButtonElement>('.practice-match-button')
+      ?.addEventListener('click', this.startPractice);
     this.flowLayer
       .querySelector<HTMLButtonElement>('.cancel-match-button')
       ?.addEventListener('click', this.cancelMatch);
@@ -927,6 +953,41 @@ export class GameShell {
 
   private readonly handleAudioUnlock = (): void => {
     void this.flowAudio?.unlock();
+  };
+
+  /** Enter starts a match from the lobby; Escape leaves the queue. */
+  private readonly handleFlowKeydown = (event: KeyboardEvent): void => {
+    if (event.repeat || event.defaultPrevented || this.flowMenu?.isOpen()) {
+      return;
+    }
+    const target = event.target as HTMLElement | null;
+    if (
+      target &&
+      (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
+    ) {
+      return;
+    }
+    if (this.state.screen === 'lobby' && (event.code === 'Enter' || event.code === 'NumpadEnter')) {
+      event.preventDefault();
+      this.startMatch();
+    } else if (this.state.screen === 'lobby' && event.code === 'KeyP') {
+      event.preventDefault();
+      this.startPractice();
+    } else if (this.state.screen === 'matching' && event.code === 'Escape') {
+      event.preventDefault();
+      this.cancelMatch();
+    }
+  };
+
+  private readonly startPractice = (): void => {
+    if (this.state.screen !== 'lobby') {
+      return;
+    }
+    this.flowAudio?.playCue('confirm');
+    const next = new URL(window.location.href);
+    next.searchParams.set('mode', 'local');
+    next.searchParams.set('active', 'MAP');
+    window.location.assign(`${next.pathname}${next.search}${next.hash}`);
   };
 
   private readonly startMatch = (): void => {

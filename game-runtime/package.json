@@ -26,6 +26,8 @@
     "models:verify:delivery": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/models/verify-model-delivery.ps1",
     "models:verify:web": "tsx tools/models/verify-web-model-assets.ts",
     "models:verify:render": "node tools/web/verify-web-models.mjs",
+    "models:build:buildings": "node tools/models/build-wuxia-buildings.mjs",
+    "models:preview:buildings": "node tools/models/preview-wuxia-buildings.mjs",
     "models:convert:map": "node tools/models/convert-map-assets.mjs",
     "models:import:free-map": "node tools/models/import-free-map-assets.mjs",
     "models:import:global-scenes": "node tools/models/import-global-scene-assets.mjs",

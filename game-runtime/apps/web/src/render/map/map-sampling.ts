@@ -152,6 +152,18 @@ export interface SampleOptions {
    * `dressingSurfaceMeters`; gameplay dressing keeps the default keep-out.
    */
   readonly includeBoundMassifs?: boolean;
+  /**
+   * Extra keep-out discs in millimetres. Vegetation passes the procedural
+   * building sites here so every house, hall and pagoda stands in a clearing
+   * instead of inside the tree canopy.
+   */
+  readonly exclusionZones?: readonly ExclusionZone[];
+}
+
+export interface ExclusionZone {
+  readonly x: number;
+  readonly z: number;
+  readonly radiusMm: number;
 }
 
 const BOUNDS = (() => {
@@ -187,7 +199,12 @@ export function sampleOpenGround(
       x: Math.round(BOUNDS.minX + nextRandom() * (BOUNDS.maxX - BOUNDS.minX)),
       z: Math.round(BOUNDS.minZ + nextRandom() * (BOUNDS.maxZ - BOUNDS.minZ)),
     };
-    if (!isOpenGround(point, { roadVergeMm })) {
+    if (
+      !isOpenGround(point, {
+        roadVergeMm,
+        ...(options.exclusionZones ? { exclusionZones: options.exclusionZones } : {}),
+      })
+    ) {
       continue;
     }
     points.push(point);
@@ -208,8 +225,26 @@ export function isOpenGround(point: MapPointMm, options: SampleOptions = {}): bo
     (options.includeBoundMassifs === true || !isInsideBoundWall(point)) &&
     !MAP_COURTS.some((court) => convexContains(court.hexVertices, point)) &&
     !isNearLandmark(point, landmarkClearanceScale) &&
-    (roadVergeMm < 0 || !isOnRoad(point, roadVergeMm))
+    (roadVergeMm < 0 || !isOnRoad(point, roadVergeMm)) &&
+    !insideExclusionZone(point, options.exclusionZones)
   );
+}
+
+function insideExclusionZone(
+  point: MapPointMm,
+  zones: readonly ExclusionZone[] | undefined,
+): boolean {
+  if (!zones || zones.length === 0) {
+    return false;
+  }
+  for (const zone of zones) {
+    const dx = zone.x - point.x;
+    const dz = zone.z - point.z;
+    if (dx * dx + dz * dz < zone.radiusMm * zone.radiusMm) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /**

@@ -314,9 +314,74 @@ function glowMaterial(color: number, opacity: number): THREE.MeshBasicMaterial {
     depthWrite: false,
     side: THREE.DoubleSide,
     blending: THREE.AdditiveBlending,
+    // Additive glows have to bypass ACES: filmic tone mapping compresses the
+    // stacked highlights into pastel, which is most of why every cast read
+    // as translucent plastic rather than as light.
+    toneMapped: false,
   });
   material.userData.baseOpacity = opacity;
   return material;
+}
+
+/**
+ * Shared soft-edge textures, painted once per page.
+ *
+ * Hard-edged primitives are what made the skills read as geometry. A radial
+ * falloff on the same shapes turns a disc into a glow and a ring into a
+ * shockwave. Both are null outside a browser so the module stays testable.
+ */
+let softDiscTexture: THREE.Texture | null | undefined;
+let softRingTexture: THREE.Texture | null | undefined;
+
+function paintRadial(stops: readonly (readonly [number, number])[]): THREE.Texture | null {
+  if (typeof document === 'undefined') {
+    return null;
+  }
+  const size = 128;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const context = canvas.getContext('2d');
+  if (!context) {
+    return null;
+  }
+  const gradient = context.createRadialGradient(
+    size / 2,
+    size / 2,
+    0,
+    size / 2,
+    size / 2,
+    size / 2,
+  );
+  for (const [offset, alpha] of stops) {
+    gradient.addColorStop(offset, `rgba(255,255,255,${alpha})`);
+  }
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, size, size);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
+export function softDisc(): THREE.Texture | null {
+  softDiscTexture ??= paintRadial([
+    [0, 1],
+    [0.3, 0.8],
+    [0.62, 0.28],
+    [1, 0],
+  ]);
+  return softDiscTexture;
+}
+
+export function softRing(): THREE.Texture | null {
+  softRingTexture ??= paintRadial([
+    [0, 0],
+    [0.62, 0],
+    [0.8, 0.55],
+    [0.9, 1],
+    [1, 0],
+  ]);
+  return softRingTexture;
 }
 
 /**
@@ -344,7 +409,7 @@ function addSparkBurst(
     return;
   }
 
-  const count = reduced ? 16 : stage === 'impact' ? 42 : 28;
+  const count = reduced ? 20 : stage === 'impact' ? 56 : 36;
   const positions = new Float32Array(count * 3);
   const velocities = new Float32Array(count * 3);
   const origins = new Float32Array(count * 3);
@@ -354,7 +419,7 @@ function addSparkBurst(
     const angle = spoke + (wobble - 0.5) * 0.22;
     const start = stage === 'impact' ? 0.1 : 0.22;
     let originX = Math.sin(angle) * start;
-    let originY = 0.28 + wobble * 0.28;
+    const originY = 0.28 + wobble * 0.28;
     let originZ = Math.cos(angle) * start;
     let velocityX = Math.sin(angle);
     let velocityY = stage === 'impact' ? 0.7 + wobble * 1.1 : 0.4 + wobble * 0.7;
@@ -406,12 +471,14 @@ function addSparkBurst(
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   const material = new THREE.PointsMaterial({
     color: profile.core,
-    size: reduced ? 0.2 : 0.28,
+    size: reduced ? 0.42 : 0.62,
     sizeAttenuation: true,
     transparent: true,
     opacity: 1,
     depthWrite: false,
     blending: THREE.AdditiveBlending,
+    toneMapped: false,
+    ...(softDisc() ? { map: softDisc() } : {}),
   });
   material.userData.baseOpacity = 0.95;
   const points = new THREE.Points(geometry, material);
@@ -449,19 +516,23 @@ function addShockRings(
     profile.motif === 'divine-gale' ||
     profile.motif === 'golden-wings';
   for (let index = 0; index < count; index += 1) {
+    // Wider band than before: the soft ring texture carries the falloff, so
+    // the geometry only has to cover where the glow can reach.
     const geometry = crescent
-      ? new THREE.RingGeometry(0.72, 1, segments, 1, -1.2, 2.4)
-      : new THREE.RingGeometry(0.78, 1, segments);
+      ? new THREE.RingGeometry(0.55, 1, segments, 1, -1.2, 2.4)
+      : new THREE.RingGeometry(0.58, 1, segments);
     geometry.rotateX(-Math.PI / 2);
     const material = new THREE.MeshBasicMaterial({
       color: index === 0 ? profile.primary : index === 1 ? profile.secondary : profile.core,
       transparent: true,
-      opacity: 0.88,
+      opacity: 0.95,
       depthWrite: false,
       side: THREE.DoubleSide,
       blending: THREE.AdditiveBlending,
+      toneMapped: false,
+      ...(softRing() ? { map: softRing() } : {}),
     });
-    material.userData.baseOpacity = 0.88;
+    material.userData.baseOpacity = 0.95;
     const ring = new THREE.Mesh(geometry, material);
     ring.position.y = 0.06;
     // The second ring starts later AND stops shorter. Starting later alone is
@@ -469,13 +540,179 @@ function addShockRings(
     // mid-flight, which reads as two rings crossing rather than as one wave
     // with a trailing edge.
     ring.userData.ringDelay = index * 0.16;
-    ring.userData.ringReach = (stage === 'impact' ? 3.1 : 2.1) - index * 0.38;
+    ring.userData.ringReach = (stage === 'impact' ? 3.6 : 2.45) - index * 0.4;
     ring.userData.shockRing = true;
     rings.push(ring);
     group.add(ring);
   }
 
   group.userData.shockRings = rings;
+}
+
+/**
+ * The two layers every game skill has and these motifs lacked: a white-hot
+ * flash at the instant of release and a glow pool on the ground under it.
+ *
+ * The flash is a sphere rather than a camera-facing card because the updater
+ * has no camera; a sphere reads as a burst from any angle. Both are driven by
+ * their own curves in `updateFlashAndPool`, not by the material envelope, so
+ * the flash can die while the motif is still unfolding.
+ */
+function addFlashAndPool(
+  group: THREE.Group,
+  profile: HeroSkillVfxProfile,
+  stage: HeroSkillStage,
+): void {
+  const pool = new THREE.Mesh(
+    new THREE.CircleGeometry(1.7, 36),
+    glowMaterial(profile.primary, stage === 'status' ? 0.4 : 0.78),
+  );
+  const poolMap = softDisc();
+  if (poolMap) {
+    (pool.material as THREE.MeshBasicMaterial).map = poolMap;
+  }
+  pool.rotation.x = -Math.PI / 2;
+  pool.position.y = 0.045;
+  pool.renderOrder = 6;
+  pool.name = 'skill-glow-pool';
+  group.add(pool);
+  group.userData.glowPool = pool;
+
+  if (stage === 'status') {
+    return;
+  }
+  const flash = new THREE.Mesh(
+    new THREE.SphereGeometry(0.62, 16, 12),
+    glowMaterial(0xffffff, 0.55),
+  );
+  (flash.material as THREE.MeshBasicMaterial).color
+    .setHex(profile.core)
+    .lerp(new THREE.Color(0xffffff), 0.62);
+  flash.position.y = 0.75;
+  flash.name = 'skill-flash';
+  flash.visible = false;
+  group.add(flash);
+  group.userData.flash = flash;
+  const cardA = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 2.4), glowMaterial(profile.core, 0.85));
+  const cardMap = softDisc();
+  if (cardMap) {
+    (cardA.material as THREE.MeshBasicMaterial).map = cardMap;
+  }
+  cardA.position.y = 0.8;
+  cardA.name = 'skill-flash-card';
+  const cardB = cardA.clone();
+  cardB.rotation.y = Math.PI / 2;
+  cardA.visible = false;
+  cardB.visible = false;
+  group.add(cardA, cardB);
+  group.userData.flashCards = [cardA, cardB];
+}
+
+function updateFlashAndPool(group: THREE.Group, progress: number): void {
+  const motion = (group.userData.heroSkillMotion as HeroSkillMotion | undefined) ?? 'burst';
+  const stage = (group.userData.heroSkillStage as HeroSkillStage | undefined) ?? 'cast';
+  const pool = group.userData.glowPool as THREE.Mesh | undefined;
+  if (pool) {
+    const material = pool.material as THREE.MeshBasicMaterial;
+    const base = Number(material.userData.baseOpacity ?? 0.6);
+    if (stage === 'status') {
+      pool.scale.setScalar(1);
+      material.opacity = base;
+    } else {
+      const eased = 1 - (1 - progress) ** 2;
+      pool.scale.setScalar(0.55 + eased * 0.95);
+      material.opacity = base * (progress < 0.55 ? 1 : 1 - (progress - 0.55) / 0.45);
+    }
+  }
+  const flash = group.userData.flash as THREE.Mesh | undefined;
+  if (!flash) {
+    return;
+  }
+  // A cast flashes at release, after its windup; an impact flashes at once.
+  const start =
+    stage === 'impact'
+      ? 0
+      : motion === 'aura'
+        ? 0
+        : motion === 'collapse'
+          ? 0.34
+          : motion === 'burst'
+            ? 0.08
+            : 0.2;
+  const local = progress - start;
+  if (local < 0 || local > 0.3) {
+    flash.visible = false;
+    const hidden = group.userData.flashCards as readonly THREE.Mesh[] | undefined;
+    if (hidden) {
+      for (const card of hidden) {
+        card.visible = false;
+      }
+    }
+    return;
+  }
+  flash.visible = true;
+  const pop = Math.min(1, local / 0.08);
+  const die = local < 0.08 ? 0 : (local - 0.08) / 0.22;
+  flash.scale.setScalar(0.25 + pop * 1.2 + die * 0.6);
+  const material = flash.material as THREE.MeshBasicMaterial;
+  material.opacity = Number(material.userData.baseOpacity ?? 0.9) * (1 - die) ** 1.35;
+  const cards = group.userData.flashCards as readonly THREE.Mesh[] | undefined;
+  if (cards) {
+    for (const card of cards) {
+      card.visible = flash.visible;
+      card.scale.setScalar(0.4 + pop * 1.8 + die * 0.9);
+      const cardMaterial = card.material as THREE.MeshBasicMaterial;
+      cardMaterial.opacity = Number(cardMaterial.userData.baseOpacity ?? 0.85) * (1 - die) ** 1.4;
+    }
+  }
+}
+
+/**
+ * Stylised slash ribbons: the missing arcade read.
+ *
+ * Motifs alone are coloured geometry. A MOBA-style cast also leaves a bright
+ * blade of light that the camera can pick up from any chase angle. Two or
+ * three additive cards, slightly fanned, do that without another particle
+ * system.
+ */
+function addSlashRibbons(
+  group: THREE.Group,
+  profile: HeroSkillVfxProfile,
+  stage: HeroSkillStage,
+  reduced: boolean,
+  materials: readonly [THREE.MeshBasicMaterial, THREE.MeshBasicMaterial, THREE.MeshBasicMaterial],
+): void {
+  if (stage === 'status') {
+    return;
+  }
+  const count = reduced ? 2 : 3;
+  const ribbon = glowMaterial(profile.core, 0.9);
+  const map = softDisc();
+  if (map) {
+    ribbon.map = map;
+  }
+  for (let index = 0; index < count; index += 1) {
+    const side = index - (count - 1) / 2;
+    addMesh(group, new THREE.PlaneGeometry(0.42, stage === 'impact' ? 2.8 : 2.2), ribbon, {
+      x: side * 0.28,
+      y: 0.92,
+      z: profile.motion === 'forward' ? 0.55 : 0.18,
+      rx: -0.55,
+      ry: side * 0.22,
+      rz: 0.72 + side * 0.28,
+      spinZ: side === 0 ? 1.6 : -2.1,
+      pulse: 0.1,
+    });
+    addMesh(group, new THREE.PlaneGeometry(0.18, stage === 'impact' ? 2.4 : 1.8), materials[2], {
+      x: side * 0.2,
+      y: 0.94,
+      z: profile.motion === 'forward' ? 0.6 : 0.22,
+      rx: -0.55,
+      ry: side * 0.18,
+      rz: 0.72 + side * 0.24,
+      spinZ: side === 0 ? -1.2 : 1.8,
+    });
+  }
 }
 
 function addCoreFlare(
@@ -1141,6 +1378,8 @@ export function createHeroSkillVisual(
   addCoreFlare(group, profile, stage, materials);
   addShockRings(group, profile, stage, reduced);
   addSparkBurst(group, profile, stage, reduced);
+  addFlashAndPool(group, profile, stage);
+  addSlashRibbons(group, profile, stage, reduced, materials);
   attachSkillTextureLayer(group, profile.textureKey, stage, reduced);
   cacheAnimatedMeshes(group);
   const durationSeconds =
@@ -1157,14 +1396,9 @@ export function createHeroSkillVisual(
  * Envelope motion is local to the skill, so it must never replace the
  * position assigned by the combat layer.
  */
-export function placeHeroSkillVisual(
-  group: THREE.Group,
-  x: number,
-  y: number,
-  z: number,
-): void {
-  const anchor = (group.userData.heroSkillWorldPosition as THREE.Vector3 | undefined) ??
-    new THREE.Vector3();
+export function placeHeroSkillVisual(group: THREE.Group, x: number, y: number, z: number): void {
+  const anchor =
+    (group.userData.heroSkillWorldPosition as THREE.Vector3 | undefined) ?? new THREE.Vector3();
   anchor.set(x, y, z);
   group.userData.heroSkillWorldPosition = anchor;
   group.position.copy(anchor);
@@ -1394,6 +1628,7 @@ export function updateHeroSkillVisual(
 
   updateSparkBurst(group, progress, elapsedSeconds);
   updateShockRings(group, progress);
+  updateFlashAndPool(group, progress);
   updateSkillTextureLayer(group, progress, elapsedSeconds);
 
   for (const child of cacheAnimatedMeshes(group)) {

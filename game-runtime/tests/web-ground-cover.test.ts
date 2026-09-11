@@ -111,9 +111,7 @@ describe('Grassworks ground cover lattice', () => {
   });
 
   it('keeps cover out of the ponds', () => {
-    for (const point of points) {
-      expect(waterSurfaceAt(point.x / MM, point.z / MM)).toBeNull();
-    }
+    expect(points.every((point) => waterSurfaceAt(point.x / MM, point.z / MM) === null)).toBe(true);
   });
 
   it('reports a plateau top only inside a highland footprint', () => {

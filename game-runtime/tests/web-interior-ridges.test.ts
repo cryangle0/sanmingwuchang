@@ -65,6 +65,7 @@ describe('封界级 wall massifs', () => {
     const mesh = group.getObjectByName('interior-ridges') as THREE.Mesh;
     expect(mesh).toBeDefined();
     expect(mesh.geometry.getAttribute('color')).toBeDefined();
+    expect(group.getObjectByName('massif-seeps')).toBeDefined();
 
     const positions = mesh.geometry.getAttribute('position');
     expect(positions.count).toBeGreaterThan(0);

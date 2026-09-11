@@ -47,7 +47,7 @@ const KIND_LOOKS: Readonly<Record<MonsterKind, MonsterSkillLook>> = {
     secondary: 0xffd27a,
     core: 0xfff4d0,
     motion: 'forward',
-    scale: 0.95,
+    scale: 1.12,
   },
   'ground-ranged': {
     id: 'M-RANGED',
@@ -256,6 +256,8 @@ function glow(color: number, opacity: number): THREE.MeshBasicMaterial {
     depthTest: true,
     side: THREE.DoubleSide,
     blending: THREE.AdditiveBlending,
+    // Additive glows must skip ACES: tone mapping flattens them to pastel.
+    toneMapped: false,
   });
   material.userData.baseOpacity = opacity;
   return material;
@@ -279,7 +281,10 @@ function decorateMonsterSignature(
   switch (profile.heroId) {
     case 'M-MELEE':
       for (const offset of [-0.28, 0, 0.28]) {
-        const slash = new THREE.Mesh(new THREE.TorusGeometry(0.95, 0.07, 6, 28, Math.PI * 0.9), accent);
+        const slash = new THREE.Mesh(
+          new THREE.TorusGeometry(0.95, 0.07, 6, 28, Math.PI * 0.9),
+          accent,
+        );
         slash.rotation.set(-0.55, offset, offset * 1.4);
         slash.position.set(offset * 0.4, 0.7, 0.35);
         slash.userData.spinZ = offset === 0 ? 8 : -8;
@@ -375,7 +380,10 @@ function decorateBossSignature(
   switch (profile.heroId) {
     case 'BOSS-RING':
       for (let index = 0; index < (reduced ? 3 : 5); index += 1) {
-        const ring = new THREE.Mesh(new THREE.TorusGeometry(1.1 + index * 0.45, 0.06, 6, 40), accent);
+        const ring = new THREE.Mesh(
+          new THREE.TorusGeometry(1.1 + index * 0.45, 0.06, 6, 40),
+          accent,
+        );
         ring.rotation.x = Math.PI / 2;
         ring.position.y = 0.08;
         ring.userData.shockRing = true;
@@ -419,7 +427,10 @@ function decorateBossSignature(
     }
     case 'BOSS-POISON':
       for (let index = 0; index < (reduced ? 5 : 8); index += 1) {
-        const bubble = new THREE.Mesh(new THREE.SphereGeometry(0.16 + (index % 3) * 0.06, 8, 6), flare);
+        const bubble = new THREE.Mesh(
+          new THREE.SphereGeometry(0.16 + (index % 3) * 0.06, 8, 6),
+          flare,
+        );
         const angle = (index / 8) * Math.PI * 2;
         bubble.position.set(Math.sin(angle) * 0.9, 0.28 + (index % 3) * 0.2, Math.cos(angle) * 0.9);
         bubble.userData.pulse = 0.22;

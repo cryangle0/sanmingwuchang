@@ -1,3 +1,5 @@
+import { readFileSync, statSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { entityId } from '@jwgb/core';
 import { GameSimulation, type MonsterKind } from '@jwgb/sim';
 import {
@@ -6,6 +8,39 @@ import {
   WEB_HERO_MODELS,
   WEB_MONSTER_MODELS,
 } from '../apps/web/src/render/models/web-model-catalog';
+
+const assetRoot = resolve(import.meta.dirname, '..', 'apps/web/public');
+const ANIMATED_HERO_IDS = [
+  'H002',
+  'H004',
+  'H005',
+  'H006',
+  'H007',
+  'H008',
+  'H009',
+  'H010',
+  'H011',
+  'H012',
+  'H013',
+  'H014',
+  'H015',
+  'H016',
+  'H017',
+  'H018',
+  'H019',
+  'H023',
+  'H024',
+  'H025',
+  'H029',
+  'H031',
+  'H032',
+  'H033',
+  'H034',
+  'H035',
+  'H036',
+  'H037',
+  'H038',
+] as const;
 
 describe('web model catalog', () => {
   it('covers every hero and every delivered monster model exactly once', () => {
@@ -18,28 +53,11 @@ describe('web model catalog', () => {
     }
   });
 
-  it('delivers the nineteen animated heroes as versioned Web GLBs while retaining FBX models', () => {
-    for (const id of [
-      'H002',
-      'H004',
-      'H006',
-      'H007',
-      'H008',
-      'H009',
-      'H010',
-      'H011',
-      'H012',
-      'H014',
-      'H015',
-      'H016',
-      'H018',
-      'H019',
-      'H023',
-      'H031',
-      'H033',
-      'H034',
-      'H038',
-    ]) {
+  it('delivers the twenty-nine animated heroes as versioned Web GLBs while retaining FBX models', () => {
+    expect(WEB_HERO_MODELS.filter((model) => model.format === 'glb')).toHaveLength(
+      ANIMATED_HERO_IDS.length,
+    );
+    for (const id of ANIMATED_HERO_IDS) {
       expect(heroModelDefinition(id)).toMatchObject({
         assetBase: 'web',
         format: 'glb',
@@ -48,12 +66,71 @@ describe('web model catalog', () => {
     }
     expect(heroModelDefinition('H006')).toMatchObject({ height: 2.4 });
     expect(heroModelDefinition('H007')).toMatchObject({ height: 2.4 });
+    expect(heroModelDefinition('H013')).toMatchObject({ height: 2.5 });
     expect(heroModelDefinition('H015')).toMatchObject({ height: 2.2 });
-    expect(heroModelDefinition('H017')).toMatchObject({
+    expect(heroModelDefinition('H001')).toMatchObject({
       assetBase: 'model-cdn',
       format: 'fbx',
-      assetPath: 'heroes/H017/model.fbx',
+      assetPath: 'heroes/H001/model.fbx',
     });
+  });
+
+  it('ships renderable GLBs with four-clip manifests for the 2026-09 heroes', () => {
+    const expectedJoints = {
+      H005: 33,
+      H013: 8,
+      H017: 41,
+      H024: 41,
+      H025: 41,
+      H029: 41,
+      H032: 41,
+      H035: 41,
+      H036: 41,
+      H037: 41,
+    } as const;
+    for (const [id, joints] of Object.entries(expectedJoints)) {
+      const definition = heroModelDefinition(id);
+      expect(definition).not.toBeNull();
+      if (!definition) {
+        continue;
+      }
+      const modelPath = resolve(assetRoot, definition.assetPath);
+      const manifestPath = resolve(assetRoot, 'models/characters', id, 'manifest.json');
+      const modelBytes = readFileSync(modelPath);
+      const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as {
+        readonly schema: string;
+        readonly modelId: string;
+        readonly displayName: string;
+        readonly status: string;
+        readonly errors: readonly string[];
+        readonly optimized: {
+          readonly bytes: number;
+          readonly triangles: number;
+          readonly textures: number;
+          readonly animations: readonly { readonly name: string; readonly channels: number }[];
+          readonly skins: readonly { readonly joints: number }[];
+        };
+      };
+      expect(modelBytes.subarray(0, 4).toString('ascii')).toBe('glTF');
+      expect(statSync(modelPath).size).toBe(manifest.optimized.bytes);
+      expect(manifest).toMatchObject({
+        schema: 'jwgb.animated-character-model.v1',
+        modelId: id,
+        displayName: definition.sourceName,
+        status: 'passed',
+        errors: [],
+      });
+      expect(manifest.optimized.triangles).toBeGreaterThan(0);
+      expect(manifest.optimized.triangles).toBeLessThanOrEqual(40_000);
+      expect(manifest.optimized.textures).toBeGreaterThan(0);
+      expect(manifest.optimized.animations.map((animation) => animation.name)).toEqual([
+        'Idle',
+        'Move',
+        'Attack',
+        'Spell',
+      ]);
+      expect(manifest.optimized.skins.every((skin) => skin.joints === joints)).toBe(true);
+    }
   });
 
   it('selects a stable model from the matching monster kind', () => {

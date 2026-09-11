@@ -123,7 +123,7 @@ describe('web Grassworks vegetation', () => {
     expect(first.length).toBeGreaterThan(250_000);
     const onMassifs = first.filter((point) => isInsideBoundWall(point));
     expect(onMassifs.length).toBeGreaterThan(5_000);
-  });
+  }, 30_000);
 
   it('scatters trees across the whole walkable map and woods the BOUND massifs', () => {
     const first = sampleGrassworksTreePoints(0x08b3d5a4);
@@ -135,7 +135,10 @@ describe('web Grassworks vegetation', () => {
     expect(hill.length).toBeGreaterThan(80);
     expect(massif.every((point) => isInsideBoundWall(point))).toBe(true);
     expect(hill.every((point) => isInsideVaultWall(point))).toBe(true);
-    expect(first.length).toBeGreaterThanOrEqual(1_500 + massif.length);
+    expect(first.length).toBeGreaterThanOrEqual(
+      GRASSWORKS_SOURCE_PROFILE.runtimeTreeCount + massif.length,
+    );
+    // Hill trees stay off the massifs, so the massif lattice alone woods them.
     expect(first.filter((point) => isInsideBoundWall(point))).toHaveLength(massif.length);
     expect(first.filter((point) => isInsideVaultWall(point)).length).toBeGreaterThan(80);
 
@@ -168,7 +171,7 @@ describe('web Grassworks vegetation', () => {
     expect(quadrants.ne).toBeGreaterThan(80);
     expect(quadrants.sw).toBeGreaterThan(80);
     expect(quadrants.se).toBeGreaterThan(80);
-  });
+  }, 30_000);
 
   it('preserves the source profile in the WebGL adaptation', () => {
     expect(GRASSWORKS_SOURCE_PROFILE).toMatchObject({
@@ -177,20 +180,21 @@ describe('web Grassworks vegetation', () => {
       maxDistanceMeters: 150,
       atlasColumns: 2,
       atlasRows: 2,
-      influenceResolution: 256,
+      influenceResolution: 0,
       runtimeSpacingMeters: 1.25,
       runtimeMaxDistanceMeters: 180,
       runtimeReducedMaxDistanceMeters: 108,
       runtimeRoadVergeMm: -1,
-      runtimeTreeCount: 1_500,
+      runtimeTreeCount: 3_800,
       runtimeTreePlacement: 'whole-map clustered woodland',
-      runtimeTreeHeightMeters: { min: 16, max: 22 },
-      runtimeMassifTreeSpacingMeters: 4.2,
-      runtimeHillTreeSpacingMeters: 5.6,
-      runtimeTreeHighDistanceMeters: 150,
+      runtimeTreeHeightMeters: { min: 12.5, max: 24 },
+      runtimeMassifTreeSpacingMeters: 3.5,
+      runtimeHillTreeSpacingMeters: 5.0,
+      runtimeUnderstory: 'bush, asia-bush and fern GLBs clustered under every placed tree',
+      runtimeTreeHighDistanceMeters: 26,
       runtimeTreeLowDistanceMeters: 260,
       runtimeReducedTreeLowDistanceMeters: 208,
-      runtimeTreeHighHysteresisMeters: 12,
+      runtimeTreeHighHysteresisMeters: 5,
       runtimeTreeLowHysteresisMeters: 16,
       leafSprites: {
         highAlphaTest: 0.5,
@@ -226,7 +230,7 @@ describe('web Grassworks vegetation', () => {
       tileSizeMeters: 25,
       renderBatchSizeMeters: 50,
       maxGrassDistanceMeters: 180,
-      influenceResolution: 256,
+      influenceResolution: 0,
       grassInstances: 0,
       grassTiles: 0,
       grassRenderBatches: 0,
@@ -234,6 +238,9 @@ describe('web Grassworks vegetation', () => {
       legacyFloraInstances: 0,
       legacyScatterInstances: 0,
       legacyGlobalSceneVegetationInstances: 0,
+      understoryInstances: 0,
+      visibleUnderstoryInstances: 0,
+      understoryStatus: 'disabled',
       visible: false,
     });
     expect(parent.children).toContain(layer.group);

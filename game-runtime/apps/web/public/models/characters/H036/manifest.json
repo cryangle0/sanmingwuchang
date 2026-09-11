@@ -1,0 +1,564 @@
+{
+  "schema": "jwgb.animated-character-model.v1",
+  "generatedAt": "2026-09-07T15:54:28.947Z",
+  "modelId": "H036",
+  "displayName": "灵感大王",
+  "deliveryPath": "models/characters/H036/model.glb",
+  "targetHeight": 2.2,
+  "sources": [
+    {
+      "name": "Idle",
+      "selectedClip": "Scene",
+      "fileName": "01_待机_idle.fbx",
+      "bytes": 7933420,
+      "sha256": "1383774FC75F0E251F16C8E4C64AE190E0714CB94ED9CDB8EF544EDEAD0D9D00"
+    },
+    {
+      "name": "Move",
+      "selectedClip": "Scene",
+      "fileName": "02_跑步_run.fbx",
+      "bytes": 7924236,
+      "sha256": "A331288206B15993AAE22ABB5A9A6C68C287FEFBB6B803E133A0A44CECEF915C"
+    },
+    {
+      "name": "Attack",
+      "selectedClip": "Scene",
+      "fileName": "03_攻击_attack.fbx",
+      "bytes": 7916940,
+      "sha256": "D50C5205635A790FDB33AC51385A55B26B0EA651540A6AE09AD17639695A6858"
+    },
+    {
+      "name": "Spell",
+      "selectedClip": "Scene",
+      "fileName": "04_施法_cast.fbx",
+      "bytes": 7922140,
+      "sha256": "A9CE67770CCFE77E4E360746A44A438F62BFC621E401D567E79E349715DED6E0"
+    }
+  ],
+  "conversion": {
+    "clipPatterns": {
+      "Idle": null,
+      "Move": null,
+      "Attack": null,
+      "Spell": null
+    },
+    "sourceFileNames": {
+      "Idle": "01_待机_idle.fbx",
+      "Move": "02_跑步_run.fbx",
+      "Attack": "03_攻击_attack.fbx",
+      "Spell": "04_施法_cast.fbx"
+    },
+    "requiresSeparateWeapon": false,
+    "allowAnimationBoneSetDifferences": false,
+    "sourceMetrics": [
+      {
+        "name": "Idle",
+        "selectedClip": "Scene",
+        "availableClips": [
+          "Scene"
+        ],
+        "meshes": 3,
+        "skinnedMeshes": 3,
+        "staticMeshes": 0,
+        "vertices": 465330,
+        "triangles": 155110,
+        "bones": [
+          "Head",
+          "Hip",
+          "L_Calf",
+          "L_CalfTwist01",
+          "L_CalfTwist02",
+          "L_Clavicle",
+          "L_Foot",
+          "L_Forearm",
+          "L_ForearmTwist01",
+          "L_ForearmTwist02",
+          "L_Hand",
+          "L_Thigh",
+          "L_ThighTwist01",
+          "L_ThighTwist02",
+          "L_ToeBase",
+          "L_Upperarm",
+          "L_UpperarmTwist01",
+          "L_UpperarmTwist02",
+          "NeckTwist01",
+          "NeckTwist02",
+          "Pelvis",
+          "R_Calf",
+          "R_CalfTwist01",
+          "R_CalfTwist02",
+          "R_Clavicle",
+          "R_Foot",
+          "R_Forearm",
+          "R_ForearmTwist01",
+          "R_ForearmTwist02",
+          "R_Hand",
+          "R_Thigh",
+          "R_ThighTwist01",
+          "R_ThighTwist02",
+          "R_ToeBase",
+          "R_Upperarm",
+          "R_UpperarmTwist01",
+          "R_UpperarmTwist02",
+          "Root",
+          "Spine01",
+          "Spine02",
+          "Waist"
+        ],
+        "meshRecords": [
+          {
+            "name": "Weapon_R",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 186906,
+            "triangles": 62302
+          },
+          {
+            "name": "Weapon_L",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 186906,
+            "triangles": 62302
+          },
+          {
+            "name": "tripo_node_ece8b682",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 91518,
+            "triangles": 30506
+          }
+        ],
+        "duration": 3.9583332538604736,
+        "tracks": 82,
+        "keyframes": 592,
+        "retargetedPositionTracks": 41,
+        "maximumRestPositionCorrection": 0,
+        "droppedTracks": 0,
+        "droppedTrackNames": []
+      },
+      {
+        "name": "Move",
+        "selectedClip": "Scene",
+        "availableClips": [
+          "Scene"
+        ],
+        "meshes": 3,
+        "skinnedMeshes": 3,
+        "staticMeshes": 0,
+        "vertices": 465330,
+        "triangles": 155110,
+        "bones": [
+          "Head",
+          "Hip",
+          "L_Calf",
+          "L_CalfTwist01",
+          "L_CalfTwist02",
+          "L_Clavicle",
+          "L_Foot",
+          "L_Forearm",
+          "L_ForearmTwist01",
+          "L_ForearmTwist02",
+          "L_Hand",
+          "L_Thigh",
+          "L_ThighTwist01",
+          "L_ThighTwist02",
+          "L_ToeBase",
+          "L_Upperarm",
+          "L_UpperarmTwist01",
+          "L_UpperarmTwist02",
+          "NeckTwist01",
+          "NeckTwist02",
+          "Pelvis",
+          "R_Calf",
+          "R_CalfTwist01",
+          "R_CalfTwist02",
+          "R_Clavicle",
+          "R_Foot",
+          "R_Forearm",
+          "R_ForearmTwist01",
+          "R_ForearmTwist02",
+          "R_Hand",
+          "R_Thigh",
+          "R_ThighTwist01",
+          "R_ThighTwist02",
+          "R_ToeBase",
+          "R_Upperarm",
+          "R_UpperarmTwist01",
+          "R_UpperarmTwist02",
+          "Root",
+          "Spine01",
+          "Spine02",
+          "Waist"
+        ],
+        "meshRecords": [
+          {
+            "name": "Weapon_R",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 186906,
+            "triangles": 62302
+          },
+          {
+            "name": "Weapon_L",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 186906,
+            "triangles": 62302
+          },
+          {
+            "name": "tripo_node_9bf92a2d",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 91518,
+            "triangles": 30506
+          }
+        ],
+        "duration": 1.4166666269302368,
+        "tracks": 82,
+        "keyframes": 449,
+        "retargetedPositionTracks": 41,
+        "maximumRestPositionCorrection": 0.03859326092119868,
+        "droppedTracks": 0,
+        "droppedTrackNames": []
+      },
+      {
+        "name": "Attack",
+        "selectedClip": "Scene",
+        "availableClips": [
+          "Scene"
+        ],
+        "meshes": 3,
+        "skinnedMeshes": 3,
+        "staticMeshes": 0,
+        "vertices": 465330,
+        "triangles": 155110,
+        "bones": [
+          "Head",
+          "Hip",
+          "L_Calf",
+          "L_CalfTwist01",
+          "L_CalfTwist02",
+          "L_Clavicle",
+          "L_Foot",
+          "L_Forearm",
+          "L_ForearmTwist01",
+          "L_ForearmTwist02",
+          "L_Hand",
+          "L_Thigh",
+          "L_ThighTwist01",
+          "L_ThighTwist02",
+          "L_ToeBase",
+          "L_Upperarm",
+          "L_UpperarmTwist01",
+          "L_UpperarmTwist02",
+          "NeckTwist01",
+          "NeckTwist02",
+          "Pelvis",
+          "R_Calf",
+          "R_CalfTwist01",
+          "R_CalfTwist02",
+          "R_Clavicle",
+          "R_Foot",
+          "R_Forearm",
+          "R_ForearmTwist01",
+          "R_ForearmTwist02",
+          "R_Hand",
+          "R_Thigh",
+          "R_ThighTwist01",
+          "R_ThighTwist02",
+          "R_ToeBase",
+          "R_Upperarm",
+          "R_UpperarmTwist01",
+          "R_UpperarmTwist02",
+          "Root",
+          "Spine01",
+          "Spine02",
+          "Waist"
+        ],
+        "meshRecords": [
+          {
+            "name": "Weapon_L",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 186906,
+            "triangles": 62302
+          },
+          {
+            "name": "Weapon_R",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 186906,
+            "triangles": 62302
+          },
+          {
+            "name": "tripo_node_df76d97b",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 91518,
+            "triangles": 30506
+          }
+        ],
+        "duration": 2.8333332538604736,
+        "tracks": 82,
+        "keyframes": 436,
+        "retargetedPositionTracks": 41,
+        "maximumRestPositionCorrection": 0.010424858306742335,
+        "droppedTracks": 0,
+        "droppedTrackNames": []
+      },
+      {
+        "name": "Spell",
+        "selectedClip": "Scene",
+        "availableClips": [
+          "Scene"
+        ],
+        "meshes": 3,
+        "skinnedMeshes": 3,
+        "staticMeshes": 0,
+        "vertices": 465330,
+        "triangles": 155110,
+        "bones": [
+          "Head",
+          "Hip",
+          "L_Calf",
+          "L_CalfTwist01",
+          "L_CalfTwist02",
+          "L_Clavicle",
+          "L_Foot",
+          "L_Forearm",
+          "L_ForearmTwist01",
+          "L_ForearmTwist02",
+          "L_Hand",
+          "L_Thigh",
+          "L_ThighTwist01",
+          "L_ThighTwist02",
+          "L_ToeBase",
+          "L_Upperarm",
+          "L_UpperarmTwist01",
+          "L_UpperarmTwist02",
+          "NeckTwist01",
+          "NeckTwist02",
+          "Pelvis",
+          "R_Calf",
+          "R_CalfTwist01",
+          "R_CalfTwist02",
+          "R_Clavicle",
+          "R_Foot",
+          "R_Forearm",
+          "R_ForearmTwist01",
+          "R_ForearmTwist02",
+          "R_Hand",
+          "R_Thigh",
+          "R_ThighTwist01",
+          "R_ThighTwist02",
+          "R_ToeBase",
+          "R_Upperarm",
+          "R_UpperarmTwist01",
+          "R_UpperarmTwist02",
+          "Root",
+          "Spine01",
+          "Spine02",
+          "Waist"
+        ],
+        "meshRecords": [
+          {
+            "name": "Weapon_R",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 186906,
+            "triangles": 62302
+          },
+          {
+            "name": "Weapon_L",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 186906,
+            "triangles": 62302
+          },
+          {
+            "name": "tripo_node_d95f3d77",
+            "parentName": null,
+            "skinned": true,
+            "vertices": 91518,
+            "triangles": 30506
+          }
+        ],
+        "duration": 2.7083332538604736,
+        "tracks": 82,
+        "keyframes": 373,
+        "retargetedPositionTracks": 41,
+        "maximumRestPositionCorrection": 0.004629628308466331,
+        "droppedTracks": 0,
+        "droppedTrackNames": []
+      }
+    ],
+    "retainedMesh": {
+      "meshes": 3,
+      "skinnedMeshes": 3,
+      "staticMeshes": 0,
+      "vertices": 465330,
+      "triangles": 155110,
+      "bones": [
+        "Head",
+        "Hip",
+        "L_Calf",
+        "L_CalfTwist01",
+        "L_CalfTwist02",
+        "L_Clavicle",
+        "L_Foot",
+        "L_Forearm",
+        "L_ForearmTwist01",
+        "L_ForearmTwist02",
+        "L_Hand",
+        "L_Thigh",
+        "L_ThighTwist01",
+        "L_ThighTwist02",
+        "L_ToeBase",
+        "L_Upperarm",
+        "L_UpperarmTwist01",
+        "L_UpperarmTwist02",
+        "NeckTwist01",
+        "NeckTwist02",
+        "Pelvis",
+        "R_Calf",
+        "R_CalfTwist01",
+        "R_CalfTwist02",
+        "R_Clavicle",
+        "R_Foot",
+        "R_Forearm",
+        "R_ForearmTwist01",
+        "R_ForearmTwist02",
+        "R_Hand",
+        "R_Thigh",
+        "R_ThighTwist01",
+        "R_ThighTwist02",
+        "R_ToeBase",
+        "R_Upperarm",
+        "R_UpperarmTwist01",
+        "R_UpperarmTwist02",
+        "Root",
+        "Spine01",
+        "Spine02",
+        "Waist"
+      ],
+      "meshRecords": [
+        {
+          "name": "H036-Body-01",
+          "parentName": "H036-灵感大王-Animated",
+          "skinned": true,
+          "vertices": 186906,
+          "triangles": 62302
+        },
+        {
+          "name": "H036-Body-02",
+          "parentName": "H036-灵感大王-Animated",
+          "skinned": true,
+          "vertices": 186906,
+          "triangles": 62302
+        },
+        {
+          "name": "H036-Body-03",
+          "parentName": "H036-灵感大王-Animated",
+          "skinned": true,
+          "vertices": 91518,
+          "triangles": 30506
+        }
+      ]
+    },
+    "exportedClips": [
+      {
+        "name": "Idle",
+        "duration": 3.9583332538604736,
+        "tracks": 82,
+        "keyframes": 592
+      },
+      {
+        "name": "Move",
+        "duration": 1.4166666269302368,
+        "tracks": 82,
+        "keyframes": 449
+      },
+      {
+        "name": "Attack",
+        "duration": 2.8333332538604736,
+        "tracks": 82,
+        "keyframes": 436
+      },
+      {
+        "name": "Spell",
+        "duration": 2.7083332538604736,
+        "tracks": 82,
+        "keyframes": 373
+      }
+    ],
+    "bodyTriangleBudget": 28000,
+    "weaponTriangleBudget": 10000,
+    "bodySimplifyRatio": 0.18051705241441557,
+    "weaponSimplifyRatio": 1
+  },
+  "optimized": {
+    "bytes": 1027264,
+    "vertices": 26955,
+    "triangles": 27995,
+    "meshes": 3,
+    "materials": 2,
+    "textures": 4,
+    "bodyTriangles": 27995,
+    "weaponTriangles": 0,
+    "animations": [
+      {
+        "name": "Idle",
+        "channels": 82,
+        "samplers": 82
+      },
+      {
+        "name": "Move",
+        "channels": 82,
+        "samplers": 82
+      },
+      {
+        "name": "Attack",
+        "channels": 82,
+        "samplers": 82
+      },
+      {
+        "name": "Spell",
+        "channels": 82,
+        "samplers": 82
+      }
+    ],
+    "skins": [
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      },
+      {
+        "name": "",
+        "joints": 41
+      }
+    ],
+    "meshRecords": [
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 11246
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 11246
+      },
+      {
+        "name": "",
+        "skinned": true,
+        "triangles": 5503
+      }
+    ]
+  },
+  "errors": [],
+  "status": "passed"
+}
