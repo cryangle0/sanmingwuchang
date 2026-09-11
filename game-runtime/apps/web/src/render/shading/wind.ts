@@ -110,15 +110,15 @@ export function applyWindSway(
               ]
             : []),
           'vec2 windSample = windOrigin + transformed.xz * 0.35;',
-          'float windPhase = uWindTime * 3.0;',
+          'float windPhase = uWindTime * 3.9;',
           'float windBroad = sin(windSample.x * 0.18 + windSample.y * 0.14 + windPhase);',
           'float windCross = cos(windSample.x * 0.08 + windSample.y * 0.22 + windPhase * 0.72);',
           'float windDetail = sin(windSample.x * 0.55 + windSample.y * 0.42 + windPhase * 0.35);',
           'float windMicro = sin(windSample.x * 0.50 - windSample.y * 0.31 + windPhase * 0.50);',
           'vec2 windDirection = normalize(vec2(0.93, 0.36));',
           'vec2 windSide = vec2(-windDirection.y, windDirection.x);',
-          'float windGust = 0.70 + windBroad * 0.20 + windDetail * 0.10;',
-          'float windCrossAmount = windCross * 0.06 + windMicro * 0.035;',
+          'float windGust = 0.78 + windBroad * 0.30 + windDetail * 0.18;',
+          'float windCrossAmount = windCross * 0.10 + windMicro * 0.06;',
           `float windWeight = smoothstep(0.02, 0.96, transformed.y) * ${strength.toFixed(4)};`,
           'vec2 windDisplacement = windDirection * windGust + windSide * windCrossAmount;',
           'transformed.xz += windDisplacement * windWeight;',
@@ -126,5 +126,5 @@ export function applyWindSway(
       );
   };
   material.customProgramCacheKey = () =>
-    `wind-sway-storm-${strength}-${billboard ? 'billboard' : 'world'}-v4`;
+    `wind-sway-storm-${strength}-${billboard ? 'billboard' : 'world'}-v5`;
 }

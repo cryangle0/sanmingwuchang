@@ -201,8 +201,8 @@ describe('web Grassworks vegetation', () => {
         lowAlphaTest: 0.35,
         highEmissiveIntensity: 0.12,
         lowEmissiveIntensity: 0.06,
-        highWind: 0.045,
-        lowWind: 0.032,
+        highWind: 0.078,
+        lowWind: 0.055,
       },
     });
     expect(GRASSWORKS_SOURCE_PROFILE.sourceLods).toEqual([

@@ -84,17 +84,26 @@ export const WORLD_SCALE_PROFILE = {
     } as Readonly<Record<string, number>>,
   },
   flora: {
+    /**
+     * Crown-top height of the near-camera flora, metres.
+     *
+     * These used to sit at 6.8–7.8 m, which put the canopy of a 7 m tree about
+     * two metres off the ground: from the chase lens the forest read as a wall
+     * of leaves with no visible trunks. Raised to match the 12.5–24 m
+     * procedural forest so the trunks clear the undergrowth and the canopy
+     * sits overhead where it belongs.
+     */
     treeTargetHeights: {
-      pine: 7.8,
-      oak: 7.7,
-      twisted: 7.1,
-      dead: 6.8,
-      asia: 6.8,
-      maple: 7.7,
-      cypress: 7.2,
-      beech: 7.8,
-      willow: 7.4,
-      lush: 7.8,
+      pine: 13.4,
+      oak: 13.0,
+      twisted: 12.0,
+      dead: 11.6,
+      asia: 11.8,
+      maple: 13.2,
+      cypress: 12.6,
+      beech: 13.6,
+      willow: 12.4,
+      lush: 13.4,
     },
     rockTargetHeight: 2.45,
     bushTargetHeight: 2.65,

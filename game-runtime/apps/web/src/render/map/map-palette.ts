@@ -774,7 +774,7 @@ export function createMapMaterials(
     emissiveIntensity: 0.12,
     side: THREE.DoubleSide,
   });
-  applyWindSway(grass, 0.085);
+  applyWindSway(grass, 0.115);
   const grassDark = new THREE.MeshStandardMaterial({
     color: 0xffffff,
     roughness: 0.98,
@@ -783,7 +783,7 @@ export function createMapMaterials(
     emissiveIntensity: 0.1,
     side: THREE.DoubleSide,
   });
-  applyWindSway(grassDark, 0.085);
+  applyWindSway(grassDark, 0.115);
   const pebble = new THREE.MeshStandardMaterial({
     color: 0xffffff,
     roughness: 0.98,
@@ -845,7 +845,7 @@ export function createMapMaterials(
     emissiveIntensity: 0.035,
     flatShading: true,
   });
-  applyWindSway(floraCanopy, 0.05);
+  applyWindSway(floraCanopy, 0.085);
   const floraBamboo = new THREE.MeshStandardMaterial({
     color: 0xffffff, // per-instance district tint
     roughness: 0.85,
@@ -854,7 +854,7 @@ export function createMapMaterials(
     emissiveIntensity: 0.025,
     flatShading: true,
   });
-  applyWindSway(floraBamboo, 0.06);
+  applyWindSway(floraBamboo, 0.1);
   const floraBoulder = new THREE.MeshStandardMaterial({
     color: 0xffffff, // per-instance stone tint
     roughness: 1,

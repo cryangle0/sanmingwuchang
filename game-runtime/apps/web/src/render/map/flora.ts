@@ -16,6 +16,9 @@ import {
   floraTreeOccluderTarget,
 } from './flora-occlusion';
 import { mapBuildingClearanceZones } from './map-asset-layer';
+
+/** Woods thin out into the shore apron over the last ~13 m of playfield. */
+const RIM_VEGETATION_CLEARANCE_MM = 13_000;
 import type { MapMaterialLibrary } from './map-palette';
 import { regionAt } from './map-regions';
 import {
@@ -223,6 +226,7 @@ function sampleClusteredOpenGround(
 ): MapPointMm[] {
   const anchors = sampleOpenGround(anchorCount, anchorCount * 18, nextRandom, {
     exclusionZones: mapBuildingClearanceZones(),
+    rimClearanceMm: RIM_VEGETATION_CLEARANCE_MM,
     roadVergeMm: anchorRoadVergeMm,
   });
   return expandClusteredPoints(
@@ -252,7 +256,11 @@ function expandClusteredPoints(
   const points: MapPointMm[] = [];
   const minDistanceSquaredMm = (minDistanceMeters * MM) ** 2;
   const canPlace = (candidate: MapPointMm): boolean =>
-    isOpenGround(candidate, { roadVergeMm, exclusionZones: mapBuildingClearanceZones() }) &&
+    isOpenGround(candidate, {
+      roadVergeMm,
+      exclusionZones: mapBuildingClearanceZones(),
+      rimClearanceMm: RIM_VEGETATION_CLEARANCE_MM,
+    }) &&
     (minDistanceSquaredMm <= 0 ||
       points.every((point) => {
         const dx = candidate.x - point.x;
@@ -344,7 +352,11 @@ function sampleModelDressing(nextRandom: () => number): readonly FloraModelDress
   const canPlace = (point: MapPointMm, roadVergeMm: number, minDistance: number): boolean => {
     if (
       placements.length >= MODEL_DRESSING_MAX ||
-      !isOpenGround(point, { roadVergeMm, exclusionZones: mapBuildingClearanceZones() })
+      !isOpenGround(point, {
+        roadVergeMm,
+        exclusionZones: mapBuildingClearanceZones(),
+        rimClearanceMm: RIM_VEGETATION_CLEARANCE_MM,
+      })
     ) {
       return false;
     }

@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { FLOW_NOISE_GLSL } from '../shading/flow-water';
 import { hash2 } from '../shading/noise';
 import { windTimeUniform } from '../shading/wind';
-import { SKY_PALETTE } from './atmosphere';
 import { AUTUMN_STORM } from './autumn-storm';
 import {
   FALL_LEAN_METERS,
@@ -30,19 +29,27 @@ import {
 
 /** How far the sea reaches past the plunge line, metres. Rings widen outward. */
 export const OCEAN_RING_OFFSETS: readonly number[] = [
-  0, 4, 9, 16, 26, 40, 60, 88, 125, 175, 240, 330, 450, 600, 800, 1_050,
+  0, 4, 9, 16, 26, 40, 60, 88, 125, 175, 240, 330, 450, 600, 800, 1_050, 1_350, 1_750, 2_250, 2_900,
 ];
+/** The scene fog is tuned for the 840 m playfield. The sea damps it so water
+ * keeps its own colour, then fades into a sea horizon rather than flat grey. */
+const OCEAN_FOG_SCALE = 0.3;
+const OCEAN_FOG_STRENGTH = 0.82;
 /** The inner ring tucks under the waterfall face so the plunge shows no seam. */
 const PLUNGE_TUCK_METERS = 0.35;
 /** Plunge ring sits a touch below sea so the fall's foot lands in it, not on it. */
 const PLUNGE_SINK_METERS = 0.3;
 
 export const OCEAN_PALETTE = {
-  deep: 0x0a2434,
-  mid: 0x1a6274,
-  shallow: 0x4aa8a4,
-  sky: SKY_PALETTE.horizon,
-  foam: 0xe8f2ee,
+  deep: 0x0b2b3f,
+  mid: 0x1d7c92,
+  shallow: 0x59c2bb,
+  shore: 0x8fe0d2,
+  /** Reflection tint: cooler than the storm sky so grazing water stays blue. */
+  sky: 0x8fb0c2,
+  /** Where water meets sky: colder and lighter than the scene fog. */
+  horizon: 0x7d9cb2,
+  foam: 0xf2f8f5,
   sun: 0xfff3d8,
 } as const;
 
@@ -59,7 +66,10 @@ float oceanSwell(vec2 p, float t) {
   float b = sin(p.x * -0.017 + p.y * 0.063 - t * 0.62);
   float c = sin((p.x + p.y) * 0.11 + t * 1.35);
   float d = sin(p.x * 0.19 - p.y * 0.14 + t * 1.9);
-  return a * 0.58 + b * 0.72 + c * 0.22 + d * 0.16;
+  // Mid-frequency train: the long swell alone is invisible from the chase lens.
+  float e = sin(p.x * 0.052 + p.y * 0.038 + t * 1.1);
+  float f = sin(p.x * -0.031 + p.y * 0.047 - t * 0.95);
+  return a * 0.62 + b * 0.78 + c * 0.3 + d * 0.24 + e * 0.34 + f * 0.3;
 }
 
 void main() {
@@ -84,7 +94,9 @@ uniform float uTime;
 uniform vec3 uDeep;
 uniform vec3 uMid;
 uniform vec3 uShallow;
+uniform vec3 uShore;
 uniform vec3 uSky;
+uniform vec3 uHorizon;
 uniform vec3 uFoam;
 uniform vec3 uSunColor;
 uniform vec3 uSunDirection;
@@ -101,8 +113,12 @@ vec3 oceanNormal(vec2 p, float t, float mask) {
   float b = cos(p.x * -0.017 + p.y * 0.063 - t * 0.62);
   float c = cos((p.x + p.y) * 0.11 + t * 1.35);
   float d = cos(p.x * 0.19 - p.y * 0.14 + t * 1.9);
-  float dx = a * 0.58 * 0.042 + b * 0.72 * -0.017 + c * 0.22 * 0.11 + d * 0.16 * 0.19;
-  float dz = a * 0.58 * 0.021 + b * 0.72 * 0.063 + c * 0.22 * 0.11 + d * 0.16 * -0.14;
+  float w1 = cos(p.x * 0.052 + p.y * 0.038 + t * 1.1);
+  float w2 = cos(p.x * -0.031 + p.y * 0.047 - t * 0.95);
+  float dx = a * 0.62 * 0.042 + b * 0.78 * -0.017 + c * 0.3 * 0.11 + d * 0.24 * 0.19
+    + w1 * 0.34 * 0.052 + w2 * 0.3 * -0.031;
+  float dz = a * 0.62 * 0.021 + b * 0.78 * 0.063 + c * 0.3 * 0.11 + d * 0.24 * -0.14
+    + w1 * 0.34 * 0.038 + w2 * 0.3 * 0.047;
   vec2 rp = p * 0.55 + vec2(t * 0.35, -t * 0.22);
   float e = 0.35;
   float r0 = fwFbm(rp);
@@ -122,22 +138,37 @@ void main() {
   float ndv = max(0.0, dot(n, toCamera));
   float fresnel = 0.04 + 0.96 * pow(1.0 - ndv, 4.2);
 
-  // Body colour: turquoise churn at the plunge, deepening with distance.
-  vec3 body = mix(uShallow, uMid, smoothstep(0.0, 48.0, vSea.x));
-  body = mix(body, uDeep, smoothstep(36.0, 220.0, vSea.x));
-  float crest = smoothstep(-0.4, 1.2, vSwell);
-  body = mix(body, uMid * 1.28, crest * 0.4 * mask);
-  vec3 colour = mix(body, uSky, fresnel * 0.68);
+  // Body colour: surf-white shallows at the plunge, turquoise shelf, then the
+  // open sea. The three bands are what make the sheet read as water rather
+  // than one flat tint.
+  vec3 body = mix(uShore, uShallow, smoothstep(2.0, 16.0, vSea.x));
+  body = mix(body, uMid, smoothstep(12.0, 60.0, vSea.x));
+  body = mix(body, uDeep, smoothstep(45.0, 260.0, vSea.x));
+  float crest = smoothstep(-0.5, 1.3, vSwell);
+  body = mix(body, uMid * 1.45, crest * 0.5 * mask);
+  // Swell shading: light on the forward face, dark in the trough, so the
+  // surface has readable waves even where nothing reflects.
+  body *= 0.9 + crest * 0.22;
+  vec3 colour = mix(body, uSky, fresnel * 0.44);
 
   // Sun glitter: a tight highlight over a broad sheen.
   vec3 h = normalize(uSunDirection + toCamera);
   float ndh = max(0.0, dot(n, h));
-  float glint = pow(ndh, 240.0) * 1.85 + pow(ndh, 22.0) * 0.18;
-  colour += uSunColor * glint * (0.38 + 0.62 * fresnel);
+  float glint = pow(ndh, 240.0) * 2.4 + pow(ndh, 18.0) * 0.3;
+  colour += uSunColor * glint * (0.34 + 0.66 * fresnel);
+
+  // Long crest lines running with the swell: the one cue that still reads as
+  // "waves" when the camera is far enough that individual ripple normals
+  // vanish. Frequencies are low on purpose so they survive to the horizon.
+  float crestField = fwFbm(vec2(vWorld.x * 0.035 + vWorld.z * 0.02, vWorld.z * 0.006 - t * 0.05));
+  float crestLines = smoothstep(0.52, 0.86, crestField) * smoothstep(60.0, 320.0, vSea.x);
+  body = mix(body, uMid * 1.5, crestLines * 0.35);
+  colour = mix(colour, uMid * 1.35, crestLines * 0.3 * (1.0 - fresnel * 0.5));
+  colour = mix(colour, uFoam, crestLines * crest * 0.5);
 
   // Whitecaps ride the swell crests in open water.
   float capNoise = fwFbm(vWorld.xz * 0.075 + vec2(t * 0.09, t * 0.05));
-  float caps = smoothstep(0.54, 0.78, capNoise) * smoothstep(0.28, 1.0, crest) * mask;
+  float caps = smoothstep(0.44, 0.7, capNoise) * smoothstep(0.18, 0.95, crest) * mask;
 
   // Plunge pool: the falls boil the first tens of metres white, and long
   // foam streaks are driven outward from the rim.
@@ -149,14 +180,22 @@ void main() {
   float foam = clamp(foamPlunge + foamStreaks + caps * 0.9, 0.0, 1.0);
   colour = mix(colour, uFoam, foam);
 
-  // Far water darkens toward the fog so the sheet does not read as a painted
-  // floor sitting under the horizon.
-  colour = mix(colour, uDeep * 0.72, smoothstep(280.0, 780.0, vSea.x) * 0.55);
+  // Far water deepens a little, then the horizon takes over.
+  colour = mix(colour, uDeep * 0.85, smoothstep(280.0, 900.0, vSea.x) * 0.5);
+
+  // The scene FogExp2 is tuned for the 840 m playfield: applied raw it flattens
+  // every wave into the fog colour within 300 m, which is why the sea used to
+  // read as a painted grey slab. Damp it, then blend into a colder sea horizon
+  // so the water keeps its colour and the sheet still dissolves into the sky.
+  float viewDistance = length(cameraPosition - vWorld);
+  float oceanFog = 1.0 - exp(-pow(fogDensity * ${OCEAN_FOG_SCALE} * viewDistance, 2.0));
+  oceanFog = clamp(oceanFog * ${OCEAN_FOG_STRENGTH}, 0.0, 1.0);
+  float horizonFade = smoothstep(2000.0, 5200.0, viewDistance) * 0.78;
+  colour = mix(colour, uHorizon, max(oceanFog, horizonFade));
 
   gl_FragColor = vec4(colour, 1.0);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
-  #include <fog_fragment>
 }
 `;
 
@@ -174,6 +213,8 @@ export function createOceanMaterial(): THREE.ShaderMaterial {
         uMid: { value: new THREE.Color(OCEAN_PALETTE.mid) },
         uShallow: { value: new THREE.Color(OCEAN_PALETTE.shallow) },
         uSky: { value: new THREE.Color(OCEAN_PALETTE.sky) },
+        uHorizon: { value: new THREE.Color(OCEAN_PALETTE.horizon) },
+        uShore: { value: new THREE.Color(OCEAN_PALETTE.shore) },
         uFoam: { value: new THREE.Color(OCEAN_PALETTE.foam) },
         uSunColor: { value: new THREE.Color(OCEAN_PALETTE.sun) },
         uSunDirection: { value: sun },
@@ -226,8 +267,11 @@ export function buildOcean(
     const a = index * ringCount;
     const b = ((index + 1) % count) * ringCount;
     for (let ring = 0; ring + 1 < ringCount; ring += 1) {
-      // Wound to face +Y so the front side is what the player sees.
-      indices.push(a + ring, a + ring + 1, b + ring, b + ring, a + ring + 1, b + ring + 1);
+      // Wound counter-clockwise seen from above so the front face is the one
+      // the player looks down on. The previous order faced the sea away from
+      // the camera, so the whole surface was backface-culled and the outer
+      // world showed nothing but sky.
+      indices.push(a + ring, b + ring, a + ring + 1, b + ring, b + ring + 1, a + ring + 1);
     }
   }
   const geometry = new THREE.BufferGeometry();
@@ -288,7 +332,7 @@ function buildPlungeApron(
     const a = index * ringCount;
     const b = ((index + 1) % count) * ringCount;
     for (let ring = 0; ring + 1 < ringCount; ring += 1) {
-      indices.push(a + ring, a + ring + 1, b + ring, b + ring, a + ring + 1, b + ring + 1);
+      indices.push(a + ring, b + ring, a + ring + 1, b + ring, b + ring + 1, a + ring + 1);
     }
   }
   const geometry = new THREE.BufferGeometry();

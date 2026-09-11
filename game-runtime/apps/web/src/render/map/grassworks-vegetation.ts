@@ -18,6 +18,9 @@ import {
   floraTreeOccluderTarget,
 } from './flora-occlusion';
 import { mapBuildingClearanceZones } from './map-asset-layer';
+
+/** Woods thin out into the shore apron over the last ~13 m of playfield. */
+const RIM_VEGETATION_CLEARANCE_MM = 13_000;
 import { type RegionId, regionAt } from './map-regions';
 import {
   createRandomStream,
@@ -565,6 +568,7 @@ function sampleForestGroves(nextRandom: () => number): MapPointMm[] {
         !isOpenGround(candidate, {
           roadVergeMm: FOREST_ROAD_VERGE_MM,
           exclusionZones: mapBuildingClearanceZones(),
+          rimClearanceMm: RIM_VEGETATION_CLEARANCE_MM,
         }) ||
         isWaterPoint(candidate) ||
         !index.farEnough(candidate)
@@ -622,6 +626,7 @@ function sampleClusteredOpenGround(
         !isOpenGround(candidate, {
           roadVergeMm: pointRoadVergeMm,
           exclusionZones: mapBuildingClearanceZones(),
+          rimClearanceMm: RIM_VEGETATION_CLEARANCE_MM,
         }) ||
         isWaterPoint(candidate) ||
         !occupiedIndex.farEnough(candidate) ||

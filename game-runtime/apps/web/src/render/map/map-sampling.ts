@@ -11,6 +11,7 @@ import {
   MAP_SPAWN_POINTS,
   type MapPointMm,
 } from '@jwgb/content';
+import { sampleRim } from './boundary-river';
 import { groundSurfaceMeters } from './ground-surface';
 import { convexContains, ringContains } from './map-polygons';
 import { isInsideBoundWall, massifSurfaceMeters } from './massif-surface';
@@ -158,6 +159,13 @@ export interface SampleOptions {
    * instead of inside the tree canopy.
    */
   readonly exclusionZones?: readonly ExclusionZone[];
+  /**
+   * Keep-out band inside the boundary polygon, in millimetres. The rim used to
+   * carry the same dense forest as the interior right up to the bank, which
+   * made the map edge read as a cut-out. Vegetation passes ~12 m here so the
+   * woods thin into the shore apron.
+   */
+  readonly rimClearanceMm?: number;
 }
 
 export interface ExclusionZone {
@@ -226,8 +234,51 @@ export function isOpenGround(point: MapPointMm, options: SampleOptions = {}): bo
     !MAP_COURTS.some((court) => convexContains(court.hexVertices, point)) &&
     !isNearLandmark(point, landmarkClearanceScale) &&
     (roadVergeMm < 0 || !isOnRoad(point, roadVergeMm)) &&
-    !insideExclusionZone(point, options.exclusionZones)
+    !insideExclusionZone(point, options.exclusionZones) &&
+    !insideRimBand(point, options.rimClearanceMm)
   );
+}
+
+/**
+ * Rim band membership from a coarse cell set, so the per-candidate cost stays
+ * constant instead of scanning the 686 rim samples.
+ */
+const RIM_CELL_METERS = 8;
+let rimCells: Set<string> | null = null;
+
+function rimCellKey(x: number, z: number): string {
+  return `${Math.floor(x / RIM_CELL_METERS)}:${Math.floor(z / RIM_CELL_METERS)}`;
+}
+
+function rimCellSet(): Set<string> {
+  if (rimCells) {
+    return rimCells;
+  }
+  const cells = new Set<string>();
+  for (const sample of sampleRim()) {
+    cells.add(rimCellKey(sample.x, sample.z));
+  }
+  rimCells = cells;
+  return cells;
+}
+
+function insideRimBand(point: MapPointMm, clearanceMm: number | undefined): boolean {
+  if (!clearanceMm || clearanceMm <= 0) {
+    return false;
+  }
+  const cells = rimCellSet();
+  const metres = clearanceMm / MM;
+  const steps = Math.max(1, Math.ceil(metres / RIM_CELL_METERS));
+  const x = point.x / MM;
+  const z = point.z / MM;
+  for (let dx = -steps; dx <= steps; dx += 1) {
+    for (let dz = -steps; dz <= steps; dz += 1) {
+      if (cells.has(rimCellKey(x + dx * RIM_CELL_METERS, z + dz * RIM_CELL_METERS))) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 function insideExclusionZone(

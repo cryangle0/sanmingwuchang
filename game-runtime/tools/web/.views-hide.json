@@ -1,0 +1,4 @@
+[
+  { "name": "hide-everything", "spawn": "-388.8,293.9", "keys": ["v", "v"], "wheel": 4, "settleMs": 1500,
+    "hideLayers": "map-ground,map-highlands,map-walls,map-courts,map-spawn-pads,map-props,map-landmarks-layer,map-dressing-layer,map-grassworks-vegetation-host,map-beyond,map-imported-assets-host,map-global-scenes-host" }
+]

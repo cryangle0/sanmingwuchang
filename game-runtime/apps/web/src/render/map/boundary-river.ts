@@ -1,6 +1,7 @@
 import { MAP_BOUNDARY, type MapPointMm, terrainHeightMeters } from '@jwgb/content';
 import * as THREE from 'three';
 import { createFlowWaterMaterial } from '../shading/flow-water';
+import { hash2 } from '../shading/noise';
 import type { MapMaterialLibrary } from './map-palette';
 import { regionBlendAt } from './map-regions';
 
@@ -40,7 +41,14 @@ export const BANK_WIDTH_METERS = 4.6;
 /** River width out to the lip. Kept short so the fall sits in the rim view. */
 export const RIVER_WIDTH_METERS = 5.4;
 /** Waterfall drop at the lowest point of the rim; taller columns fall further. */
-export const FALL_DROP_METERS = 48;
+/**
+ * Drop from the river lip to the sea, metres.
+ *
+ * 48 m read as a cliff into a void: from a 25 m chase camera the lip hid the
+ * whole sea and the outer world was just fog. 22 m keeps a dramatic fall while
+ * putting the water surface back inside the gameplay sightline.
+ */
+export const FALL_DROP_METERS = 22;
 /** Fall face leans back outward as it descends. Small so the curtain stays readable. */
 export const FALL_LEAN_METERS = 2.4;
 export const RIVER_SURFACE_BELOW_BANK = 0.9;
@@ -76,6 +84,7 @@ export function buildBoundaryRiver(
   const levels = smoothedLevels(rim);
   const surfaces = riverSurfaceLevels(rim, levels);
   const sea = seaLevelMeters(surfaces);
+  buildShoreApron(group, materials, track, rim, levels);
   buildBankTop(group, materials, track, rim, levels);
   buildBankFace(group, materials, track, rim, levels);
   buildCliff(group, materials, track, rim, surfaces, sea);
@@ -183,6 +192,150 @@ function ringGeometry(
  * from the same district palette as the ground so the playfield runs
  * continuously to the water instead of stopping on a rock kerb.
  */
+/**
+ * Shore apron between the forest and the river bank.
+ *
+ * The grass used to stop on a clean arc two metres from the water, which read
+ * as a cut-out map edge. This band runs ~26 m inland with a jittered outer
+ * edge, blends the district ground colour into wet gravel, and drops boulders,
+ * driftwood and reed clumps along the waterline so the playfield dissolves
+ * into the bank instead of ending on a line.
+ */
+function buildShoreApron(
+  group: THREE.Group,
+  materials: MapMaterialLibrary,
+  track: Track,
+  rim: readonly RimSample[],
+  levels: Float32Array,
+): void {
+  const offsets = [-26, -18, -12, -7, -3.4, -2.2];
+  const gravel = new THREE.Color(0x776f60);
+  const wetSand = new THREE.Color(0x59523f);
+  const primary = new THREE.Color();
+  const secondary = new THREE.Color();
+  const colour = new THREE.Color();
+  const positions: number[] = [];
+  const vertexColours: number[] = [];
+  const indices: number[] = [];
+  const count = rim.length;
+  const ringCount = offsets.length;
+  for (let index = 0; index < count; index += 1) {
+    const sample = rim[index] as RimSample;
+    const level = levels[index] as number;
+    for (let ring = 0; ring < ringCount; ring += 1) {
+      // Jitter both the offset and the height so the band edge is not an arc.
+      const jitter = (hash2(index, ring, 0x2b) - 0.5) * 3.4;
+      const offset = (offsets[ring] as number) + jitter;
+      const blend = regionBlendAt(sample.x, sample.z);
+      primary.setHex(blend.primary.ground);
+      secondary.setHex(blend.secondary.ground);
+      colour.copy(primary).lerp(secondary, blend.mix).lerp(NEUTRAL_LIGHT, 0.38);
+      const mix = Math.max(0, (ring - 1) / (ringCount - 2));
+      colour.lerp(gravel, mix * 0.78).lerp(wetSand, mix * mix * 0.6);
+      const shelfY = Math.max(sample.groundY, level);
+      const y = ring >= ringCount - 2 ? shelfY - 0.1 : sample.groundY - 0.12 + jitter * 0.02;
+      positions.push(sample.x + sample.outX * offset, y, sample.z + sample.outZ * offset);
+      vertexColours.push(colour.r, colour.g, colour.b);
+    }
+  }
+  for (let index = 0; index < count; index += 1) {
+    const a = index * ringCount;
+    const b = ((index + 1) % count) * ringCount;
+    for (let ring = 0; ring + 1 < ringCount; ring += 1) {
+      indices.push(a + ring, b + ring, a + ring + 1, b + ring, b + ring + 1, a + ring + 1);
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(vertexColours, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  geometry.computeBoundingSphere();
+  const mesh = new THREE.Mesh(
+    track(geometry),
+    new THREE.MeshStandardMaterial({
+      vertexColors: true,
+      roughness: 0.95,
+      metalness: 0.02,
+    }),
+  );
+  mesh.name = 'boundary-shore-apron';
+  mesh.receiveShadow = true;
+  group.add(mesh);
+
+  buildShoreScatter(group, track, rim, levels);
+}
+
+/** Boulders, driftwood and reed clumps along the waterline. */
+function buildShoreScatter(
+  group: THREE.Group,
+  track: Track,
+  rim: readonly RimSample[],
+  levels: Float32Array,
+): void {
+  const dummy = new THREE.Object3D();
+  const matrices: THREE.Matrix4[] = [];
+  const colours: THREE.Color[] = [];
+  const rock = new THREE.Color(0x6d6a60);
+  const wet = new THREE.Color(0x474b45);
+  const drift = new THREE.Color(0x6b5844);
+  const reed = new THREE.Color(0x8d8f5c);
+  for (let index = 0; index < rim.length; index += 2) {
+    const sample = rim[index] as RimSample;
+    for (let item = 0; item < 3; item += 1) {
+      const along = (hash2(index, item, 0x31) - 0.5) * 5.5;
+      const out = -(3 + hash2(index, item, 0x41) * 21);
+      const size = 0.5 + hash2(index, item, 0x51) * 1.7;
+      dummy.position.set(
+        sample.x + sample.outX * out - sample.outZ * along,
+        sample.groundY + size * 0.22,
+        sample.z + sample.outZ * out + sample.outX * along,
+      );
+      const kind = hash2(index, item, 0x61);
+      if (kind < 0.55) {
+        dummy.rotation.set(
+          hash2(index, item, 0x71) * 0.6,
+          hash2(index, item, 0x81) * Math.PI * 2,
+          hash2(index, item, 0x91) * 0.5,
+        );
+        dummy.scale.set(size, size * (0.5 + hash2(index, item, 0xa1) * 0.5), size * 0.8);
+        colours.push(rock.clone().lerp(wet, hash2(index, item, 0xb1)));
+      } else if (kind < 0.8) {
+        // Driftwood: a long low log lying along the bank.
+        dummy.rotation.set(0, hash2(index, item, 0xc1) * Math.PI * 2, Math.PI / 2);
+        dummy.scale.set(size * 0.22, size * 2.4, size * 0.22);
+        colours.push(drift);
+      } else {
+        dummy.rotation.set(0, hash2(index, item, 0xd1) * Math.PI * 2, 0);
+        dummy.scale.set(size * 0.5, size * 1.5, size * 0.5);
+        colours.push(reed);
+      }
+      dummy.updateMatrix();
+      matrices.push(dummy.matrix.clone());
+    }
+  }
+  if (matrices.length === 0) {
+    return;
+  }
+  const mesh = new THREE.InstancedMesh(
+    track(new THREE.IcosahedronGeometry(1, 1)),
+    new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, metalness: 0.02 }),
+    matrices.length,
+  );
+  mesh.name = 'boundary-shore-scatter';
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  for (let index = 0; index < matrices.length; index += 1) {
+    mesh.setMatrixAt(index, matrices[index] as THREE.Matrix4);
+    mesh.setColorAt(index, colours[index] as THREE.Color);
+  }
+  mesh.instanceMatrix.needsUpdate = true;
+  if (mesh.instanceColor) {
+    mesh.instanceColor.needsUpdate = true;
+  }
+  group.add(mesh);
+}
+
 function buildBankTop(
   group: THREE.Group,
   materials: MapMaterialLibrary,

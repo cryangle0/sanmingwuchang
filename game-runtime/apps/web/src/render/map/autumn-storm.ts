@@ -31,9 +31,11 @@ export const AUTUMN_STORM = {
   leafEmissive: { r: 0.14, g: 0.13, b: 0.09 },
   leafEmissiveHigh: 0.12,
   leafEmissiveLow: 0.06,
-  windLeafHigh: 0.045,
-  windLeafLow: 0.032,
-  windTrunk: 0.014,
+  // Raised for the "make the wind obvious" pass: canopies now move visibly
+  // from the chase lens instead of only under close inspection.
+  windLeafHigh: 0.078,
+  windLeafLow: 0.055,
+  windTrunk: 0.026,
   rainWindX: 14,
   rainWindZ: 5.6,
 } as const;

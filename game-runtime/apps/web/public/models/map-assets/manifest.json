@@ -2375,7 +2375,7 @@
       "id": "mission-lush-tree",
       "path": "models/foliage/mission-lush-tree.glb",
       "source": "Tree And Grass Object / MissionGoGoPlants.glb tree and leaves",
-      "targetHeight": 7.8,
+      "targetHeight": 13.4,
       "bytes": 139552,
       "metrics": {
         "after": {
@@ -2410,7 +2410,7 @@
       "id": "lowpoly-asia-tree",
       "path": "models/foliage/asia-tree.glb",
       "source": "0072 Lowpoly Style Ultra Pack 1.2 / AsiaTree1.fbx",
-      "targetHeight": 8.6,
+      "targetHeight": 11.8,
       "bytes": 43292,
       "metrics": {
         "before": {
@@ -2476,7 +2476,7 @@
       "id": "lowpoly-red-maple",
       "path": "models/foliage/red-maple.glb",
       "source": "0072 Lowpoly Style Ultra Pack 1.2 / RedMapleTree1.fbx",
-      "targetHeight": 8.1,
+      "targetHeight": 13.2,
       "bytes": 50364,
       "metrics": {
         "before": {
@@ -2806,7 +2806,7 @@
       "id": "poly-nature-beech",
       "path": "models/foliage/beech-poly.glb",
       "source": "Poly Nature Pack 1.0.0 / tree-beech-european-generic-mature-a",
-      "targetHeight": 7.8,
+      "targetHeight": 13.6,
       "bytes": 51816,
       "metrics": {
         "after": {
@@ -2841,7 +2841,7 @@
       "id": "poly-nature-willow",
       "path": "models/foliage/willow-poly.glb",
       "source": "Poly Nature Pack 1.0.0 / tree-willow-weeping-generic-mature-a",
-      "targetHeight": 7.4,
+      "targetHeight": 12.4,
       "bytes": 70472,
       "metrics": {
         "after": {
@@ -2876,7 +2876,7 @@
       "id": "poly-nature-cypress",
       "path": "models/foliage/cypress-poly.glb",
       "source": "Poly Nature Pack 1.0.0 / tree-cypress-mediterranean-generic-mature-a",
-      "targetHeight": 7.2,
+      "targetHeight": 12.6,
       "bytes": 34280,
       "metrics": {
         "after": {
@@ -2911,7 +2911,7 @@
       "id": "poly-nature-dead-beech",
       "path": "models/foliage/dead-beech-poly.glb",
       "source": "Poly Nature Pack 1.0.0 / tree-beech-european-dry-dead-a",
-      "targetHeight": 6.8,
+      "targetHeight": 11.6,
       "bytes": 16180,
       "metrics": {
         "after": {
@@ -2946,7 +2946,7 @@
       "id": "poly-nature-dead-cypress",
       "path": "models/foliage/dead-cypress-poly.glb",
       "source": "Poly Nature Pack 1.0.0 / tree-cypress-mediterranean-dry-dead-a",
-      "targetHeight": 6.8,
+      "targetHeight": 11.6,
       "bytes": 8248,
       "metrics": {
         "after": {

@@ -40,7 +40,11 @@ const BASE_FOG_DENSITY = AUTUMN_STORM.fogDensity;
  * dome vertex sits exactly this far from the eye. Keep it well inside the
  * camera far plane (600 m) or the GPU clips the whole sky away.
  */
-export const SKY_DOME_RADIUS_METERS = 420;
+/**
+ * Camera-centred sky radius. Must sit inside the camera far plane (3.6 km) but
+ * outside every drawn thing, or the dome cuts through the sea and the far ridge.
+ */
+export const SKY_DOME_RADIUS_METERS = 3_200;
 
 /**
  * World-space cloud drift in cloud-plane units per second. The clouds are a

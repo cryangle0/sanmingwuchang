@@ -38,7 +38,10 @@ describe('web world scale profile', () => {
     expect(Math.min(...architectureHeights)).toBeGreaterThanOrEqual(heroHeight * 4);
     expect(Math.max(...architectureHeights)).toBeLessThanOrEqual(32);
     expect(Math.min(...treeHeights)).toBeGreaterThanOrEqual(6.8);
-    expect(Math.max(...treeHeights)).toBeLessThanOrEqual(7.8);
+    // Near-camera trees were 7.8 m and showed no trunk from the chase lens;
+    // they now match the 12.5–24 m procedural forest.
+    expect(Math.max(...treeHeights)).toBeLessThanOrEqual(14);
+    expect(Math.min(...treeHeights)).toBeGreaterThanOrEqual(11);
     expect(Math.min(...treeHeights)).toBeGreaterThan(2.2 * 3);
     expect(WORLD_SCALE_PROFILE.map.rockMinWorldHeight).toBeGreaterThanOrEqual(1.45);
     expect(WORLD_SCALE_PROFILE.map.rockMaxWorldHeight).toBeLessThanOrEqual(4.25);

@@ -43,6 +43,10 @@ describe('boundary river and waterfall', () => {
     });
     const names = group.children.map((child) => child.name);
     expect(names).toEqual([
+      // Shore apron and its boulder/driftwood scatter soften the grass-to-water
+      // seam; the rest is the original bank, cliff, river and mists.
+      'boundary-shore-apron',
+      'boundary-shore-scatter',
       'boundary-river-bank-top',
       'boundary-river-bank',
       'boundary-river-cliff',

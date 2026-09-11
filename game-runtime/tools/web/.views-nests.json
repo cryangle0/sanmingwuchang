@@ -1,0 +1,5 @@
+[
+  { "name": "nest-melee", "spawn": "268.7,-65.9", "moveMs": 1600, "drag": [0, 150], "settleMs": 2600 },
+  { "name": "nest-ranged", "spawn": "-287.4,191.2", "moveMs": 1600, "drag": [0, 150], "settleMs": 2600 },
+  { "name": "nest-flyer", "spawn": "-84.9,-150.4", "moveMs": 1600, "drag": [0, 150], "settleMs": 2600 }
+]

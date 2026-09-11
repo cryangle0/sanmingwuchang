@@ -110,6 +110,7 @@ export function buildMapEnvironment(
     (geometry, material, options) => addMesh(ground, geometry, material, options),
     materials.ground,
   );
+
   buildWater(materials.valleyWater, (geometry, material, options) =>
     addMesh(ground, geometry, material, options),
   );

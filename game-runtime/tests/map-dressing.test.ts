@@ -118,7 +118,10 @@ describe('district dressing', () => {
       expect(Array.from(position.array).every(Number.isFinite)).toBe(true);
       totalVertices += position.count;
     }
-    expect(totalVertices).toBeLessThanOrEqual(380_000);
+    // The 48 monster lairs were rebuilt as full set pieces (boulder mouths,
+    // stepped altars, roost spires) in the same bags, which is what took this
+    // from ~368k to ~388k vertices while the draw-call count stayed put.
+    expect(totalVertices).toBeLessThanOrEqual(392_000);
 
     dispose(built);
   });

@@ -434,7 +434,7 @@ function prepareMaterial(
       material.emissive.setRGB(0.018, 0.028, 0.012);
       material.emissiveIntensity = 0.16;
       material.color.multiplyScalar(entry.sourceId === 'forest-road-night' ? 0.92 : 0.86);
-      applyWindSway(material, entry.role === 'foliage' ? 0.018 : 0.028);
+      applyWindSway(material, entry.role === 'foliage' ? 0.032 : 0.045);
     }
   } else {
     material.transparent = false;

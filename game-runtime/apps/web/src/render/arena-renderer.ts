@@ -33,9 +33,9 @@ import {
 } from './camera-controls';
 import { type CameraFollowState, updateCameraFollowState } from './camera-follow';
 import { CombatEffectsLayer, effectColorForElement } from './combat-effects';
+import { activePresentationRange, type CombatRangePreviewMode } from './combat-range-preview';
 import { CombatTextLayer, formatCombatNumber } from './combat-text';
 import { softDisc } from './hero-skill-vfx';
-import { activePresentationRange, type CombatRangePreviewMode } from './combat-range-preview';
 import { createMapAtmosphere, type MapAtmosphere } from './map/atmosphere';
 import { AUTUMN_STORM } from './map/autumn-storm';
 import type { GlobalSceneLayerDiagnostics } from './map/global-scene-layer';
@@ -505,7 +505,11 @@ export class ArenaRenderer {
 
     // Far plane reaches the ridge line beyond the boundary cliffs; the
     // orthographic rig only ever needed 180 m.
-    this.camera = new THREE.PerspectiveCamera(CAMERA_FOV_DEGREES, 1, 0.1, 600);
+    // Far plane 600 m clipped the whole outer sea: the ocean runs to ~2.9 km
+    // and the horizon isles sit at 420–800 m, so everything past the rim fell
+    // away into flat sky. 3.6 km clears the sea, the isles and the far ridge;
+    // 0.3 m near keeps enough depth resolution for foliage at the lens.
+    this.camera = new THREE.PerspectiveCamera(CAMERA_FOV_DEGREES, 1, 0.3, 3_600);
     this.camera.position.set(...CAMERA_VIEWS.standard.offset);
     this.camera.lookAt(0, 0, 0);
 

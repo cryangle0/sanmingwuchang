@@ -7,11 +7,11 @@ import {
 } from '../apps/web/src/render/map/atmosphere';
 
 /** Mirrors the far plane of the arena camera in arena-renderer.ts. */
-const ARENA_CAMERA_FAR_METERS = 600;
+const ARENA_CAMERA_FAR_METERS = 3_600;
 
 describe('map sky dome', () => {
   it('stays inside the camera far plane so the GPU never clips the sky away', () => {
-    expect(SKY_DOME_RADIUS_METERS).toBeGreaterThan(100);
+    expect(SKY_DOME_RADIUS_METERS).toBeGreaterThan(1_000);
     expect(SKY_DOME_RADIUS_METERS).toBeLessThan(ARENA_CAMERA_FAR_METERS * 0.9);
   });
 

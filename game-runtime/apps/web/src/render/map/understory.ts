@@ -6,6 +6,9 @@ import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js';
 import { appendAssetVersion, webAssetDirectoryUrl, webAssetUrl } from '../../runtime/asset-url';
 import { applyWindSway } from '../shading/wind';
 import { mapBuildingClearanceZones } from './map-asset-layer';
+
+/** Woods thin out into the shore apron over the last ~13 m of playfield. */
+const RIM_VEGETATION_CLEARANCE_MM = 13_000;
 import { regionAt } from './map-regions';
 import { dressingSurfaceMeters, isOpenGround } from './map-sampling';
 import { isInSpawnPond } from './spawn-ponds';
@@ -31,7 +34,7 @@ const VISIBILITY_UPDATE_INTERVAL = 3;
 const BALANCED_CULL_DISTANCE = 72;
 const REDUCED_CULL_DISTANCE = 58;
 const REDUCED_DENSITY = 0.5;
-const WIND_STRENGTH = 0.03;
+const WIND_STRENGTH = 0.05;
 const ALPHA_TEST = 0.4;
 
 export interface UnderstoryAnchor {
@@ -189,6 +192,7 @@ export function sampleUnderstoryPlacements(
       if (
         !isOpenGround(point, {
           exclusionZones: mapBuildingClearanceZones(),
+          rimClearanceMm: RIM_VEGETATION_CLEARANCE_MM,
           roadVergeMm: 1_200,
           landmarkClearanceScale: 0.6,
           includeBoundMassifs: true,

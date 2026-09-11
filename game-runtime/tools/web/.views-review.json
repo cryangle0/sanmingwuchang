@@ -1,0 +1,8 @@
+[
+  { "name": "nest-MEL", "spawn": "281.7,-78.9", "moveMs": 1200, "settleMs": 2500 },
+  { "name": "nest-RNG", "spawn": "-274.4,178.2", "moveMs": 1200, "settleMs": 2500 },
+  { "name": "nest-FLY", "spawn": "-71.9,-163.4", "moveMs": 1200, "settleMs": 2500 },
+  { "name": "sea-nw", "spawn": "-313.2,-236.8", "moveMs": 1500, "settleMs": 2500 },
+  { "name": "sea-se", "spawn": "383.5,240.7", "moveMs": 1500, "settleMs": 2500 },
+  { "name": "forest-trunks", "spawn": "-150,40", "moveMs": 1200, "settleMs": 2500 }
+]
