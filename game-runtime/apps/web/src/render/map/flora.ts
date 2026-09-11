@@ -17,8 +17,9 @@ import {
 } from './flora-occlusion';
 import { mapBuildingClearanceZones } from './map-asset-layer';
 
-/** Woods thin out into the shore apron over the last ~13 m of playfield. */
-const RIM_VEGETATION_CLEARANCE_MM = 13_000;
+/** Woods thin out into the shore apron over the last ~44 m of playfield. */
+const RIM_VEGETATION_THINNING_MM = 44_000;
+
 import type { MapMaterialLibrary } from './map-palette';
 import { regionAt } from './map-regions';
 import {
@@ -226,7 +227,7 @@ function sampleClusteredOpenGround(
 ): MapPointMm[] {
   const anchors = sampleOpenGround(anchorCount, anchorCount * 18, nextRandom, {
     exclusionZones: mapBuildingClearanceZones(),
-    rimClearanceMm: RIM_VEGETATION_CLEARANCE_MM,
+    rimThinningMm: RIM_VEGETATION_THINNING_MM,
     roadVergeMm: anchorRoadVergeMm,
   });
   return expandClusteredPoints(
@@ -259,7 +260,7 @@ function expandClusteredPoints(
     isOpenGround(candidate, {
       roadVergeMm,
       exclusionZones: mapBuildingClearanceZones(),
-      rimClearanceMm: RIM_VEGETATION_CLEARANCE_MM,
+      rimThinningMm: RIM_VEGETATION_THINNING_MM,
     }) &&
     (minDistanceSquaredMm <= 0 ||
       points.every((point) => {
@@ -355,7 +356,7 @@ function sampleModelDressing(nextRandom: () => number): readonly FloraModelDress
       !isOpenGround(point, {
         roadVergeMm,
         exclusionZones: mapBuildingClearanceZones(),
-        rimClearanceMm: RIM_VEGETATION_CLEARANCE_MM,
+        rimThinningMm: RIM_VEGETATION_THINNING_MM,
       })
     ) {
       return false;

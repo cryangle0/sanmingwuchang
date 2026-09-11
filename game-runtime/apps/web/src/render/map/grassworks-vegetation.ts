@@ -19,8 +19,9 @@ import {
 } from './flora-occlusion';
 import { mapBuildingClearanceZones } from './map-asset-layer';
 
-/** Woods thin out into the shore apron over the last ~13 m of playfield. */
-const RIM_VEGETATION_CLEARANCE_MM = 13_000;
+/** Woods thin out into the shore apron over the last ~44 m of playfield. */
+const RIM_VEGETATION_THINNING_MM = 44_000;
+
 import { type RegionId, regionAt } from './map-regions';
 import {
   createRandomStream,
@@ -32,6 +33,7 @@ import {
   sampleOpenGround,
 } from './map-sampling';
 import { isInSpawnPond } from './spawn-ponds';
+import { exposeTreeTrunk } from './tree-canopy';
 import { buildUnderstoryLayer, type UnderstoryLayer } from './understory';
 import { waterSurfaceAt } from './water';
 
@@ -568,7 +570,7 @@ function sampleForestGroves(nextRandom: () => number): MapPointMm[] {
         !isOpenGround(candidate, {
           roadVergeMm: FOREST_ROAD_VERGE_MM,
           exclusionZones: mapBuildingClearanceZones(),
-          rimClearanceMm: RIM_VEGETATION_CLEARANCE_MM,
+          rimThinningMm: RIM_VEGETATION_THINNING_MM,
         }) ||
         isWaterPoint(candidate) ||
         !index.farEnough(candidate)
@@ -626,7 +628,7 @@ function sampleClusteredOpenGround(
         !isOpenGround(candidate, {
           roadVergeMm: pointRoadVergeMm,
           exclusionZones: mapBuildingClearanceZones(),
-          rimClearanceMm: RIM_VEGETATION_CLEARANCE_MM,
+          rimThinningMm: RIM_VEGETATION_THINNING_MM,
         }) ||
         isWaterPoint(candidate) ||
         !occupiedIndex.farEnough(candidate) ||
@@ -1235,6 +1237,9 @@ function extractTreeTemplates(scene: THREE.Group): Map<string, TreeTemplate> {
       if (parts.length === 0) {
         throw new Error(`Grassworks tree template ${variant}/${lod} has no renderable meshes`);
       }
+      // Same bare-trunk correction as the near-camera flora: the wood has to
+      // show trunks under the canopy from the chase lens.
+      exposeTreeTrunk(parts, 0.34);
       templates.set(`${variant}:${lod}`, { variant, lod, parts });
     }
   }

@@ -287,7 +287,6 @@ export function buildOcean(
   group.add(mesh);
   buildPlungeApron(group, track, rim, sea, base);
   buildCoastalSkerries(group, track, rim, sea, base);
-  buildHorizonIsles(group, track, rim, sea, base);
   return mesh;
 }
 
@@ -416,47 +415,5 @@ function buildCoastalSkerries(
   if (mesh.instanceColor) {
     mesh.instanceColor.needsUpdate = true;
   }
-  group.add(mesh);
-}
-
-function buildHorizonIsles(
-  group: THREE.Group,
-  track: <T extends THREE.BufferGeometry>(geometry: T) => T,
-  rim: readonly RimSample[],
-  sea: number,
-  base: number,
-): void {
-  const dummy = new THREE.Object3D();
-  const count = 9;
-  const mesh = new THREE.InstancedMesh(
-    track(new THREE.ConeGeometry(1, 1, 7)),
-    new THREE.MeshStandardMaterial({
-      color: 0x2c3c38,
-      roughness: 0.92,
-      metalness: 0,
-      fog: true,
-    }),
-    count,
-  );
-  mesh.name = 'beyond-horizon-isles';
-  mesh.frustumCulled = false;
-  mesh.castShadow = false;
-  mesh.receiveShadow = false;
-  for (let index = 0; index < count; index += 1) {
-    const sample = rim[Math.floor((index / count) * rim.length) % rim.length] as RimSample;
-    const distance = 420 + hash2(index, 1, 0xe1) * 380;
-    const breadth = 28 + hash2(index, 2, 0xe2) * 48;
-    const peak = 18 + hash2(index, 3, 0xe3) * 36;
-    dummy.position.set(
-      sample.x + sample.outX * (base + distance),
-      sea + peak * 0.42,
-      sample.z + sample.outZ * (base + distance),
-    );
-    dummy.rotation.set(0, hash2(index, 4, 0xe4) * Math.PI * 2, 0);
-    dummy.scale.set(breadth, peak, breadth * (0.7 + hash2(index, 5, 0xe5) * 0.5));
-    dummy.updateMatrix();
-    mesh.setMatrixAt(index, dummy.matrix);
-  }
-  mesh.instanceMatrix.needsUpdate = true;
   group.add(mesh);
 }

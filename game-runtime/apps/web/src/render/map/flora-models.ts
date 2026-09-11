@@ -12,6 +12,7 @@ import {
   floraTreeOccluderTarget,
 } from './flora-occlusion';
 import { type RegionId, regionAt } from './map-regions';
+import { exposeTreeTrunk } from './tree-canopy';
 
 const MODEL_DIR = 'models/foliage/';
 const TREE_TARGET_HEIGHTS = WORLD_SCALE_PROFILE.flora.treeTargetHeights;
@@ -542,20 +543,10 @@ function extractParts(path: string, gltf: { readonly scene: THREE.Group }): Mode
   if (parts.length === 0) {
     throw new Error(`foliage model has no renderable meshes: ${path}`);
   }
-  let minY = Number.POSITIVE_INFINITY;
-  let maxY = Number.NEGATIVE_INFINITY;
-  for (const part of parts) {
-    part.geometry.computeBoundingBox();
-    const bounds = part.geometry.boundingBox;
-    if (!bounds) {
-      continue;
-    }
-    minY = Math.min(minY, bounds.min.y);
-    maxY = Math.max(maxY, bounds.max.y);
-  }
-  if (!Number.isFinite(minY) || !Number.isFinite(maxY) || maxY - minY <= 0.001) {
-    throw new Error(`foliage model has invalid bounds: ${path}`);
-  }
+  // Expose the trunk before the template bounds are recorded: the crown moves
+  // up, the bole grows, and the model is still normalised to its profile
+  // height later, so only the silhouette changes.
+  const { minY, maxY } = exposeTreeTrunk(parts);
   return {
     path,
     parts,

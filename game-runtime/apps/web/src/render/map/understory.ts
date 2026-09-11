@@ -7,8 +7,9 @@ import { appendAssetVersion, webAssetDirectoryUrl, webAssetUrl } from '../../run
 import { applyWindSway } from '../shading/wind';
 import { mapBuildingClearanceZones } from './map-asset-layer';
 
-/** Woods thin out into the shore apron over the last ~13 m of playfield. */
-const RIM_VEGETATION_CLEARANCE_MM = 13_000;
+/** Woods thin out into the shore apron over the last ~44 m of playfield. */
+const RIM_VEGETATION_THINNING_MM = 44_000;
+
 import { regionAt } from './map-regions';
 import { dressingSurfaceMeters, isOpenGround } from './map-sampling';
 import { isInSpawnPond } from './spawn-ponds';
@@ -192,7 +193,7 @@ export function sampleUnderstoryPlacements(
       if (
         !isOpenGround(point, {
           exclusionZones: mapBuildingClearanceZones(),
-          rimClearanceMm: RIM_VEGETATION_CLEARANCE_MM,
+          rimThinningMm: RIM_VEGETATION_THINNING_MM,
           roadVergeMm: 1_200,
           landmarkClearanceScale: 0.6,
           includeBoundMassifs: true,

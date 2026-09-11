@@ -591,6 +591,7 @@ function assetPlacement(
   kind: 'landmark' | 'structure',
   lift: number,
   scaleMultiplier = 1,
+  groundY?: number,
 ): MapAssetPlacement {
   const targetHeight = catalogEntry(assetId).targetHeight;
   return {
@@ -598,7 +599,7 @@ function assetPlacement(
     assetId,
     kind,
     x: point.x,
-    y: terrainHeightMeters(point.x, point.z) + lift,
+    y: (groundY ?? terrainHeightMeters(point.x, point.z)) + lift,
     z: point.z,
     yaw,
     worldHeight,
@@ -661,12 +662,17 @@ function buildingSites(
   readonly x: number;
   readonly z: number;
   readonly yaw: number;
+  readonly groundY: number;
+  readonly step: number;
 }[] {
   const nextRandom = createRandomStream(seed ^ 0x5bf03635);
   const sampled = sampleOpenGround(2_400, 26_000, nextRandom, {
     roadVergeMm: BUILDING_ROAD_VERGE_MM,
   });
-  const buckets = new Map<RegionId, { x: number; z: number; yaw: number }[]>();
+  const buckets = new Map<
+    RegionId,
+    { x: number; z: number; yaw: number; groundY: number; step: number }[]
+  >();
   for (const point of sampled) {
     const xMeters = point.x / MM;
     const zMeters = point.z / MM;
@@ -694,12 +700,70 @@ function buildingSites(
     if (!spaced) {
       continue;
     }
-    bucket.push({ x: xMeters, z: zMeters, yaw: nextRandom() * Math.PI * 2 });
+    // A flat-bottomed building on a slope floats on its downhill side. Reject
+    // sites whose footprint steps more than the plinth can absorb, and ground
+    // the survivors on the lowest corner so nothing hovers.
+    const footprint = footprintGroundMeters(xMeters, zMeters);
+    if (footprint === null) {
+      continue;
+    }
+    bucket.push({
+      x: xMeters,
+      z: zMeters,
+      yaw: nextRandom() * Math.PI * 2,
+      groundY: footprint.groundY,
+      step: footprint.step,
+    });
     buckets.set(region.id, bucket);
   }
   return [...buckets.entries()].flatMap(([region, sites]) =>
     sites.map((site) => ({ region, ...site })),
   );
+}
+
+/** Largest footprint half-extent in the family (the 14 m gate tower). */
+const BUILDING_FOOTPRINT_HALF_METERS = 7.2;
+/**
+ * Terrain step a footprint may span, metres. Buildings are grounded on their
+ * lowest corner, so this is how deep the uphill side may bury: past ~1.5 m a
+ * hall still reads as built into the slope, which is why steeper sites are
+ * dropped rather than sunk.
+ */
+const BUILDING_MAX_FOOTPRINT_STEP_METERS = 1.5;
+
+/**
+ * Ground height for a building centred here, or null when the footprint is too
+ * steep to sit on. Returns the lowest corner, so the downhill edge of the
+ * plinth always meets the terrain and the uphill edge buries into the slope.
+ */
+function footprintGroundMeters(
+  xMeters: number,
+  zMeters: number,
+): { readonly groundY: number; readonly step: number } | null {
+  const offsets: readonly (readonly [number, number])[] = [
+    [1, 0],
+    [-1, 0],
+    [0, 1],
+    [0, -1],
+    [0.7, 0.7],
+    [0.7, -0.7],
+    [-0.7, 0.7],
+    [-0.7, -0.7],
+  ];
+  let lowest = terrainHeightMeters(xMeters, zMeters);
+  let highest = lowest;
+  for (const [dx, dz] of offsets) {
+    const height = terrainHeightMeters(
+      xMeters + dx * BUILDING_FOOTPRINT_HALF_METERS,
+      zMeters + dz * BUILDING_FOOTPRINT_HALF_METERS,
+    );
+    lowest = Math.min(lowest, height);
+    highest = Math.max(highest, height);
+  }
+  if (highest - lowest > BUILDING_MAX_FOOTPRINT_STEP_METERS) {
+    return null;
+  }
+  return { groundY: lowest, step: highest - lowest };
 }
 
 function nearBuildingBlocker(xMm: number, zMm: number): boolean {
@@ -897,8 +961,9 @@ function buildingPlacements(seed: number): readonly MapAssetPlacement[] {
         height,
         site.yaw,
         'structure',
-        0.04,
+        0.03,
         scaleMultiplier,
+        site.groundY,
       ),
     );
   }

@@ -324,8 +324,16 @@ const HERO_COLORS: Readonly<Record<string, number>> = {
   H018: 0x3d735c,
 };
 const MAX_PERFORMANCE_FRAME_SAMPLES = 240;
-const BALANCED_ENTITY_VISUAL_CULL_DISTANCE_SQUARED = 55_000 ** 2;
-const REDUCED_ENTITY_VISUAL_CULL_DISTANCE_SQUARED = 45_000 ** 2;
+/**
+ * Distance an entity visual stays on screen, millimetres.
+ *
+ * 55 m was so short that on an 840 m map with spawn zones spread across it a
+ * player could cross a whole match without ever seeing another hero. 150 m
+ * keeps distant heroes and monsters in the picture without turning the frame
+ * into a crowd; the reduced tier stays a step tighter for low-end devices.
+ */
+const BALANCED_ENTITY_VISUAL_CULL_DISTANCE_SQUARED = 150_000 ** 2;
+const REDUCED_ENTITY_VISUAL_CULL_DISTANCE_SQUARED = 110_000 ** 2;
 const BALANCED_PLAYER_STATUS_DISTANCE_SQUARED = 38_000 ** 2;
 const BALANCED_MONSTER_STATUS_DISTANCE_SQUARED = 34_000 ** 2;
 const REDUCED_PLAYER_STATUS_DISTANCE_SQUARED = 30_000 ** 2;

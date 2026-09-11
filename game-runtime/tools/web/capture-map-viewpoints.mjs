@@ -110,6 +110,11 @@ try {
         camera: debug.getCameraDiagnostics?.() ?? null,
         scene: debug.getRenderSceneContributorDiagnostics?.() ?? null,
         globalScenes: debug.getGlobalSceneDiagnostics?.() ?? null,
+        entities: debug.getRenderEntityDiagnostics?.() ?? null,
+        entityDiag: debug.getRenderEntityDiagnostics?.() ?? null,
+        players: (debug.getSnapshot?.()?.players ?? []).map((p) => ({ id: p.entityId, x: Math.round(p.position.x / 1000), z: Math.round(p.position.z / 1000) })),
+        models: debug.getModelDiagnostics?.() ?? null,
+        snapshotPlayers: debug.getSnapshot?.()?.players?.length ?? null,
         flora: debug.getFloraModelDiagnostics?.() ?? null,
       };
     });
@@ -123,6 +128,11 @@ try {
       zoom: camera.camera?.zoom ?? null,
       scene: camera.scene,
       globalScenes: camera.globalScenes,
+      entities: camera.entities,
+      entityDiag: camera.entityDiag,
+      players: camera.players,
+      models: camera.models,
+      snapshotPlayers: camera.snapshotPlayers,
       flora: camera.flora,
       errors,
     });

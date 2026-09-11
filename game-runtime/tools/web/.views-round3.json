@@ -1,0 +1,9 @@
+[
+  { "name": "forest-bole", "spawn": "-150,40", "moveMs": 1200, "settleMs": 2500 },
+  { "name": "edge-standard", "spawn": "420,263", "moveMs": 1500, "settleMs": 2500 },
+  { "name": "edge-tactical", "spawn": "420,263", "keys": ["v", "v"], "wheel": 4, "settleMs": 2600 },
+  { "name": "sea-west", "spawn": "-388.8,293.9", "keys": ["v", "v"], "wheel": 4, "settleMs": 2600 },
+  { "name": "building-hall", "spawn": "-13.1,12.7", "moveMs": 900, "settleMs": 2500 },
+  { "name": "building-paifang", "spawn": "-10.9,-125.8", "moveMs": 900, "settleMs": 2500 },
+  { "name": "next-to-bot", "spawn": "-224,86", "moveMs": 800, "settleMs": 2500 }
+]

@@ -11,6 +11,7 @@ import {
   MAP_SPAWN_POINTS,
   type MapPointMm,
 } from '@jwgb/content';
+import { hash2 } from '../shading/noise';
 import { sampleRim } from './boundary-river';
 import { groundSurfaceMeters } from './ground-surface';
 import { convexContains, ringContains } from './map-polygons';
@@ -160,12 +161,11 @@ export interface SampleOptions {
    */
   readonly exclusionZones?: readonly ExclusionZone[];
   /**
-   * Keep-out band inside the boundary polygon, in millimetres. The rim used to
-   * carry the same dense forest as the interior right up to the bank, which
-   * made the map edge read as a cut-out. Vegetation passes ~12 m here so the
-   * woods thin into the shore apron.
+   * Distance over which vegetation thins towards the boundary, in millimetres.
+   * Density falls off continuously instead of stopping on a keep-out line, so
+   * the wood dissolves into the shore apron.
    */
-  readonly rimClearanceMm?: number;
+  readonly rimThinningMm?: number;
 }
 
 export interface ExclusionZone {
@@ -235,50 +235,137 @@ export function isOpenGround(point: MapPointMm, options: SampleOptions = {}): bo
     !isNearLandmark(point, landmarkClearanceScale) &&
     (roadVergeMm < 0 || !isOnRoad(point, roadVergeMm)) &&
     !insideExclusionZone(point, options.exclusionZones) &&
-    !insideRimBand(point, options.rimClearanceMm)
+    survivesRimThinning(point, options.rimThinningMm)
   );
 }
 
 /**
- * Rim band membership from a coarse cell set, so the per-candidate cost stays
- * constant instead of scanning the 686 rim samples.
+ * Distance to the boundary rim, metres, from a baked field.
+ *
+ * A hard keep-out band drew its own visible edge where the wood stopped. The
+ * thinning test needs the actual distance, and scanning 686 rim samples per
+ * candidate is far too slow, so the distance is rasterised once into a 4 m
+ * grid with a two-pass chamfer sweep and then read back in O(1).
  */
-const RIM_CELL_METERS = 8;
-let rimCells: Set<string> | null = null;
+const RIM_FIELD_CELL_METERS = 4;
+let rimDistanceField: {
+  minX: number;
+  minZ: number;
+  columns: number;
+  rows: number;
+  data: Float32Array;
+} | null = null;
 
-function rimCellKey(x: number, z: number): string {
-  return `${Math.floor(x / RIM_CELL_METERS)}:${Math.floor(z / RIM_CELL_METERS)}`;
-}
-
-function rimCellSet(): Set<string> {
-  if (rimCells) {
-    return rimCells;
+function buildRimDistanceField(): NonNullable<typeof rimDistanceField> {
+  const rim = sampleRim();
+  let minX = Number.POSITIVE_INFINITY;
+  let maxX = Number.NEGATIVE_INFINITY;
+  let minZ = Number.POSITIVE_INFINITY;
+  let maxZ = Number.NEGATIVE_INFINITY;
+  for (const point of MAP_BOUNDARY) {
+    minX = Math.min(minX, point.x);
+    maxX = Math.max(maxX, point.x);
+    minZ = Math.min(minZ, point.z);
+    maxZ = Math.max(maxZ, point.z);
   }
-  const cells = new Set<string>();
-  for (const sample of sampleRim()) {
-    cells.add(rimCellKey(sample.x, sample.z));
-  }
-  rimCells = cells;
-  return cells;
-}
-
-function insideRimBand(point: MapPointMm, clearanceMm: number | undefined): boolean {
-  if (!clearanceMm || clearanceMm <= 0) {
-    return false;
-  }
-  const cells = rimCellSet();
-  const metres = clearanceMm / MM;
-  const steps = Math.max(1, Math.ceil(metres / RIM_CELL_METERS));
-  const x = point.x / MM;
-  const z = point.z / MM;
-  for (let dx = -steps; dx <= steps; dx += 1) {
-    for (let dz = -steps; dz <= steps; dz += 1) {
-      if (cells.has(rimCellKey(x + dx * RIM_CELL_METERS, z + dz * RIM_CELL_METERS))) {
-        return true;
+  const margin = 60_000;
+  const step = RIM_FIELD_CELL_METERS * MM;
+  const originX = minX - margin;
+  const originZ = minZ - margin;
+  const columns = Math.ceil((maxX - minX + margin * 2) / step) + 1;
+  const rows = Math.ceil((maxZ - minZ + margin * 2) / step) + 1;
+  const data = new Float32Array(columns * rows).fill(Number.POSITIVE_INFINITY);
+  for (const sample of rim) {
+    // Stamp a 3x3 block so the sweep has a starting value in every direction.
+    for (let dz = -1; dz <= 1; dz += 1) {
+      for (let dx = -1; dx <= 1; dx += 1) {
+        const x = sample.x + dx * step;
+        const z = sample.z + dz * step;
+        const column = Math.round((x - originX) / step);
+        const row = Math.round((z - originZ) / step);
+        if (column < 0 || row < 0 || column >= columns || row >= rows) {
+          continue;
+        }
+        const index = row * columns + column;
+        const distance = Math.hypot(x - sample.x, z - sample.z) / MM;
+        if (distance < (data[index] as number)) {
+          data[index] = distance;
+        }
       }
     }
   }
-  return false;
+  const diagonal = RIM_FIELD_CELL_METERS * Math.SQRT2;
+  for (let row = 0; row < rows; row += 1) {
+    for (let column = 0; column < columns; column += 1) {
+      const index = row * columns + column;
+      let best = data[index] as number;
+      if (column > 0) {
+        best = Math.min(best, (data[index - 1] as number) + RIM_FIELD_CELL_METERS);
+        if (row > 0) {
+          best = Math.min(best, (data[index - columns - 1] as number) + diagonal);
+        }
+      }
+      if (row > 0) {
+        best = Math.min(best, (data[index - columns] as number) + RIM_FIELD_CELL_METERS);
+        if (column + 1 < columns) {
+          best = Math.min(best, (data[index - columns + 1] as number) + diagonal);
+        }
+      }
+      data[index] = best;
+    }
+  }
+  for (let row = rows - 1; row >= 0; row -= 1) {
+    for (let column = columns - 1; column >= 0; column -= 1) {
+      const index = row * columns + column;
+      let best = data[index] as number;
+      if (column + 1 < columns) {
+        best = Math.min(best, (data[index + 1] as number) + RIM_FIELD_CELL_METERS);
+        if (row + 1 < rows) {
+          best = Math.min(best, (data[index + columns + 1] as number) + diagonal);
+        }
+      }
+      if (row + 1 < rows) {
+        best = Math.min(best, (data[index + columns] as number) + RIM_FIELD_CELL_METERS);
+        if (column > 0) {
+          best = Math.min(best, (data[index + columns - 1] as number) + diagonal);
+        }
+      }
+      data[index] = best;
+    }
+  }
+  return { minX: originX, minZ: originZ, columns, rows, data };
+}
+
+/** Distance from a point to the boundary rim in metres. */
+export function rimDistanceMeters(xMm: number, zMm: number): number {
+  rimDistanceField ??= buildRimDistanceField();
+  const field = rimDistanceField;
+  const step = RIM_FIELD_CELL_METERS * MM;
+  const column = Math.round((xMm - field.minX) / step);
+  const row = Math.round((zMm - field.minZ) / step);
+  if (column < 0 || row < 0 || column >= field.columns || row >= field.rows) {
+    return 0;
+  }
+  const value = field.data[row * field.columns + column] as number;
+  return Number.isFinite(value) ? value : 0;
+}
+
+/**
+ * Continuous density falloff towards the boundary.
+ *
+ * A point on the rim is always rejected, cover returns to full at
+ * `rimThinningMm` inland, and a stable per-point hash turns the ramp into
+ * scattered outliers rather than a visible band edge.
+ */
+function survivesRimThinning(point: MapPointMm, thinningMm: number | undefined): boolean {
+  if (!thinningMm || thinningMm <= 0) {
+    return true;
+  }
+  const keep = Math.min(1, rimDistanceMeters(point.x, point.z) / (thinningMm / MM));
+  if (keep >= 1) {
+    return true;
+  }
+  return hash2(point.x, point.z, 0x5c1) < keep * keep;
 }
 
 function insideExclusionZone(

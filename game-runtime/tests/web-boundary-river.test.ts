@@ -77,7 +77,7 @@ describe('boundary river and waterfall', () => {
 });
 
 describe('sea beyond the falls', () => {
-  it('builds a swell sheet, wet apron, coastal rocks and far isles', () => {
+  it('builds a swell sheet, wet apron and coastal rocks', () => {
     const group = new THREE.Group();
     const tracked: THREE.BufferGeometry[] = [];
     const mesh = buildOcean(group, (geometry) => {
@@ -87,7 +87,10 @@ describe('sea beyond the falls', () => {
     expect(mesh?.name).toBe('beyond-ocean');
     expect(group.getObjectByName('beyond-ocean-apron')).toBeDefined();
     expect(group.getObjectByName('beyond-ocean-skerries')).toBeDefined();
-    expect(group.getObjectByName('beyond-horizon-isles')).toBeDefined();
+    // The simulated cone islands were removed: they read as mountains floating
+    // in the water rather than open sea. Coastal rocks stay.
+    expect(group.getObjectByName('beyond-horizon-isles')).toBeUndefined();
+    expect(group.getObjectByName('beyond-ocean-skerries')).toBeDefined();
     const sea = mesh as THREE.Mesh;
     expect(sea.geometry.getAttribute('aSea')).toBeDefined();
     for (const geometry of tracked) {
