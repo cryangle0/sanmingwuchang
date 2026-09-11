@@ -50,9 +50,9 @@ describe('web imported map asset layer', () => {
       }[];
     };
     const expected = [
-      ['free-pagoda-niko313', 'free-pagoda-niko313.glb', 11_201],
+      ['free-pagoda-niko313', 'free-pagoda-niko313.glb', 11_134],
       ['free-stone-cart', 'free-stone-cart.glb', 1_920],
-      ['free-stone-lion', 'free-stone-lion.glb', 31_438],
+      ['free-stone-lion', 'free-stone-lion.glb', 4_398],
       ['free-pagoda-ruin', 'free-pagoda-ruin.glb', 1_527],
     ] as const;
 

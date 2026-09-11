@@ -150,7 +150,7 @@ function serve() {
 }
 
 async function main() {
-  const requested = process.argv.slice(2).filter((value) => value.startsWith('tang-'));
+  const requested = process.argv.slice(2).filter((value) => !value.startsWith('--'));
   const ids =
     requested.length > 0
       ? requested

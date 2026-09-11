@@ -49,6 +49,15 @@ describe('唐宋 procedural building family', () => {
     }
   });
 
+  it('keeps the imported landmarks inside the tightened triangle budget', () => {
+    const landmarks = manifest.assets.filter((asset) =>
+      MAP_ASSET_CATALOG.some((entry) => entry.id === asset.id && entry.kind === 'landmark'),
+    );
+    expect(landmarks.length).toBeGreaterThanOrEqual(10);
+    const heaviest = landmarks.reduce((max, asset) => Math.max(max, asset.optimized.triangles), 0);
+    expect(heaviest).toBeLessThanOrEqual(manifest.budgets.landmarkMaxTriangles ?? 40_000);
+  });
+
   it('keeps every building inside the triangle, material and draw-call budget', () => {
     for (const entry of buildingCatalog) {
       const asset = manifest.assets.find((candidate) => candidate.id === entry.id);

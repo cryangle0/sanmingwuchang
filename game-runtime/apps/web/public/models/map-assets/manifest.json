@@ -1,6 +1,6 @@
 {
   "schema": "jwgb.map-asset-manifest.v1",
-  "generatedAt": "2026-08-24T10:03:09.178Z",
+  "generatedAt": "2026-09-11T07:25:07.602Z",
   "assets": [
     {
       "id": "desert-rock-01",
@@ -1083,9 +1083,9 @@
     {
       "id": "wuxia-citadel",
       "path": "models/map-assets/wuxia-citadel.glb",
-      "source": "80个精品中国风武侠仙侠 MAX Unity 场景 / 45.FBX",
+      "source": "80\u4e2a\u7cbe\u54c1\u4e2d\u56fd\u98ce\u6b66\u4fa0\u4ed9\u4fa0 MAX Unity \u573a\u666f / 45.FBX",
       "targetHeight": 34,
-      "bytes": 770364,
+      "bytes": 227512,
       "metrics": {
         "before": {
           "meshes": 263,
@@ -1139,8 +1139,8 @@
         }
       },
       "optimized": {
-        "vertices": 63318,
-        "triangles": 21106,
+        "vertices": 11953,
+        "triangles": 8429,
         "meshes": 2,
         "materials": 2,
         "drawCalls": 1
@@ -1157,14 +1157,19 @@
           "minZ": -55,
           "maxZ": 32
         }
+      },
+      "optimization": {
+        "tool": "tools/models/optimize-map-assets.mjs",
+        "ratio": 0.4,
+        "error": 0.05
       }
     },
     {
       "id": "wuxia-gate-court",
       "path": "models/map-assets/wuxia-gate-court.glb",
-      "source": "80个精品中国风武侠仙侠 MAX Unity 场景 / 51.FBX",
+      "source": "80\u4e2a\u7cbe\u54c1\u4e2d\u56fd\u98ce\u6b66\u4fa0\u4ed9\u4fa0 MAX Unity \u573a\u666f / 51.FBX",
       "targetHeight": 30,
-      "bytes": 1238184,
+      "bytes": 458764,
       "metrics": {
         "before": {
           "meshes": 352,
@@ -1218,8 +1223,8 @@
         }
       },
       "optimized": {
-        "vertices": 99807,
-        "triangles": 33269,
+        "vertices": 23786,
+        "triangles": 13332,
         "meshes": 3,
         "materials": 3,
         "drawCalls": 1
@@ -1232,14 +1237,19 @@
       "nodeFilter": {
         "include": "Building|Item",
         "exclude": "Terrain|Ground|Plant|Tree|Grass|Bush|Flower"
+      },
+      "optimization": {
+        "tool": "tools/models/optimize-map-assets.mjs",
+        "ratio": 0.4,
+        "error": 0.05
       }
     },
     {
       "id": "wuxia-east-asia-hall",
       "path": "models/map-assets/wuxia-east-asia-hall.glb",
-      "source": "80个精品中国风武侠仙侠 MAX Unity 场景 / 54.FBX",
+      "source": "80\u4e2a\u7cbe\u54c1\u4e2d\u56fd\u98ce\u6b66\u4fa0\u4ed9\u4fa0 MAX Unity \u573a\u666f / 54.FBX",
       "targetHeight": 32,
-      "bytes": 2109932,
+      "bytes": 525852,
       "metrics": {
         "before": {
           "meshes": 372,
@@ -1293,8 +1303,8 @@
         }
       },
       "optimized": {
-        "vertices": 171978,
-        "triangles": 57326,
+        "vertices": 31845,
+        "triangles": 24896,
         "meshes": 3,
         "materials": 3,
         "drawCalls": 1
@@ -1312,14 +1322,19 @@
           "minZ": -36,
           "maxZ": 36
         }
+      },
+      "optimization": {
+        "tool": "tools/models/optimize-map-assets.mjs",
+        "ratio": 0.42,
+        "error": 0.04
       }
     },
     {
       "id": "wuxia-mountain-gate",
       "path": "models/map-assets/wuxia-mountain-gate.glb",
-      "source": "80个精品中国风武侠仙侠 MAX Unity 场景 / 60.FBX",
+      "source": "80\u4e2a\u7cbe\u54c1\u4e2d\u56fd\u98ce\u6b66\u4fa0\u4ed9\u4fa0 MAX Unity \u573a\u666f / 60.FBX",
       "targetHeight": 34,
-      "bytes": 780832,
+      "bytes": 256520,
       "metrics": {
         "before": {
           "meshes": 391,
@@ -1373,8 +1388,8 @@
         }
       },
       "optimized": {
-        "vertices": 60177,
-        "triangles": 20059,
+        "vertices": 12674,
+        "triangles": 9020,
         "meshes": 3,
         "materials": 3,
         "drawCalls": 1
@@ -1391,6 +1406,11 @@
           "minZ": -32,
           "maxZ": 48
         }
+      },
+      "optimization": {
+        "tool": "tools/models/optimize-map-assets.mjs",
+        "ratio": 0.45,
+        "error": 0.04
       }
     },
     {
@@ -1398,7 +1418,7 @@
       "path": "models/map-assets/lowpoly-asian-village.glb",
       "source": "0072 Lowpoly Style Ultra Pack 1.2 / precomposed Asian village",
       "targetHeight": 18,
-      "bytes": 1182516,
+      "bytes": 621284,
       "metrics": {
         "after": {
           "vertices": 144189,
@@ -1420,8 +1440,8 @@
         }
       },
       "optimized": {
-        "vertices": 144189,
-        "triangles": 48063,
+        "vertices": 68546,
+        "triangles": 35488,
         "meshes": 3,
         "materials": 3,
         "drawCalls": 1
@@ -1433,14 +1453,19 @@
         "ZenGarden",
         "RockFormation1"
       ],
-      "delivery": "single-precomposed-glb"
+      "delivery": "single-precomposed-glb",
+      "optimization": {
+        "tool": "tools/models/optimize-map-assets.mjs",
+        "ratio": 0.42,
+        "error": 0.04
+      }
     },
     {
       "id": "lowpoly-asia-house",
       "path": "models/map-assets/asia-house.glb",
       "source": "0072 Lowpoly Style Ultra Pack 1.2 / AsianHouse_2.fbx",
       "targetHeight": 12,
-      "bytes": 351408,
+      "bytes": 181700,
       "metrics": {
         "before": {
           "meshes": 6,
@@ -1494,13 +1519,18 @@
         }
       },
       "optimized": {
-        "vertices": 42600,
-        "triangles": 14200,
+        "vertices": 18405,
+        "triangles": 9980,
         "meshes": 2,
         "materials": 2,
         "drawCalls": 1
       },
-      "delivery": "map"
+      "delivery": "map",
+      "optimization": {
+        "tool": "tools/models/optimize-map-assets.mjs",
+        "ratio": 0.45,
+        "error": 0.04
+      }
     },
     {
       "id": "lowpoly-torii",
@@ -1641,7 +1671,7 @@
       "path": "models/map-assets/free-pagoda-niko313.glb",
       "source": "free-assets-3d/_converted/sketchfab-pagoda-niko313.glb",
       "targetHeight": 16,
-      "bytes": 138672,
+      "bytes": 137924,
       "metrics": {
         "after": {
           "meshes": 5,
@@ -1668,13 +1698,18 @@
         }
       },
       "optimized": {
-        "vertices": 22503,
-        "triangles": 11201,
+        "vertices": 22372,
+        "triangles": 11134,
         "meshes": 5,
         "materials": 5,
         "drawCalls": 1
       },
-      "delivery": "free-glb-normalized"
+      "delivery": "free-glb-normalized",
+      "optimization": {
+        "tool": "tools/models/optimize-map-assets.mjs",
+        "ratio": 0.4,
+        "error": 0.05
+      }
     },
     {
       "id": "free-stone-cart",
@@ -1721,7 +1756,7 @@
       "path": "models/map-assets/free-stone-lion.glb",
       "source": "free-assets-3d/_converted/stone-lion-fpan.glb",
       "targetHeight": 1.8,
-      "bytes": 249580,
+      "bytes": 109124,
       "metrics": {
         "after": {
           "meshes": 1,
@@ -1748,13 +1783,18 @@
         }
       },
       "optimized": {
-        "vertices": 15719,
-        "triangles": 31438,
+        "vertices": 2197,
+        "triangles": 4398,
         "meshes": 1,
         "materials": 1,
         "drawCalls": 1
       },
-      "delivery": "free-glb-normalized"
+      "delivery": "free-glb-normalized",
+      "optimization": {
+        "tool": "tools/models/optimize-map-assets.mjs",
+        "ratio": 0.14,
+        "error": 0.02
+      }
     },
     {
       "id": "free-pagoda-ruin",
@@ -1800,7 +1840,7 @@
       "id": "tang-hall",
       "path": "models/map-assets/tang-hall.glb",
       "source": "procedural:tools/models/build-wuxia-buildings-entry.js#tang-hall",
-      "displayName": "重檐大殿",
+      "displayName": "\u91cd\u6a90\u5927\u6bbf",
       "targetHeight": 10.29,
       "bytes": 15408,
       "metrics": {
@@ -1841,7 +1881,7 @@
       "id": "tang-pagoda",
       "path": "models/map-assets/tang-pagoda.glb",
       "source": "procedural:tools/models/build-wuxia-buildings-entry.js#tang-pagoda",
-      "displayName": "八角宝塔",
+      "displayName": "\u516b\u89d2\u5b9d\u5854",
       "targetHeight": 20,
       "bytes": 20904,
       "metrics": {
@@ -1882,7 +1922,7 @@
       "id": "tang-paifang",
       "path": "models/map-assets/tang-paifang.glb",
       "source": "procedural:tools/models/build-wuxia-buildings-entry.js#tang-paifang",
-      "displayName": "牌坊",
+      "displayName": "\u724c\u574a",
       "targetHeight": 6.49,
       "bytes": 7888,
       "metrics": {
@@ -1891,7 +1931,7 @@
           "triangles": 482,
           "nativeBounds": [
             -5.0378,
-            0.00003,
+            3e-05,
             -0.78005,
             5.0378,
             6.48997,
@@ -1902,7 +1942,7 @@
           "targetHeight": 6.49,
           "bounds": [
             -5.0378,
-            0.00003,
+            3e-05,
             -0.78005,
             5.0378,
             6.48997,
@@ -1923,7 +1963,7 @@
       "id": "tang-gate-tower",
       "path": "models/map-assets/tang-gate-tower.glb",
       "source": "procedural:tools/models/build-wuxia-buildings-entry.js#tang-gate-tower",
-      "displayName": "城门楼",
+      "displayName": "\u57ce\u95e8\u697c",
       "targetHeight": 11.64,
       "bytes": 11356,
       "metrics": {
@@ -1932,7 +1972,7 @@
           "triangles": 1054,
           "nativeBounds": [
             -7,
-            0.00009,
+            9e-05,
             -2.59966,
             7,
             11.63991,
@@ -1943,7 +1983,7 @@
           "targetHeight": 11.64,
           "bounds": [
             -7,
-            0.00009,
+            9e-05,
             -2.59966,
             7,
             11.63991,
@@ -1964,7 +2004,7 @@
       "id": "tang-inn",
       "path": "models/map-assets/tang-inn.glb",
       "source": "procedural:tools/models/build-wuxia-buildings-entry.js#tang-inn",
-      "displayName": "客栈",
+      "displayName": "\u5ba2\u6808",
       "targetHeight": 9.591,
       "bytes": 9832,
       "metrics": {
@@ -2005,7 +2045,7 @@
       "id": "tang-teahouse",
       "path": "models/map-assets/tang-teahouse.glb",
       "source": "procedural:tools/models/build-wuxia-buildings-entry.js#tang-teahouse",
-      "displayName": "茶棚",
+      "displayName": "\u8336\u68da",
       "targetHeight": 5.14,
       "bytes": 6868,
       "metrics": {
@@ -2014,7 +2054,7 @@
           "triangles": 430,
           "nativeBounds": [
             -4.056,
-            0.00002,
+            2e-05,
             -3.22418,
             4.056,
             5.13998,
@@ -2025,7 +2065,7 @@
           "targetHeight": 5.14,
           "bounds": [
             -4.056,
-            0.00002,
+            2e-05,
             -3.22418,
             4.056,
             5.13998,
@@ -2046,7 +2086,7 @@
       "id": "tang-shrine",
       "path": "models/map-assets/tang-shrine.glb",
       "source": "procedural:tools/models/build-wuxia-buildings-entry.js#tang-shrine",
-      "displayName": "土地庙",
+      "displayName": "\u571f\u5730\u5e99",
       "targetHeight": 4.09,
       "bytes": 5776,
       "metrics": {
@@ -2055,7 +2095,7 @@
           "triangles": 286,
           "nativeBounds": [
             -2.62571,
-            0.00009,
+            9e-05,
             -1.97601,
             2.62571,
             4.08991,
@@ -2066,7 +2106,7 @@
           "targetHeight": 4.09,
           "bounds": [
             -2.62571,
-            0.00009,
+            9e-05,
             -1.97601,
             2.62571,
             4.08991,
@@ -2087,7 +2127,7 @@
       "id": "tang-drum-tower",
       "path": "models/map-assets/tang-drum-tower.glb",
       "source": "procedural:tools/models/build-wuxia-buildings-entry.js#tang-drum-tower",
-      "displayName": "钟鼓楼",
+      "displayName": "\u949f\u9f13\u697c",
       "targetHeight": 10.8,
       "bytes": 10228,
       "metrics": {
@@ -2128,7 +2168,7 @@
       "id": "tang-corridor",
       "path": "models/map-assets/tang-corridor.glb",
       "source": "procedural:tools/models/build-wuxia-buildings-entry.js#tang-corridor",
-      "displayName": "回廊",
+      "displayName": "\u56de\u5eca",
       "targetHeight": 4.689,
       "bytes": 12572,
       "metrics": {
@@ -2169,7 +2209,7 @@
       "id": "tang-scripture-pillar",
       "path": "models/map-assets/tang-scripture-pillar.glb",
       "source": "procedural:tools/models/build-wuxia-buildings-entry.js#tang-scripture-pillar",
-      "displayName": "经幢",
+      "displayName": "\u7ecf\u5e62",
       "targetHeight": 7.355,
       "bytes": 6148,
       "metrics": {
@@ -2210,7 +2250,7 @@
       "id": "tang-stele",
       "path": "models/map-assets/tang-stele.glb",
       "source": "procedural:tools/models/build-wuxia-buildings-entry.js#tang-stele",
-      "displayName": "石碑",
+      "displayName": "\u77f3\u7891",
       "targetHeight": 3.77,
       "bytes": 3284,
       "metrics": {
@@ -2251,7 +2291,7 @@
       "id": "tang-lantern-post",
       "path": "models/map-assets/tang-lantern-post.glb",
       "source": "procedural:tools/models/build-wuxia-buildings-entry.js#tang-lantern-post",
-      "displayName": "灯柱",
+      "displayName": "\u706f\u67f1",
       "targetHeight": 4.295,
       "bytes": 5256,
       "metrics": {
@@ -2292,7 +2332,7 @@
       "id": "tang-well",
       "path": "models/map-assets/tang-well.glb",
       "source": "procedural:tools/models/build-wuxia-buildings-entry.js#tang-well",
-      "displayName": "井亭",
+      "displayName": "\u4e95\u4ead",
       "targetHeight": 3.99,
       "bytes": 4764,
       "metrics": {
@@ -2974,7 +3014,7 @@
     }
   ],
   "budgets": {
-    "landmarkMaxTriangles": 60000,
+    "landmarkMaxTriangles": 40000,
     "rockMaxTriangles": 4000,
     "maxInitialLandmarks": 5,
     "maxInitialRockInstances": 84,
