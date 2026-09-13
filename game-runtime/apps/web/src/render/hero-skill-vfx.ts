@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { attachSkillTextureLayer, updateSkillTextureLayer } from './skill-texture-vfx';
+import { updateSkillTextureLayer } from './skill-texture-vfx';
 
 export type HeroSkillMotif =
   | 'fan-gale'
@@ -409,7 +409,7 @@ function addSparkBurst(
     return;
   }
 
-  const count = reduced ? 20 : stage === 'impact' ? 56 : 36;
+  const count = reduced ? 14 : 22;
   const positions = new Float32Array(count * 3);
   const velocities = new Float32Array(count * 3);
   const origins = new Float32Array(count * 3);
@@ -667,81 +667,6 @@ function updateFlashAndPool(group: THREE.Group, progress: number): void {
   }
 }
 
-/**
- * Stylised slash ribbons: the missing arcade read.
- *
- * Motifs alone are coloured geometry. A MOBA-style cast also leaves a bright
- * blade of light that the camera can pick up from any chase angle. Two or
- * three additive cards, slightly fanned, do that without another particle
- * system.
- */
-function addSlashRibbons(
-  group: THREE.Group,
-  profile: HeroSkillVfxProfile,
-  stage: HeroSkillStage,
-  reduced: boolean,
-  materials: readonly [THREE.MeshBasicMaterial, THREE.MeshBasicMaterial, THREE.MeshBasicMaterial],
-): void {
-  if (stage === 'status') {
-    return;
-  }
-  const count = reduced ? 2 : 3;
-  const ribbon = glowMaterial(profile.core, 0.9);
-  const map = softDisc();
-  if (map) {
-    ribbon.map = map;
-  }
-  for (let index = 0; index < count; index += 1) {
-    const side = index - (count - 1) / 2;
-    addMesh(group, new THREE.PlaneGeometry(0.42, stage === 'impact' ? 2.8 : 2.2), ribbon, {
-      x: side * 0.28,
-      y: 0.92,
-      z: profile.motion === 'forward' ? 0.55 : 0.18,
-      rx: -0.55,
-      ry: side * 0.22,
-      rz: 0.72 + side * 0.28,
-      spinZ: side === 0 ? 1.6 : -2.1,
-      pulse: 0.1,
-    });
-    addMesh(group, new THREE.PlaneGeometry(0.18, stage === 'impact' ? 2.4 : 1.8), materials[2], {
-      x: side * 0.2,
-      y: 0.94,
-      z: profile.motion === 'forward' ? 0.6 : 0.22,
-      rx: -0.55,
-      ry: side * 0.18,
-      rz: 0.72 + side * 0.24,
-      spinZ: side === 0 ? -1.2 : 1.8,
-    });
-  }
-}
-
-function addCoreFlare(
-  group: THREE.Group,
-  profile: HeroSkillVfxProfile,
-  stage: HeroSkillStage,
-  materials: readonly [THREE.MeshBasicMaterial, THREE.MeshBasicMaterial, THREE.MeshBasicMaterial],
-): void {
-  const [, secondary, core] = materials;
-  addMesh(group, new THREE.OctahedronGeometry(0.22, 1), core, {
-    y: 0.62,
-    pulse: 0.22,
-    spinY: 4.8,
-  });
-  addMesh(group, new THREE.SphereGeometry(0.38, 14, 10), secondary, {
-    y: 0.62,
-    pulse: 0.12,
-  });
-  if (stage === 'status') {
-    return;
-  }
-  if (profile.motion === 'rise' || profile.motion === 'aura' || profile.motion === 'burst') {
-    addMesh(group, new THREE.CylinderGeometry(0.05, 0.18, 2.4, 10, 1, true), core, {
-      y: 1.35,
-      pulse: 0.1,
-    });
-  }
-}
-
 function addMesh(
   group: THREE.Group,
   geometry: THREE.BufferGeometry,
@@ -901,8 +826,8 @@ function populateMotif(
 ): void {
   const [primary, secondary, core] = materials;
   const detail = reduced ? 0.68 : 1;
-  const orbitCount = reduced ? 3 : 5;
-  const spokeCount = reduced ? 6 : 10;
+  const orbitCount = 3;
+  const spokeCount = reduced ? 6 : 8;
 
   switch (profile.motif) {
     case 'fan-gale':
@@ -1374,13 +1299,18 @@ export function createHeroSkillVisual(
     glowMaterial(profile.core, stage === 'status' ? 0.66 : 1),
   ] as const;
   group.userData.heroSkillMaterials = materials;
+  // One readable shape per stage. Every skill used to stack the motif, a
+  // core flare, shock rings, a spark burst, slash ribbons and a painted
+  // texture card in the same half second, which turned all 38 into the
+  // same bright tangle. Now the cast is the motif alone over its ground
+  // pool; the impact adds one shock wave and a short spark burst so the hit
+  // lands; the status aura is the motif breathing.
   populateMotif(group, profile, stage, reduced, materials);
-  addCoreFlare(group, profile, stage, materials);
-  addShockRings(group, profile, stage, reduced);
-  addSparkBurst(group, profile, stage, reduced);
   addFlashAndPool(group, profile, stage);
-  addSlashRibbons(group, profile, stage, reduced, materials);
-  attachSkillTextureLayer(group, profile.textureKey, stage, reduced);
+  if (stage === 'impact') {
+    addShockRings(group, profile, stage, reduced);
+    addSparkBurst(group, profile, stage, reduced);
+  }
   cacheAnimatedMeshes(group);
   const durationSeconds =
     stage === 'cast'

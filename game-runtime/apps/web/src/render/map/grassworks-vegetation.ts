@@ -2,6 +2,7 @@ import type { MapPointMm } from '@jwgb/content';
 import * as THREE from 'three';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { appendAssetVersion, webAssetUrl } from '../../runtime/asset-url';
 import {
   applyWindSway,
@@ -1231,6 +1232,24 @@ function extractTreeTemplates(scene: THREE.Group): Map<string, TreeTemplate> {
   const templates = new Map<string, TreeTemplate>();
   for (let variant = 1; variant <= TREE_VARIANTS; variant += 1) {
     for (const lod of ['high', 'low'] as const) {
+      if (lod === 'low') {
+        // The far LOD is no longer the source's camera-facing billboard: it
+        // is a sparse 3D crown derived from the high template (every third
+        // leaf card, enlarged) over a plain bark cylinder. Trees keep depth
+        // at every distance, at roughly a fifth of the high LOD's triangles.
+        const high = templates.get(`${variant}:high`);
+        if (!high) {
+          throw new Error(`Grassworks tree template ${variant}/high is missing`);
+        }
+        const parts = deriveSparseTreeLod(high.parts);
+        for (const part of parts) {
+          part.geometry.translate(0, -TREE_BILLBOARD_BURY_FRACTION, 0);
+          part.geometry.computeBoundingBox();
+          part.geometry.computeBoundingSphere();
+        }
+        templates.set(`${variant}:${lod}`, { variant, lod, parts });
+        continue;
+      }
       const root = scene.getObjectByName(`grassworks-tree-${variant}-${lod}`);
       if (!root) {
         throw new Error(`Grassworks tree template ${variant}/${lod} is missing`);
@@ -1263,7 +1282,6 @@ function extractTreeTemplates(scene: THREE.Group): Map<string, TreeTemplate> {
           geometry.clearGroups();
           geometry.setDrawRange(group.start, group.count);
           const isLeaf =
-            lod === 'low' ||
             sourceMaterial.transparent ||
             sourceMaterial.alphaTest > 0 ||
             /leaf|leaves|billboard/i.test(`${object.name} ${sourceMaterial.name}`);
@@ -1287,17 +1305,151 @@ function extractTreeTemplates(scene: THREE.Group): Map<string, TreeTemplate> {
       // Same bare-trunk correction as the near-camera flora: the wood has to
       // show trunks under the canopy from the chase lens.
       exposeTreeTrunk(parts, 0.34);
-      if (lod === 'low') {
-        for (const part of parts) {
-          part.geometry.translate(0, -TREE_BILLBOARD_BURY_FRACTION, 0);
-          part.geometry.computeBoundingBox();
-          part.geometry.computeBoundingSphere();
-        }
-      }
       templates.set(`${variant}:${lod}`, { variant, lod, parts });
     }
   }
   return templates;
+}
+
+/** Keep one leaf card in this many for the far crown. */
+const SPARSE_LEAF_KEEP_EVERY = 3;
+/** Far crown cards are enlarged about their centre so coverage stays full. */
+const SPARSE_LEAF_CARD_SCALE = 1.7;
+
+function deriveSparseTreeLod(highParts: readonly TreeTemplatePart[]): TreeTemplatePart[] {
+  const parts: TreeTemplatePart[] = [];
+  const trunkSource = highParts.find((part) => !part.isLeaf);
+  const leafSource = highParts.find((part) => part.isLeaf);
+  if (!trunkSource || !leafSource) {
+    throw new Error('Grassworks tree template lacks a trunk or leaf part');
+  }
+  // Bark: a tapered cylinder spanning the high trunk's bounds, plus three
+  // short limbs so the far tree still branches under its crown.
+  trunkSource.geometry.computeBoundingBox();
+  const trunkBounds = trunkSource.geometry.boundingBox as THREE.Box3;
+  const trunkHeight = Math.max(0.05, trunkBounds.max.y - trunkBounds.min.y);
+  const trunkRadius = Math.max(0.006, (trunkBounds.max.x - trunkBounds.min.x) * 0.05);
+  const bole = new THREE.CylinderGeometry(trunkRadius * 0.55, trunkRadius, trunkHeight * 0.7, 7, 1);
+  bole.translate(0, trunkBounds.min.y + trunkHeight * 0.35, 0);
+  const limbs: THREE.BufferGeometry[] = [bole];
+  for (let index = 0; index < 3; index += 1) {
+    const limb = new THREE.CylinderGeometry(
+      trunkRadius * 0.25,
+      trunkRadius * 0.45,
+      trunkHeight * 0.32,
+      5,
+      1,
+    );
+    const angle = (index / 3) * Math.PI * 2 + 0.6;
+    limb.rotateZ(0.7);
+    limb.rotateY(angle);
+    limb.translate(
+      Math.sin(angle) * trunkRadius * 0.8,
+      trunkBounds.min.y + trunkHeight * 0.66,
+      Math.cos(angle) * trunkRadius * 0.8,
+    );
+    limbs.push(limb);
+  }
+  const bark = mergeBufferGeometries(limbs);
+  parts.push({
+    geometry: bark,
+    material: trunkSource.material,
+    isLeaf: false,
+    triangles: Math.floor((bark.index?.count ?? bark.getAttribute('position').count) / 3),
+  });
+
+  // Crown: subsample the high leaf cards. Leaf cards are quads (two indexed
+  // triangles, four vertices); keep every Nth quad and scale it about its
+  // own centre so the sparse crown still covers the same silhouette.
+  const source = leafSource.geometry;
+  const position = source.getAttribute('position');
+  const normal = source.getAttribute('normal');
+  const uv = source.getAttribute('uv');
+  const colour = source.getAttribute('color');
+  const index = source.index;
+  const start = source.drawRange.start;
+  const count = Math.min(
+    source.drawRange.count,
+    (index?.count ?? position.count) - source.drawRange.start,
+  );
+  const outPosition: number[] = [];
+  const outNormal: number[] = [];
+  const outUv: number[] = [];
+  const outColour: number[] = [];
+  const outIndex: number[] = [];
+  let quad = 0;
+  for (let cursor = start; cursor + 5 < start + count; cursor += 6, quad += 1) {
+    if (quad % SPARSE_LEAF_KEEP_EVERY !== 0) {
+      continue;
+    }
+    const corners = [0, 1, 2, 3, 4, 5].map((offset) =>
+      index ? index.getX(cursor + offset) : cursor + offset,
+    );
+    const unique = [...new Set(corners)];
+    let centreX = 0;
+    let centreY = 0;
+    let centreZ = 0;
+    for (const vertex of unique) {
+      centreX += position.getX(vertex);
+      centreY += position.getY(vertex);
+      centreZ += position.getZ(vertex);
+    }
+    centreX /= unique.length;
+    centreY /= unique.length;
+    centreZ /= unique.length;
+    const base = outPosition.length / 3;
+    const remap = new Map<number, number>();
+    unique.forEach((vertex, slot) => {
+      remap.set(vertex, base + slot);
+      outPosition.push(
+        centreX + (position.getX(vertex) - centreX) * SPARSE_LEAF_CARD_SCALE,
+        centreY + (position.getY(vertex) - centreY) * SPARSE_LEAF_CARD_SCALE,
+        centreZ + (position.getZ(vertex) - centreZ) * SPARSE_LEAF_CARD_SCALE,
+      );
+      if (normal) {
+        outNormal.push(normal.getX(vertex), normal.getY(vertex), normal.getZ(vertex));
+      }
+      if (uv) {
+        outUv.push(uv.getX(vertex), uv.getY(vertex));
+      }
+      if (colour) {
+        outColour.push(colour.getX(vertex), colour.getY(vertex), colour.getZ(vertex));
+      }
+    });
+    for (const vertex of corners) {
+      outIndex.push(remap.get(vertex) as number);
+    }
+  }
+  const crown = new THREE.BufferGeometry();
+  crown.setAttribute('position', new THREE.Float32BufferAttribute(outPosition, 3));
+  if (outNormal.length > 0) {
+    crown.setAttribute('normal', new THREE.Float32BufferAttribute(outNormal, 3));
+  }
+  if (outUv.length > 0) {
+    crown.setAttribute('uv', new THREE.Float32BufferAttribute(outUv, 2));
+  }
+  if (outColour.length > 0) {
+    crown.setAttribute('color', new THREE.Float32BufferAttribute(outColour, 3));
+  }
+  crown.setIndex(outIndex);
+  parts.push({
+    geometry: crown,
+    material: leafSource.material,
+    isLeaf: true,
+    triangles: Math.floor(outIndex.length / 3),
+  });
+  return parts;
+}
+
+function mergeBufferGeometries(geometries: readonly THREE.BufferGeometry[]): THREE.BufferGeometry {
+  const merged = mergeGeometries([...geometries], false);
+  for (const geometry of geometries) {
+    geometry.dispose();
+  }
+  if (!merged) {
+    throw new Error('Grassworks tree template: bark merge failed');
+  }
+  return merged;
 }
 
 function treeVariantForChunk(x: number, z: number): number {

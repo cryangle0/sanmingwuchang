@@ -37,7 +37,8 @@ function ringsIn(group: THREE.Group): THREE.Mesh[] {
 describe('hero skill burst layers', () => {
   it('gives casts and impacts a spark burst but leaves a persistent aura alone', () => {
     const profile = firstProfile();
-    expect(pointsIn(createHeroSkillVisual(profile, 'cast', false).group)).toHaveLength(1);
+    // Casts are the bare motif now; only the impact throws sparks.
+    expect(pointsIn(createHeroSkillVisual(profile, 'cast', false).group)).toHaveLength(0);
     expect(pointsIn(createHeroSkillVisual(profile, 'impact', false).group)).toHaveLength(1);
     // A status aura is a state, not an event: sparks there would fire for as
     // long as the buff is up and stop reading as an impact.
@@ -47,7 +48,7 @@ describe('hero skill burst layers', () => {
   it('pairs the shock rings on impact so the wave has a trailing edge', () => {
     const profile = firstProfile();
     expect(ringsIn(createHeroSkillVisual(profile, 'impact', false).group)).toHaveLength(3);
-    expect(ringsIn(createHeroSkillVisual(profile, 'cast', false).group)).toHaveLength(2);
+    expect(ringsIn(createHeroSkillVisual(profile, 'cast', false).group)).toHaveLength(0);
     expect(ringsIn(createHeroSkillVisual(profile, 'status', false).group)).toHaveLength(0);
   });
 
