@@ -1,5 +1,6 @@
 import { terrainHeightMeters } from '@jwgb/content';
 import * as THREE from 'three';
+import { setWeatherScalars } from '../shading/wind';
 import { AUTUMN_STORM } from './autumn-storm';
 import { MapFallingLeaves } from './falling-leaves';
 import { blendClimateAt } from './region-climate';
@@ -21,6 +22,7 @@ export interface MapAtmosphere {
     dt: number,
     cameraPosition: THREE.Vector3,
   ): void;
+  weatherState(): WeatherState;
   dispose(): void;
 }
 
@@ -178,6 +180,147 @@ export function createSkyDome(): THREE.Mesh<THREE.SphereGeometry, THREE.ShaderMa
   return dome;
 }
 
+/**
+ * Automatic weather cycle. The storm breathes: a squall builds, breaks,
+ * eases into overcast with the rain thinning and the sea settling, then a
+ * brief bright interval before the next front. Each phase blends its targets
+ * for light, fog, rain, wind gust and sea state; nothing here touches the
+ * simulation.
+ */
+interface WeatherPhase {
+  readonly name: 'squall' | 'storm' | 'overcast' | 'break';
+  readonly seconds: number;
+  /** Multipliers against the AUTUMN_STORM baseline. */
+  readonly sun: number;
+  readonly hemi: number;
+  readonly fog: number;
+  readonly sky: number;
+  readonly rain: number;
+  readonly gust: number;
+  readonly storm: number;
+}
+
+const WEATHER_CYCLE: readonly WeatherPhase[] = [
+  { name: 'storm', seconds: 70, sun: 1, hemi: 1, fog: 1, sky: 1, rain: 1, gust: 1, storm: 1 },
+  {
+    name: 'squall',
+    seconds: 28,
+    sun: 0.78,
+    hemi: 0.86,
+    fog: 1.35,
+    sky: 0.82,
+    rain: 1.5,
+    gust: 1.7,
+    storm: 1.35,
+  },
+  { name: 'storm', seconds: 50, sun: 1, hemi: 1, fog: 1, sky: 1, rain: 1, gust: 1, storm: 1 },
+  {
+    name: 'overcast',
+    seconds: 55,
+    sun: 1.08,
+    hemi: 1.05,
+    fog: 0.8,
+    sky: 1.06,
+    rain: 0.35,
+    gust: 0.6,
+    storm: 0.55,
+  },
+  {
+    name: 'break',
+    seconds: 30,
+    sun: 1.3,
+    hemi: 1.12,
+    fog: 0.62,
+    sky: 1.18,
+    rain: 0,
+    gust: 0.4,
+    storm: 0.3,
+  },
+  {
+    name: 'overcast',
+    seconds: 40,
+    sun: 1.05,
+    hemi: 1.02,
+    fog: 0.9,
+    sky: 1.02,
+    rain: 0.6,
+    gust: 0.8,
+    storm: 0.7,
+  },
+];
+/** Seconds the blend takes to cross between phases. */
+const WEATHER_BLEND_SECONDS = 12;
+
+export interface WeatherState {
+  readonly phase: WeatherPhase['name'];
+  readonly sun: number;
+  readonly hemi: number;
+  readonly fog: number;
+  readonly sky: number;
+  readonly rain: number;
+  readonly gust: number;
+  readonly storm: number;
+}
+
+export class WeatherCycle {
+  private elapsed = 0;
+  private current: WeatherState;
+
+  constructor(startPhaseIndex = 0) {
+    let offset = 0;
+    for (let index = 0; index < startPhaseIndex; index += 1) {
+      offset += (WEATHER_CYCLE[index] as WeatherPhase).seconds;
+    }
+    this.elapsed = offset;
+    const first = WEATHER_CYCLE[startPhaseIndex] as WeatherPhase;
+    this.current = {
+      phase: first.name,
+      sun: first.sun,
+      hemi: first.hemi,
+      fog: first.fog,
+      sky: first.sky,
+      rain: first.rain,
+      gust: first.gust,
+      storm: first.storm,
+    };
+  }
+
+  /** Advances the clock and eases the live state toward the active phase. */
+  update(dt: number): WeatherState {
+    this.elapsed += dt;
+    const target = this.targetAt(this.elapsed);
+    const ease = 1 - Math.exp(-dt / (WEATHER_BLEND_SECONDS / 3));
+    const lerp = (from: number, to: number): number => from + (to - from) * ease;
+    this.current = {
+      phase: target.name,
+      sun: lerp(this.current.sun, target.sun),
+      hemi: lerp(this.current.hemi, target.hemi),
+      fog: lerp(this.current.fog, target.fog),
+      sky: lerp(this.current.sky, target.sky),
+      rain: lerp(this.current.rain, target.rain),
+      gust: lerp(this.current.gust, target.gust),
+      storm: lerp(this.current.storm, target.storm),
+    };
+    return this.current;
+  }
+
+  state(): WeatherState {
+    return this.current;
+  }
+
+  private targetAt(seconds: number): WeatherPhase {
+    const total = WEATHER_CYCLE.reduce((sum, phase) => sum + phase.seconds, 0);
+    let t = seconds % total;
+    for (const phase of WEATHER_CYCLE) {
+      if (t < phase.seconds) {
+        return phase;
+      }
+      t -= phase.seconds;
+    }
+    return WEATHER_CYCLE[0] as WeatherPhase;
+  }
+}
+
 export function createMapAtmosphere(
   scene: THREE.Scene,
   lights: MapAtmosphereLights,
@@ -204,6 +347,8 @@ export function createMapAtmosphere(
   let currentDensity = BASE_FOG_DENSITY;
   let skySeconds = 0;
   const baseFill = AUTUMN_STORM.fillIntensity;
+  const cycle = new WeatherCycle();
+  const skyIntensity = skyDome.material.uniforms.uIntensity ?? { value: 1 };
 
   return {
     update(
@@ -216,6 +361,10 @@ export function createMapAtmosphere(
       skySeconds += dt;
       skyDome.position.copy(cameraPosition);
       skyTime.value = skySeconds;
+      const wx = cycle.update(dt);
+      skyIntensity.value = AUTUMN_STORM.backgroundIntensity * wx.sky;
+      setWeatherScalars(wx.gust, wx.storm);
+      weather.setIntensityScale(wx.rain);
 
       const { primary, secondary, mix, climate } = blendClimateAt(localXMeters, localZMeters);
       targetColour.setHex(primary.mist);
@@ -227,20 +376,23 @@ export function createMapAtmosphere(
       currentDensity += (climate.fogDensity - currentDensity) * 0.04;
       const height = terrainHeightMeters(localXMeters, localZMeters);
       const valley = height < 0 ? Math.min(0.42, -height / 3.4) : 0;
-      fog.density = currentDensity * (1 + valley);
+      fog.density = currentDensity * (1 + valley) * wx.fog;
 
       sunColour.setHex(climate.sunColor);
       lights.sun.color.lerp(sunColour, 0.05);
-      lights.sun.intensity += (climate.sunIntensity - lights.sun.intensity) * 0.05;
+      lights.sun.intensity += (climate.sunIntensity * wx.sun - lights.sun.intensity) * 0.05;
       hemiSky.setHex(climate.hemiSky);
       hemiGround.setHex(climate.hemiGround);
       lights.hemisphere.color.lerp(hemiSky, 0.05);
       lights.hemisphere.groundColor.lerp(hemiGround, 0.05);
       lights.hemisphere.intensity +=
-        (AUTUMN_STORM.hemiIntensity - lights.hemisphere.intensity) * 0.05;
-      lights.fill.intensity += (baseFill - lights.fill.intensity) * 0.05;
+        (AUTUMN_STORM.hemiIntensity * wx.hemi - lights.hemisphere.intensity) * 0.05;
+      lights.fill.intensity += (baseFill * wx.hemi - lights.fill.intensity) * 0.05;
       weather.update(focus, dt);
       leaves.update(focus, dt);
+    },
+    weatherState(): WeatherState {
+      return cycle.state();
     },
     dispose(): void {
       weather.dispose();

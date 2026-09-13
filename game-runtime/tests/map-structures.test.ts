@@ -110,6 +110,7 @@ describe('map structure footprints', () => {
   it('keeps every piece a sim-CCW convex quad of sane size', () => {
     for (const piece of MAP_STRUCTURE_PIECES) {
       expect(piece.vertices).toHaveLength(4);
+      // Wall strips are thin but never degenerate.
       for (let index = 0; index < 4; index += 1) {
         const a = piece.vertices[index] as { x: number; z: number };
         const b = piece.vertices[(index + 1) % 4] as { x: number; z: number };
@@ -136,9 +137,12 @@ describe('map structure footprints', () => {
     expect(buried.map((point) => point.label)).toEqual([]);
   });
 
-  it('blocks walking into a hall but lets a player already inside walk out', () => {
+  it('blocks a hall wall, opens its doorway, and lets an embedded player walk out', () => {
     const field = createMapCollisionField();
-    const piece = MAP_STRUCTURE_PIECES.find((item) => item.wallId === 'tang-hall');
+    // Enterable buildings are five wall strips; the back wall is solid.
+    const piece = MAP_STRUCTURE_PIECES.find(
+      (item) => item.wallId === 'tang-hall' && item.pieceId.endsWith('#back'),
+    );
     expect(piece).toBeDefined();
     if (!piece) {
       return;
@@ -148,7 +152,24 @@ describe('map structure footprints', () => {
       z: Math.trunc(piece.vertices.reduce((sum, v) => sum + v.z, 0) / 4),
     };
     expect(field.isCircleBlocked(centre, PLAYER_RADIUS_MM)).toBe(true);
-    const outside = { x: centre.x + 20_000, z: centre.z };
+    // The floor between the walls is walkable: sample the midpoint between
+    // the back and front strips of the same hall.
+    const hallId = piece.pieceId.replace(/#back$/, '');
+    const strips = MAP_STRUCTURE_PIECES.filter((item) => item.pieceId.startsWith(`${hallId}#`));
+    expect(strips.map((item) => item.pieceId.split('#')[1]).sort()).toEqual([
+      'back',
+      'front-left',
+      'front-right',
+      'left',
+      'right',
+    ]);
+    const all = strips.flatMap((item) => item.vertices);
+    const floor = {
+      x: Math.trunc(all.reduce((sum, v) => sum + v.x, 0) / all.length),
+      z: Math.trunc(all.reduce((sum, v) => sum + v.z, 0) / all.length),
+    };
+    expect(field.isCircleBlocked(floor, PLAYER_RADIUS_MM)).toBe(false);
+    const outside = { x: centre.x + 30_000, z: centre.z };
     expect(field.isCircleBlocked(outside, PLAYER_RADIUS_MM)).toBe(false);
     // Walking in from open ground stops at the wall.
     const step = field.resolveMovement(

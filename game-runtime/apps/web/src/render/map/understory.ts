@@ -35,7 +35,7 @@ const VISIBILITY_UPDATE_INTERVAL = 3;
 const BALANCED_CULL_DISTANCE = 72;
 const REDUCED_CULL_DISTANCE = 58;
 const REDUCED_DENSITY = 0.5;
-const WIND_STRENGTH = 0.05;
+const WIND_STRENGTH = 0.085;
 const ALPHA_TEST = 0.4;
 
 export interface UnderstoryAnchor {

@@ -11,6 +11,27 @@ const WIND_CAMERA_POSITION: { value: THREE.Vector3 } = {
   value: new THREE.Vector3(),
 };
 
+/**
+ * Weather cycle scalars shared by every environment shader. `gust` scales
+ * vegetation sway; `storm` drives sea swell, spray and rain density. Both
+ * ease between phases in the atmosphere's weather cycle.
+ */
+const WIND_GUST: { value: number } = { value: 1 };
+const STORM_LEVEL: { value: number } = { value: 1 };
+
+export function windGustUniform(): { value: number } {
+  return WIND_GUST;
+}
+
+export function stormLevelUniform(): { value: number } {
+  return STORM_LEVEL;
+}
+
+export function setWeatherScalars(gust: number, storm: number): void {
+  WIND_GUST.value = gust;
+  STORM_LEVEL.value = storm;
+}
+
 /** Advances the shared wind clock; call once per rendered frame. */
 export function tickWind(elapsedSeconds: number): void {
   WIND_TIME.value = elapsedSeconds;
@@ -46,6 +67,7 @@ export function applyWindSway(
   const billboard = options.billboard === true;
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uWindTime = WIND_TIME;
+    shader.uniforms.uWindGust = WIND_GUST;
     if (billboard) {
       shader.uniforms.uWindCameraPosition = WIND_CAMERA_POSITION;
     }
@@ -55,6 +77,7 @@ export function applyWindSway(
         [
           '#include <common>',
           'uniform float uWindTime;',
+          'uniform float uWindGust;',
           billboard ? 'uniform vec3 uWindCameraPosition;' : '',
         ]
           .filter(Boolean)
@@ -110,21 +133,21 @@ export function applyWindSway(
               ]
             : []),
           'vec2 windSample = windOrigin + transformed.xz * 0.35;',
-          'float windPhase = uWindTime * 3.9;',
+          'float windPhase = uWindTime * 4.8;',
           'float windBroad = sin(windSample.x * 0.18 + windSample.y * 0.14 + windPhase);',
           'float windCross = cos(windSample.x * 0.08 + windSample.y * 0.22 + windPhase * 0.72);',
           'float windDetail = sin(windSample.x * 0.55 + windSample.y * 0.42 + windPhase * 0.35);',
           'float windMicro = sin(windSample.x * 0.50 - windSample.y * 0.31 + windPhase * 0.50);',
           'vec2 windDirection = normalize(vec2(0.93, 0.36));',
           'vec2 windSide = vec2(-windDirection.y, windDirection.x);',
-          'float windGust = 0.78 + windBroad * 0.30 + windDetail * 0.18;',
-          'float windCrossAmount = windCross * 0.10 + windMicro * 0.06;',
-          `float windWeight = smoothstep(0.02, 0.96, transformed.y) * ${strength.toFixed(4)};`,
+          'float windGust = 0.9 + windBroad * 0.55 + windDetail * 0.3;',
+          'float windCrossAmount = windCross * 0.2 + windMicro * 0.1;',
+          `float windWeight = smoothstep(0.02, 0.96, transformed.y) * ${strength.toFixed(4)} * uWindGust;`,
           'vec2 windDisplacement = windDirection * windGust + windSide * windCrossAmount;',
           'transformed.xz += windDisplacement * windWeight;',
         ].join('\n'),
       );
   };
   material.customProgramCacheKey = () =>
-    `wind-sway-storm-${strength}-${billboard ? 'billboard' : 'world'}-v5`;
+    `wind-sway-storm-${strength}-${billboard ? 'billboard' : 'world'}-v7`;
 }

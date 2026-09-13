@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { FLOW_NOISE_GLSL } from '../shading/flow-water';
 import { hash2 } from '../shading/noise';
-import { windTimeUniform } from '../shading/wind';
+import { stormLevelUniform, windTimeUniform } from '../shading/wind';
 import { AUTUMN_STORM } from './autumn-storm';
 import {
   FALL_LEAN_METERS,
@@ -46,9 +46,9 @@ export const OCEAN_PALETTE = {
   shallow: 0x59c2bb,
   shore: 0x8fe0d2,
   /** Reflection tint: cooler than the storm sky so grazing water stays blue. */
-  sky: 0x8fb0c2,
+  sky: 0x7fa3b4,
   /** Where water meets sky: colder and lighter than the scene fog. */
-  horizon: 0x7d9cb2,
+  horizon: 0x6f93a6,
   foam: 0xf2f8f5,
   sun: 0xfff3d8,
 } as const;
@@ -61,15 +61,22 @@ varying vec2 vSea;
 varying float vSwell;
 #include <fog_pars_vertex>
 
+uniform float uStorm;
+// Gerstner-style sharpening: crests pinch, troughs flatten, so a storm sea
+// reads as rolling walls of water instead of a gentle sine sheet.
+float sharpen(float v) {
+  return v - 0.35 * v * v * sign(v) + 0.35 * v * v;
+}
 float oceanSwell(vec2 p, float t) {
-  float a = sin(p.x * 0.042 + p.y * 0.021 + t * 0.85);
-  float b = sin(p.x * -0.017 + p.y * 0.063 - t * 0.62);
+  float a = sharpen(sin(p.x * 0.042 + p.y * 0.021 + t * 0.85));
+  float b = sharpen(sin(p.x * -0.017 + p.y * 0.063 - t * 0.62));
   float c = sin((p.x + p.y) * 0.11 + t * 1.35);
   float d = sin(p.x * 0.19 - p.y * 0.14 + t * 1.9);
   // Mid-frequency train: the long swell alone is invisible from the chase lens.
-  float e = sin(p.x * 0.052 + p.y * 0.038 + t * 1.1);
+  float e = sharpen(sin(p.x * 0.052 + p.y * 0.038 + t * 1.1));
   float f = sin(p.x * -0.031 + p.y * 0.047 - t * 0.95);
-  return a * 0.62 + b * 0.78 + c * 0.3 + d * 0.24 + e * 0.34 + f * 0.3;
+  float amp = 0.7 + 1.1 * uStorm;
+  return (a * 0.95 + b * 1.15 + c * 0.45 + d * 0.36 + e * 0.55 + f * 0.42) * amp;
 }
 
 void main() {
@@ -100,6 +107,7 @@ uniform vec3 uHorizon;
 uniform vec3 uFoam;
 uniform vec3 uSunColor;
 uniform vec3 uSunDirection;
+uniform float uStorm;
 varying vec3 vWorld;
 varying vec2 vSea;
 varying float vSwell;
@@ -115,16 +123,17 @@ vec3 oceanNormal(vec2 p, float t, float mask) {
   float d = cos(p.x * 0.19 - p.y * 0.14 + t * 1.9);
   float w1 = cos(p.x * 0.052 + p.y * 0.038 + t * 1.1);
   float w2 = cos(p.x * -0.031 + p.y * 0.047 - t * 0.95);
-  float dx = a * 0.62 * 0.042 + b * 0.78 * -0.017 + c * 0.3 * 0.11 + d * 0.24 * 0.19
-    + w1 * 0.34 * 0.052 + w2 * 0.3 * -0.031;
-  float dz = a * 0.62 * 0.021 + b * 0.78 * 0.063 + c * 0.3 * 0.11 + d * 0.24 * -0.14
-    + w1 * 0.34 * 0.038 + w2 * 0.3 * 0.047;
+  float amp = 0.7 + 1.1 * uStorm;
+  float dx = (a * 0.95 * 0.042 + b * 1.15 * -0.017 + c * 0.45 * 0.11 + d * 0.36 * 0.19
+    + w1 * 0.55 * 0.052 + w2 * 0.42 * -0.031) * amp;
+  float dz = (a * 0.95 * 0.021 + b * 1.15 * 0.063 + c * 0.45 * 0.11 + d * 0.36 * -0.14
+    + w1 * 0.55 * 0.038 + w2 * 0.42 * 0.047) * amp;
   vec2 rp = p * 0.55 + vec2(t * 0.35, -t * 0.22);
   float e = 0.35;
   float r0 = fwFbm(rp);
   float rx = fwFbm(rp + vec2(e, 0.0));
   float rz = fwFbm(rp + vec2(0.0, e));
-  float ripple = 0.19;
+  float ripple = 0.19 + 0.16 * uStorm;
   dx = dx * mask + (rx - r0) / e * ripple;
   dz = dz * mask + (rz - r0) / e * ripple;
   return normalize(vec3(-dx, 1.0, -dz));
@@ -144,12 +153,12 @@ void main() {
   vec3 body = mix(uShore, uShallow, smoothstep(2.0, 16.0, vSea.x));
   body = mix(body, uMid, smoothstep(12.0, 60.0, vSea.x));
   body = mix(body, uDeep, smoothstep(45.0, 260.0, vSea.x));
-  float crest = smoothstep(-0.5, 1.3, vSwell);
+  float crest = smoothstep(-0.8, 2.2, vSwell);
   body = mix(body, uMid * 1.45, crest * 0.5 * mask);
   // Swell shading: light on the forward face, dark in the trough, so the
   // surface has readable waves even where nothing reflects.
   body *= 0.9 + crest * 0.22;
-  vec3 colour = mix(body, uSky, fresnel * 0.44);
+  vec3 colour = mix(body, uSky, fresnel * 0.32);
 
   // Sun glitter: a tight highlight over a broad sheen.
   vec3 h = normalize(uSunDirection + toCamera);
@@ -168,15 +177,23 @@ void main() {
 
   // Whitecaps ride the swell crests in open water.
   float capNoise = fwFbm(vWorld.xz * 0.075 + vec2(t * 0.09, t * 0.05));
-  float caps = smoothstep(0.44, 0.7, capNoise) * smoothstep(0.18, 0.95, crest) * mask;
+  // Storm sea: caps break on most crests and spray streaks off them downwind.
+  float capGate = mix(0.5, 0.36, uStorm);
+  float caps = smoothstep(capGate, capGate + 0.24, capNoise) * smoothstep(0.3, 0.95, crest) * mask;
+  float spray = fwNoise(vWorld.xz * 0.3 + vec2(t * 0.9, t * 0.35)) * caps * uStorm;
+  caps = clamp(caps + spray * 0.5, 0.0, 1.0);
 
   // Plunge pool: the falls boil the first tens of metres white, and long
   // foam streaks are driven outward from the rim.
-  float churn = 1.0 - smoothstep(0.0, 38.0, vSea.x);
+  float churn = 1.0 - smoothstep(0.0, 52.0, vSea.x);
   float boil = fwFbm(vec2(vSea.y * 0.16 + t * 0.35, vSea.x * 0.42 - t * 2.4));
   float streak = fwNoise(vec2(vSea.y * 0.45, vSea.x * 0.08 - t * 0.85));
-  float foamPlunge = churn * (0.5 + 0.5 * smoothstep(0.28, 0.72, boil)) + churn * churn * 0.4;
-  float foamStreaks = (1.0 - smoothstep(4.0, 88.0, vSea.x)) * smoothstep(0.5, 0.88, streak) * 0.62;
+  // The plunge pool heaves: bursts of white rise and collapse where the
+  // falls hit, so the foot of the fall is a boiling ring, not a flat disc.
+  float heave = fwNoise(vec2(vSea.y * 0.3 - t * 0.6, vSea.x * 0.25 + t * 1.8));
+  float foamPlunge = churn * (0.55 + 0.45 * smoothstep(0.25, 0.7, boil))
+    + churn * churn * (0.5 + 0.5 * smoothstep(0.4, 0.8, heave));
+  float foamStreaks = (1.0 - smoothstep(4.0, 120.0, vSea.x)) * smoothstep(0.5, 0.88, streak) * 0.7;
   float foam = clamp(foamPlunge + foamStreaks + caps * 0.9, 0.0, 1.0);
   colour = mix(colour, uFoam, foam);
 
@@ -218,6 +235,7 @@ export function createOceanMaterial(): THREE.ShaderMaterial {
         uFoam: { value: new THREE.Color(OCEAN_PALETTE.foam) },
         uSunColor: { value: new THREE.Color(OCEAN_PALETTE.sun) },
         uSunDirection: { value: sun },
+        uStorm: { value: 1 },
       },
     ]),
     vertexShader: VERTEX_SHADER,
@@ -227,6 +245,7 @@ export function createOceanMaterial(): THREE.ShaderMaterial {
   });
   // UniformsUtils.merge clones values; the clock has to be the shared object.
   material.uniforms.uTime = windTimeUniform();
+  material.uniforms.uStorm = stormLevelUniform();
   material.name = 'jwgb-ocean';
   return material;
 }
@@ -305,7 +324,7 @@ function buildPlungeApron(
   base: number,
 ): void {
   const offsets = [0.6, 4.5, 10, 18];
-  const heights = [sea + 0.42, sea + 0.12, sea - 0.08, sea - 0.22];
+  const heights = [sea + 0.9, sea + 0.35, sea - 0.05, sea - 0.22];
   const positions: number[] = [];
   const colours: number[] = [];
   const indices: number[] = [];

@@ -1862,7 +1862,7 @@ export class ArenaRenderer {
     const sun = new THREE.DirectionalLight(AUTUMN_STORM.sunColor, AUTUMN_STORM.sunIntensity);
     sun.position.set(AUTUMN_STORM.sunOffsetX, AUTUMN_STORM.sunHeight, AUTUMN_STORM.sunOffsetZ);
     sun.castShadow = this.graphicsTier === 'balanced';
-    sun.shadow.mapSize.set(1_024, 1_024);
+    sun.shadow.mapSize.set(2_048, 2_048);
     // Widened with the pitch drop: at 26-32 degrees the camera sees roughly
     // half again as far down-range as it did at 39, and shadows that stopped
     // at 38 m ended in a visible line across open ground.
@@ -1871,7 +1871,7 @@ export class ArenaRenderer {
     sun.shadow.camera.top = 58;
     sun.shadow.camera.bottom = -58;
     sun.shadow.normalBias = 0.08;
-    sun.shadow.radius = 3;
+    sun.shadow.radius = 2;
     this.scene.add(sun);
     this.scene.add(sun.target);
     this.sun = sun;

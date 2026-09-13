@@ -51,9 +51,9 @@ export const RIVER_WIDTH_METERS = 7.2;
  * whole sea and the outer world was just fog. 22 m keeps a dramatic fall while
  * putting the water surface back inside the gameplay sightline.
  */
-export const FALL_DROP_METERS = 22;
+export const FALL_DROP_METERS = 30;
 /** Fall face leans back outward as it descends. Small so the curtain stays readable. */
-export const FALL_LEAN_METERS = 2.4;
+export const FALL_LEAN_METERS = 3.2;
 /**
  * River surface below the bank crest. It used to sit 0.9 m down a rock face,
  * so from the chase lens the edge read as ground, then a moat, then a fall.
@@ -297,6 +297,26 @@ function buildShoreScatter(
   const wet = new THREE.Color(0x474b45);
   const drift = new THREE.Color(0x6b5844);
   const reed = new THREE.Color(0x8d8f5c);
+  // Wet boulders sitting in the sheet at the lip: the water parts around
+  // them, which is what makes a waterfall read as ropes instead of a curtain.
+  const lipRock = new THREE.Color(0x4c524d);
+  for (let index = 0; index < rim.length; index += 3) {
+    const sample = rim[index] as RimSample;
+    if (hash2(index, 9, 0x77) < 0.35) {
+      continue;
+    }
+    const along = (hash2(index, 9, 0x31) - 0.5) * 6;
+    const out = riverLipOffsetMeters() - 1.2 + hash2(index, 9, 0x41) * 1.6;
+    const size = 0.9 + hash2(index, 9, 0x51) * 1.6;
+    const px = sample.x + sample.outX * out - sample.outZ * along;
+    const pz = sample.z + sample.outZ * out + sample.outX * along;
+    dummy.position.set(px, (levels[index] as number) - RIVER_SURFACE_BELOW_BANK - 0.2, pz);
+    dummy.rotation.set(hash2(index, 9, 0x71) * 0.5, hash2(index, 9, 0x81) * Math.PI * 2, 0);
+    dummy.scale.set(size, size * 0.7, size * 0.8);
+    dummy.updateMatrix();
+    matrices.push(dummy.matrix.clone());
+    colours.push(lipRock.clone().lerp(wet, hash2(index, 9, 0xb1) * 0.6));
+  }
   for (let index = 0; index < rim.length; index += 2) {
     const sample = rim[index] as RimSample;
     for (let item = 0; item < 3; item += 1) {
@@ -567,9 +587,10 @@ function buildMist(
   const geometry = flowGeometry(rim, (_sample, index) => {
     const surface = surfaces[index] as number;
     return [
-      { offset: lip - 0.6, y: surface + 0.35, flowY: 0, kind: 0 },
-      { offset: lip + 1.2, y: surface - 3.5, flowY: 0.4, kind: 0 },
-      { offset: lip + 6, y: surface - 16, flowY: 1, kind: 0 },
+      { offset: lip - 0.8, y: surface + 0.6, flowY: 0, kind: 0 },
+      { offset: lip + 1.6, y: surface - 3.0, flowY: 0.35, kind: 0 },
+      { offset: lip + 5, y: surface - 10, flowY: 0.7, kind: 0 },
+      { offset: lip + 9, y: surface - 18, flowY: 1, kind: 0 },
     ];
   });
   const mesh = new THREE.Mesh(track(geometry), createFlowWaterMaterial({ mist: true }));
@@ -588,10 +609,10 @@ function buildPlungeMist(
 ): void {
   const foot = riverLipOffsetMeters() + FALL_LEAN_METERS;
   const geometry = flowGeometry(rim, () => [
-    { offset: foot - 1.4, y: sea - 0.55, flowY: 0, kind: 0 },
-    { offset: foot + 4.8, y: sea + 6.8, flowY: 0.32, kind: 0 },
-    { offset: foot + 14, y: sea + 9.5, flowY: 0.62, kind: 0 },
-    { offset: foot + 26, y: sea + 2.4, flowY: 1, kind: 0 },
+    { offset: foot - 2.0, y: sea - 0.55, flowY: 0, kind: 0 },
+    { offset: foot + 4.0, y: sea + 9.5, flowY: 0.3, kind: 0 },
+    { offset: foot + 12, y: sea + 14, flowY: 0.6, kind: 0 },
+    { offset: foot + 30, y: sea + 3.5, flowY: 1, kind: 0 },
   ]);
   const mesh = new THREE.Mesh(track(geometry), createFlowWaterMaterial({ mist: true }));
   mesh.name = 'boundary-river-plunge-mist';

@@ -509,6 +509,8 @@ interface AssetPart {
   readonly geometry: THREE.BufferGeometry;
   readonly material: THREE.Material;
   readonly triangles: number;
+  /** Door leaf: swings about `hinge` (model space) per instance instead of using the building matrix. */
+  readonly door?: { readonly hinge: THREE.Vector3; readonly swingSign: 1 | -1 };
 }
 
 interface AssetTemplate {
@@ -1174,6 +1176,19 @@ function extractTemplate(assetId: string, scene: THREE.Group): AssetTemplate {
     throw new Error(`map assets: ${assetId} has no renderable parts`);
   }
   const entry = catalogEntry(assetId);
+  const doorway = STRUCTURE_DOORWAYS[assetId];
+  if (doorway && entry.kind === 'structure') {
+    for (const part of parts) {
+      cutDoorway(
+        part.geometry,
+        doorway,
+        templateBounds({ id: assetId, path: '', parts, triangles: 0 }),
+      );
+    }
+    parts.push(
+      ...doorLeafParts(doorway, templateBounds({ id: assetId, path: '', parts, triangles: 0 })),
+    );
+  }
   if (entry.kind === 'structure' || SOLID_LANDMARK_ASSETS.has(assetId)) {
     parts.push(structurePlinthPart(parts));
   }
@@ -1247,6 +1262,101 @@ function structurePlinthMaterial(): THREE.MeshStandardMaterial {
     emissiveIntensity: 0.35,
   });
   return plinthMaterial;
+}
+
+/**
+ * Opens the doorway: every triangle whose centroid lies inside the door box
+ * on the front wall is dropped from the index. The converted buildings are
+ * single closed shells, so removing the front-face triangles there leaves a
+ * clean rectangular hole with the (double-sided) interior visible behind it.
+ */
+function cutDoorway(
+  geometry: THREE.BufferGeometry,
+  doorway: StructureDoorway,
+  bounds: THREE.Box3,
+): void {
+  const position = geometry.getAttribute('position');
+  const index = geometry.getIndex();
+  if (!(position instanceof THREE.BufferAttribute)) {
+    return;
+  }
+  const frontZ = bounds.max.z;
+  const floorY = bounds.min.y;
+  const kept: number[] = [];
+  const count = index ? index.count : position.count;
+  const at = (i: number): number => (index ? index.getX(i) : i);
+  for (let cursor = 0; cursor + 2 < count; cursor += 3) {
+    const a = at(cursor);
+    const b = at(cursor + 1);
+    const c = at(cursor + 2);
+    const cx = (position.getX(a) + position.getX(b) + position.getX(c)) / 3;
+    const cy = (position.getY(a) + position.getY(b) + position.getY(c)) / 3;
+    const cz = (position.getZ(a) + position.getZ(b) + position.getZ(c)) / 3;
+    const inDoor =
+      Math.abs(cx) <= doorway.halfWidth &&
+      cy >= floorY - 0.05 &&
+      cy <= floorY + doorway.height &&
+      cz >= frontZ - doorway.depth;
+    if (!inDoor) {
+      kept.push(a, b, c);
+    }
+  }
+  geometry.setIndex(kept);
+  geometry.setDrawRange(0, kept.length);
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+}
+
+const doorLeafMaterials = new Map<number, THREE.MeshStandardMaterial>();
+
+/**
+ * Two door leaves hinged at the jambs, drawn as one part. The instance colour
+ * is neutral so the leaf colour comes from the material; the swing is applied
+ * per building at runtime by `updateDoors` through a second instanced mesh.
+ */
+function doorLeafParts(doorway: StructureDoorway, bounds: THREE.Box3): AssetPart[] {
+  const leafWidth = doorway.halfWidth;
+  const leafHeight = doorway.height - 0.05;
+  const thickness = 0.08;
+  let material = doorLeafMaterials.get(doorway.leafColor);
+  if (!material) {
+    material = new THREE.MeshStandardMaterial({
+      name: `structure-door-${doorway.leafColor.toString(16)}`,
+      color: doorway.leafColor,
+      roughness: 0.7,
+      metalness: 0.05,
+      emissive: 0x2a120a,
+      emissiveIntensity: 0.3,
+      side: THREE.DoubleSide,
+    });
+    doorLeafMaterials.set(doorway.leafColor, material);
+  }
+  // Each leaf is authored with its hinge on the model origin: the geometry
+  // extends from x=0 inward, so `updateDoors` can swing it with one rotation
+  // about Y and then translate it to its jamb. The hinge position for the
+  // runtime is carried on the part.
+  const parts: AssetPart[] = [];
+  for (const side of [-1, 1] as const) {
+    const leaf = new THREE.BoxGeometry(leafWidth, leafHeight, thickness);
+    leaf.translate((side * -leafWidth) / 2, leafHeight / 2, 0);
+    leaf.computeBoundingBox();
+    leaf.computeBoundingSphere();
+    parts.push({
+      geometry: leaf,
+      material,
+      triangles: 12,
+      door: {
+        hinge: new THREE.Vector3(
+          side * doorway.halfWidth,
+          bounds.min.y,
+          bounds.max.z - doorway.depth * 0.5,
+        ),
+        // Leaves swing outward; mirrored per side.
+        swingSign: side,
+      },
+    });
+  }
+  return parts;
 }
 
 /** Depth the plinth reaches below the building base, model metres. */
@@ -1343,6 +1453,34 @@ const SOLID_LANDMARK_ASSETS: ReadonlySet<string> = new Set([
   'free-stone-lion',
 ]);
 
+/**
+ * Buildings the hero can walk into. Each names a doorway cut into the model's
+ * front wall (+z in model space) in model metres, centred on x=0. The mesh is
+ * opened there at load, the collision footprint becomes three solid strips
+ * around the gap, and a pair of door leaves swings out as the player nears.
+ */
+export interface StructureDoorway {
+  /** Half width of the opening, model metres. */
+  readonly halfWidth: number;
+  /** Height of the opening from the floor, model metres. */
+  readonly height: number;
+  /** Depth of the wall band to clear either side of the front face, model metres. */
+  readonly depth: number;
+  /** Colour of the door leaves. */
+  readonly leafColor: number;
+}
+
+export const STRUCTURE_DOORWAYS: Readonly<Record<string, StructureDoorway>> = {
+  'tang-hall': { halfWidth: 1.3, height: 3.0, depth: 1.4, leafColor: 0x7a2c1c },
+  'tang-inn': { halfWidth: 1.1, height: 2.6, depth: 1.2, leafColor: 0x6b3b22 },
+  'tang-teahouse': { halfWidth: 1.0, height: 2.3, depth: 1.1, leafColor: 0x6b3b22 },
+  'tang-drum-tower': { halfWidth: 1.0, height: 2.6, depth: 1.3, leafColor: 0x7a2c1c },
+  'tang-shrine': { halfWidth: 0.9, height: 2.1, depth: 1.0, leafColor: 0x7a2c1c },
+};
+
+/** Plan distance from the hero at which a door starts to swing open. */
+export const STRUCTURE_DOOR_OPEN_RADIUS_METERS = 6;
+
 export interface StructureCollisionFootprint {
   readonly id: string;
   readonly assetId: string;
@@ -1382,26 +1520,92 @@ export function structureCollisionFootprints(
     const yaw = structureWorldYaw(placement);
     const cos = Math.cos(yaw);
     const sin = Math.sin(yaw);
-    const corners: readonly (readonly [number, number])[] = [
-      [minX, minZ],
-      [maxX, minZ],
-      [maxX, maxZ],
-      [minX, maxZ],
-    ];
-    footprints.push({
-      id: placement.id,
-      assetId: placement.assetId,
-      // Same rotation three.js applies for a Y-axis euler: x' = x cos + z sin,
-      // z' = -x sin + z cos, then the uniform placement scale and translation.
-      vertices: corners.map(([x, z]) => ({
-        x: placement.x + (x * cos + z * sin) * placement.scale,
-        z: placement.z + (-x * sin + z * cos) * placement.scale,
-      })),
-      heightMeters: catalogEntry(placement.assetId).targetHeight * placement.scale,
+    // Same rotation three.js applies for a Y-axis euler: x' = x cos + z sin,
+    // z' = -x sin + z cos, then the uniform placement scale and translation.
+    const toWorld = ([x, z]: readonly [number, number]) => ({
+      x: placement.x + (x * cos + z * sin) * placement.scale,
+      z: placement.z + (-x * sin + z * cos) * placement.scale,
     });
+    const heightMeters = catalogEntry(placement.assetId).targetHeight * placement.scale;
+    const doorway = STRUCTURE_DOORWAYS[placement.assetId];
+    const rects: (readonly [string, readonly (readonly [number, number])[]])[] = [];
+    if (doorway && placement.kind === 'structure') {
+      // Walls only: a U of three strips around the doorway on the front
+      // (+z) face, leaving the interior floor and the opening walkable.
+      const wall = STRUCTURE_WALL_THICKNESS_METERS / placement.scale;
+      const gap = doorway.halfWidth;
+      rects.push(
+        [
+          'back',
+          [
+            [minX, minZ],
+            [maxX, minZ],
+            [maxX, minZ + wall],
+            [minX, minZ + wall],
+          ],
+        ],
+        [
+          'left',
+          [
+            [minX, minZ],
+            [minX + wall, minZ],
+            [minX + wall, maxZ],
+            [minX, maxZ],
+          ],
+        ],
+        [
+          'right',
+          [
+            [maxX - wall, minZ],
+            [maxX, minZ],
+            [maxX, maxZ],
+            [maxX - wall, maxZ],
+          ],
+        ],
+        [
+          'front-left',
+          [
+            [minX, maxZ - wall],
+            [-gap, maxZ - wall],
+            [-gap, maxZ],
+            [minX, maxZ],
+          ],
+        ],
+        [
+          'front-right',
+          [
+            [gap, maxZ - wall],
+            [maxX, maxZ - wall],
+            [maxX, maxZ],
+            [gap, maxZ],
+          ],
+        ],
+      );
+    } else {
+      rects.push([
+        '',
+        [
+          [minX, minZ],
+          [maxX, minZ],
+          [maxX, maxZ],
+          [minX, maxZ],
+        ],
+      ]);
+    }
+    for (const [suffix, corners] of rects) {
+      footprints.push({
+        id: suffix ? `${placement.id}#${suffix}` : placement.id,
+        assetId: placement.assetId,
+        vertices: corners.map(toWorld),
+        heightMeters,
+      });
+    }
   }
   return footprints;
 }
+
+/** Solid wall band the sim keeps around an enterable building, world metres. */
+export const STRUCTURE_WALL_THICKNESS_METERS = 1.2;
 
 function makeStructureMatrix(placement: MapAssetPlacement): THREE.Matrix4 {
   // Buildings stay upright: only a tiny deterministic yaw jitter so repeated
@@ -1508,6 +1712,15 @@ export function buildMapAssetLayer(
   let visibleStructureInstances = 0;
   let batches: RockBatch[] = [];
   let structureBatches: RockBatch[] = [];
+  let doorBatches: {
+    mesh: THREE.InstancedMesh;
+    placements: readonly MapAssetPlacement[];
+    matrices: readonly THREE.Matrix4[];
+    open: number[];
+    hinge: THREE.Vector3;
+    swingSign: 1 | -1;
+  }[] = [];
+  let lastDoorUpdateMs = Number.NaN;
   let landmarkRuntimes: LandmarkRuntime[] = [];
   const templates = new Map<string, AssetTemplate>();
   const failedAssets: string[] = [];
@@ -1554,6 +1767,11 @@ export function buildMapAssetLayer(
     disposeRockBatches(batches);
     batches = [];
     landmarkRuntimes = [];
+    for (const batch of doorBatches) {
+      batch.mesh.removeFromParent();
+      batch.mesh.dispose();
+    }
+    doorBatches = [];
     const selected = placementsForTier(placements, tier);
 
     for (const placement of selected.landmarks) {
@@ -1687,6 +1905,28 @@ export function buildMapAssetLayer(
           matrices,
           colours,
         });
+        if (part.door) {
+          // Split the leaves into their own pair of instanced meshes so each
+          // building's doors can swing without touching the shared batch.
+          mesh.count = 0;
+          mesh.visible = false;
+          const leafGeometry = part.geometry;
+          const leaves = new THREE.InstancedMesh(leafGeometry, part.material, list.length);
+          leaves.name = `map-imported-door-${assetId}`;
+          leaves.castShadow = true;
+          leaves.receiveShadow = true;
+          leaves.frustumCulled = false;
+          leaves.count = 0;
+          structureGroup.add(leaves);
+          doorBatches.push({
+            mesh: leaves,
+            placements: list,
+            matrices,
+            open: list.map(() => 0),
+            hinge: part.door.hinge,
+            swingSign: part.door.swingSign,
+          });
+        }
       }
     }
     const hasRocks = batches.length > 0;
@@ -1827,6 +2067,51 @@ export function buildMapAssetLayer(
     }
   }
 
+  /**
+   * Door leaves swing open as the hero approaches. The leaves live in their
+   * own instanced meshes; each frame the open fraction eases toward 1 inside
+   * `STRUCTURE_DOOR_OPEN_RADIUS_METERS` and back to 0 outside, and the leaf
+   * matrix is rebuilt as a hinge rotation about the jamb.
+   */
+  const doorHinge = new THREE.Matrix4();
+  const doorRotate = new THREE.Matrix4();
+  const doorLocal = new THREE.Matrix4();
+  function updateDoors(focusPosition: THREE.Vector3, deltaSeconds: number): void {
+    const ease = 1 - Math.exp(-4 * deltaSeconds);
+    for (const batch of doorBatches) {
+      let slot = 0;
+      for (const [index, placement] of batch.placements.entries()) {
+        const doorway = STRUCTURE_DOORWAYS[placement.assetId];
+        const base = batch.matrices[index];
+        if (!doorway || !base) {
+          continue;
+        }
+        const dx = placement.x - focusPosition.x;
+        const dz = placement.z - focusPosition.z;
+        const near =
+          dx * dx + dz * dz <=
+          (STRUCTURE_DOOR_OPEN_RADIUS_METERS + doorway.halfWidth * placement.scale) ** 2;
+        const target = near ? 1 : 0;
+        const open = THREE.MathUtils.lerp(batch.open[index] ?? 0, target, ease);
+        batch.open[index] = open;
+        if (dx * dx + dz * dz > placement.maxDistance * placement.maxDistance) {
+          continue;
+        }
+        // Leaf geometry is authored with its hinge at the origin, so the
+        // instance matrix is building × translate-to-jamb × swing.
+        const angle = open * 1.45 * batch.swingSign;
+        doorHinge.makeTranslation(batch.hinge.x, batch.hinge.y, batch.hinge.z);
+        doorRotate.makeRotationY(angle);
+        doorLocal.copy(base).multiply(doorHinge).multiply(doorRotate);
+        batch.mesh.setMatrixAt(slot, doorLocal);
+        slot += 1;
+      }
+      batch.mesh.count = slot;
+      batch.mesh.visible = slot > 0 && group.visible;
+      batch.mesh.instanceMatrix.needsUpdate = true;
+    }
+  }
+
   function updateVisibility(cameraPosition: THREE.Vector3, focusPosition: THREE.Vector3): void {
     const reference = focusPosition.lengthSq() > 0 ? focusPosition : cameraPosition;
     visibilityReference ??= new THREE.Vector3();
@@ -1905,6 +2190,12 @@ export function buildMapAssetLayer(
           void loadForFocus(focusPosition.lengthSq() > 0 ? focusPosition : cameraPosition);
         }
       }
+      const now = performance.now();
+      const delta = Number.isFinite(lastDoorUpdateMs)
+        ? Math.min(0.1, (now - lastDoorUpdateMs) / 1000)
+        : 0.016;
+      lastDoorUpdateMs = now;
+      updateDoors(focusPosition.lengthSq() > 0 ? focusPosition : cameraPosition, delta);
     },
     diagnostics(): MapAssetLayerDiagnostics {
       const visibleBatches = [...batches, ...structureBatches].filter(

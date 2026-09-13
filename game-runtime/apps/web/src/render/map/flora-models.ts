@@ -465,7 +465,7 @@ function prepareMaterial(
     material.alphaTest = Math.max(material.alphaTest, LEAF_ALPHA_TEST);
     material.transparent = false;
     material.depthWrite = true;
-    applyWindSway(material, lowpolyFoliage ? 0.034 : 0.058);
+    applyWindSway(material, lowpolyFoliage ? 0.055 : 0.095);
     const profile = /(?:^|\/)red-maple\.glb$/i.test(path)
       ? 'maple'
       : /(?:^|\/)mission-lush-tree\.glb$/i.test(path)

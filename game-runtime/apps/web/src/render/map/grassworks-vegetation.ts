@@ -3,7 +3,12 @@ import * as THREE from 'three';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { appendAssetVersion, webAssetUrl } from '../../runtime/asset-url';
-import { applyWindSway, setWindCameraPosition } from '../shading/wind';
+import {
+  applyWindSway,
+  setWindCameraPosition,
+  windGustUniform,
+  windTimeUniform,
+} from '../shading/wind';
 import {
   type AutumnGroundDressingLayer,
   buildAutumnGroundDressing,
@@ -781,11 +786,15 @@ function createGrassMaterial(atlas: THREE.Texture): THREE.MeshStandardMaterial {
   });
   material.alphaToCoverage = false;
   material.onBeforeCompile = (shader) => {
+    shader.uniforms.uWindTime = windTimeUniform();
+    shader.uniforms.uWindGust = windGustUniform();
     shader.vertexShader = shader.vertexShader
       .replace(
         '#include <common>',
         [
           '#include <common>',
+          'uniform float uWindTime;',
+          'uniform float uWindGust;',
           'attribute vec3 grassworksOffset;',
           'attribute vec4 grassworksParams;',
           'attribute vec3 grassworksTint;',
@@ -824,6 +833,16 @@ function createGrassMaterial(atlas: THREE.Texture): THREE.MeshStandardMaterial {
           'transformed.y *= grassworksHeight;',
           'transformed.xz = mat2(grassworksCos, -grassworksSin, grassworksSin, grassworksCos) * transformed.xz;',
           'transformed += grassworksOffset;',
+          // Storm wind on the blades: the tip bends downwind with a broad
+          // gust field plus a fine flutter, weighted by height so roots stay put.
+          'float gwTip = clamp(transformed.y - grassworksOffset.y, 0.0, 4.0) / max(grassworksHeight, 0.001);',
+          'float gwPhase = uWindTime * 4.8;',
+          'float gwBroad = sin(grassworksOffset.x * 0.18 + grassworksOffset.z * 0.14 + gwPhase);',
+          'float gwFlutter = sin(grassworksOffset.x * 1.7 - grassworksOffset.z * 1.3 + gwPhase * 2.3 + grassworksParams.w * 6.283);',
+          'vec2 gwDir = normalize(vec2(0.93, 0.36));',
+          'float gwGust = (0.55 + gwBroad * 0.45 + gwFlutter * 0.2) * uWindGust;',
+          'transformed.xz += gwDir * gwGust * gwTip * gwTip * grassworksHeight * 0.55;',
+          'transformed.y -= gwGust * gwTip * gwTip * grassworksHeight * 0.08;',
           'vGrassworksTint = grassworksTint;',
         ].join('\n'),
       );
@@ -846,7 +865,7 @@ function createGrassMaterial(atlas: THREE.Texture): THREE.MeshStandardMaterial {
         ].join('\n'),
       );
   };
-  material.customProgramCacheKey = () => 'jwgb-grassworks-grass-atlas-static-v8';
+  material.customProgramCacheKey = () => 'jwgb-grassworks-grass-atlas-wind-v10';
   return material;
 }
 
@@ -1412,7 +1431,10 @@ function buildTreeContent(
       for (const [partIndex, part] of template.parts.entries()) {
         const mesh = new THREE.InstancedMesh(part.geometry, part.material, chunkPlacements.length);
         mesh.name = `grassworks-tree-${lod}-v${variant}-${key.replace(':', '-')}-${partIndex}`;
-        mesh.castShadow = false;
+        // Near trees throw real shadows on the balanced tier: trunks and
+        // crowns crossing the ground are most of what makes the wood read as
+        // lit. The low LOD is a billboard and would cast a flat card.
+        mesh.castShadow = lod === 'high';
         mesh.receiveShadow = lod === 'high';
         mesh.frustumCulled = true;
         chunkPlacements.forEach((placement, index) => {

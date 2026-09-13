@@ -110,6 +110,7 @@ export class MapWeather {
   private readonly textures: { flake: THREE.CanvasTexture; streak: THREE.CanvasTexture };
   private readonly spawnRng = mulberry32(0x5eed ^ 0x9e37);
   private mode: PrecipMode = 'rain';
+  private intensityScale = 1;
   private intensity = 0;
   private time = 0;
   private planMode: PrecipMode | null = null;
@@ -155,6 +156,11 @@ export class MapWeather {
     scene.add(this.points);
   }
 
+  /** Weather-cycle multiplier on the precipitation density target. */
+  setIntensityScale(scale: number): void {
+    this.intensityScale = Math.max(0, scale);
+  }
+
   update(focus: THREE.Vector3, dt: number): void {
     this.planTimer -= dt;
     if (this.planTimer <= 0) {
@@ -176,7 +182,7 @@ export class MapWeather {
         maskedSwap = !this.planLocal;
       }
     } else {
-      target = STYLES[this.mode].target;
+      target = STYLES[this.mode].target * this.intensityScale;
     }
     this.intensity += (target - this.intensity) * Math.min(1, dt * 2.4);
     this.material.opacity = this.intensity;
