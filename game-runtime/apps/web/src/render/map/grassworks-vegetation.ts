@@ -133,7 +133,15 @@ const REDUCED_GRASS_DISTANCE = 108;
  * in a closed wood; past ~64 m the photographic billboards read the same from
  * the chase camera.
  */
-const BALANCED_TREE_HIGH_DISTANCE = 26;
+/**
+ * Full 3D crowns out to here from the hero. At 26 m everything the chase lens
+ * framed past the hero's feet was already the billboard card, which turns to
+ * face the camera and so reads as a flat picture of a tree whenever the view
+ * orbits. 48 m covers the frame around the hero at the standard pitch and
+ * keeps the M1 chase view above 20 fps; beyond that the fixed crossed cards
+ * take over.
+ */
+const BALANCED_TREE_HIGH_DISTANCE = 48;
 const BALANCED_TREE_LOW_DISTANCE = 260;
 const REDUCED_TREE_LOW_DISTANCE = 208;
 const TREE_HIGH_HYSTERESIS = 5;
@@ -1180,7 +1188,10 @@ function prepareTreeMaterial(
         ? GRASSWORKS_SOURCE_PROFILE.leafSprites.highWind
         : GRASSWORKS_SOURCE_PROFILE.leafSprites.lowWind
       : AUTUMN_STORM.windTrunk,
-    { billboard: lod === 'low' },
+    // The far LOD is a pair of crossed cards; they stay fixed in the world so
+    // a distant tree keeps a silhouette with depth instead of pivoting to
+    // face every camera turn as one flat plane.
+    { billboard: false },
   );
   if (material instanceof THREE.MeshStandardMaterial) {
     // The baked crown occlusion lives in the vertex colour of the high LOD;

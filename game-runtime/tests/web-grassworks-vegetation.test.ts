@@ -191,7 +191,7 @@ describe('web Grassworks vegetation', () => {
       runtimeMassifTreeSpacingMeters: 2.6,
       runtimeHillTreeSpacingMeters: 3.6,
       runtimeUnderstory: 'bush, asia-bush and fern GLBs clustered under every placed tree',
-      runtimeTreeHighDistanceMeters: 26,
+      runtimeTreeHighDistanceMeters: 48,
       runtimeTreeLowDistanceMeters: 260,
       runtimeReducedTreeLowDistanceMeters: 208,
       runtimeTreeHighHysteresisMeters: 5,
