@@ -6,24 +6,6 @@ import {
   updateHeroSkillVisual,
 } from '../apps/web/src/render/hero-skill-vfx';
 
-function firstProfile() {
-  const profile = HERO_SKILL_VFX_PROFILES[0];
-  if (!profile) {
-    throw new Error('missing hero skill profile');
-  }
-  return profile;
-}
-
-function pointsIn(group: THREE.Group): THREE.Points[] {
-  const found: THREE.Points[] = [];
-  group.traverse((child) => {
-    if (child instanceof THREE.Points) {
-      found.push(child);
-    }
-  });
-  return found;
-}
-
 function ringsIn(group: THREE.Group): THREE.Mesh[] {
   const found: THREE.Mesh[] = [];
   group.traverse((child) => {
@@ -34,77 +16,67 @@ function ringsIn(group: THREE.Group): THREE.Mesh[] {
   return found;
 }
 
-describe('hero skill burst layers', () => {
-  it('gives casts and impacts a spark burst but leaves a persistent aura alone', () => {
-    const profile = firstProfile();
-    // Casts are the bare motif now; only the impact throws sparks.
-    expect(pointsIn(createHeroSkillVisual(profile, 'cast', false).group)).toHaveLength(0);
-    expect(pointsIn(createHeroSkillVisual(profile, 'impact', false).group)).toHaveLength(1);
-    // A status aura is a state, not an event: sparks there would fire for as
-    // long as the buff is up and stop reading as an impact.
-    expect(pointsIn(createHeroSkillVisual(profile, 'status', false).group)).toHaveLength(0);
+function shapesIn(group: THREE.Group): THREE.Mesh[] {
+  const found: THREE.Mesh[] = [];
+  group.traverse((child) => {
+    if (child instanceof THREE.Mesh && child.userData.skillShape === true) {
+      found.push(child);
+    }
+  });
+  return found;
+}
+
+describe('hero skill shapes', () => {
+  it('gives every profile a bespoke silhouette with a small part count', () => {
+    for (const profile of HERO_SKILL_VFX_PROFILES) {
+      const cast = createHeroSkillVisual(profile, 'cast', false);
+      const shapes = shapesIn(cast.group);
+      expect(shapes.length, profile.heroId).toBeGreaterThan(0);
+      // A shape is a few solid meshes, not a cloud of parts.
+      expect(shapes.length, profile.heroId).toBeLessThanOrEqual(30);
+      for (const mesh of shapes) {
+        const material = mesh.material as THREE.MeshBasicMaterial;
+        expect(material.blending, profile.heroId).toBe(THREE.NormalBlending);
+      }
+    }
   });
 
-  it('pairs the shock rings on impact so the wave has a trailing edge', () => {
-    const profile = firstProfile();
-    expect(ringsIn(createHeroSkillVisual(profile, 'impact', false).group)).toHaveLength(3);
-    expect(ringsIn(createHeroSkillVisual(profile, 'cast', false).group)).toHaveLength(0);
+  it('marks the hit with one ground ring on cast and impact, none on a status aura', () => {
+    const profile = HERO_SKILL_VFX_PROFILES[0];
+    if (!profile) {
+      throw new Error('missing profile');
+    }
+    expect(ringsIn(createHeroSkillVisual(profile, 'cast', false).group)).toHaveLength(1);
+    expect(ringsIn(createHeroSkillVisual(profile, 'impact', false).group)).toHaveLength(1);
     expect(ringsIn(createHeroSkillVisual(profile, 'status', false).group)).toHaveLength(0);
   });
 
-  it('throws sparks outward and fades them out', () => {
-    const profile = firstProfile();
-    const visual = createHeroSkillVisual(profile, 'impact', false);
-    const points = pointsIn(visual.group)[0];
-    if (!points) {
-      throw new Error('missing spark burst');
+  it('expands the ring as the effect plays', () => {
+    const profile = HERO_SKILL_VFX_PROFILES[0];
+    if (!profile) {
+      throw new Error('missing profile');
     }
-    const position = points.geometry.getAttribute('position');
-    const spread = (): number => {
-      let widest = 0;
-      for (let index = 0; index < position.count; index += 1) {
-        widest = Math.max(widest, Math.hypot(position.getX(index), position.getZ(index)));
-      }
-      return widest;
-    };
-
-    const start = spread();
-    updateHeroSkillVisual(visual.group, 0.5, 0.25);
-    const mid = spread();
-    expect(mid).toBeGreaterThan(start);
-
-    const material = points.material as THREE.PointsMaterial;
-    updateHeroSkillVisual(visual.group, 1, 0.6);
-    expect(material.opacity).toBeLessThan(0.05);
+    const visual = createHeroSkillVisual(profile, 'impact', false);
+    const [ring] = ringsIn(visual.group);
+    if (!ring) {
+      throw new Error('missing ring');
+    }
+    updateHeroSkillVisual(visual.group, 0.15, 0.15);
+    const early = ring.scale.x;
+    updateHeroSkillVisual(visual.group, 0.7, 0.7);
+    expect(ring.scale.x).toBeGreaterThan(early);
   });
 
-  it('expands each ring on its own delay', () => {
-    const profile = firstProfile();
-    const visual = createHeroSkillVisual(profile, 'impact', false);
-    const [lead, trail] = ringsIn(visual.group);
-    if (!lead || !trail) {
-      throw new Error('missing shock rings');
+  it('keeps distinct motifs from sharing one silhouette', () => {
+    const signatures = new Set<string>();
+    for (const profile of HERO_SKILL_VFX_PROFILES) {
+      const cast = createHeroSkillVisual(profile, 'cast', false);
+      const signature = shapesIn(cast.group)
+        .map((mesh) => `${mesh.geometry.type}:${mesh.position.y.toFixed(1)}`)
+        .sort()
+        .join('|');
+      signatures.add(signature);
     }
-    updateHeroSkillVisual(visual.group, 0.1, 0.05);
-    // The trailing ring has not started yet, so it must not be drawn at full
-    // size on top of the leading one.
-    expect(trail.visible).toBe(false);
-    expect(lead.visible).toBe(true);
-
-    updateHeroSkillVisual(visual.group, 0.6, 0.3);
-    expect(trail.visible).toBe(true);
-    expect(lead.scale.x).toBeGreaterThan(trail.scale.x);
-  });
-
-  it('keeps the reduced tier cheaper', () => {
-    const profile = firstProfile();
-    const full = pointsIn(createHeroSkillVisual(profile, 'impact', false).group)[0];
-    const reduced = pointsIn(createHeroSkillVisual(profile, 'impact', true).group)[0];
-    if (!full || !reduced) {
-      throw new Error('missing spark burst');
-    }
-    expect(reduced.geometry.getAttribute('position').count).toBeLessThan(
-      full.geometry.getAttribute('position').count,
-    );
+    expect(signatures.size).toBeGreaterThanOrEqual(HERO_SKILL_VFX_PROFILES.length - 2);
   });
 });
