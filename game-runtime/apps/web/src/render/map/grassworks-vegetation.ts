@@ -144,7 +144,9 @@ const REDUCED_TREE_DENSITY = 0.7;
 const TREE_TARGET_HEIGHT_MIN = 12.5;
 const TREE_TARGET_HEIGHT_MAX = 24;
 /** Trees on a slope sink by up to this much so the uphill roots stay buried. */
-const TREE_SLOPE_SINK_MAX_METERS = 0.9;
+const TREE_SLOPE_SINK_MAX_METERS = 1.6;
+/** Billboard cards are flat and wide; bury their base so the downhill corner never hangs. */
+const TREE_BILLBOARD_BURY_FRACTION = 0.035;
 const GRASS_VERTICES_PER_DETAIL = 6;
 const GRASS_TRIANGLES_PER_DETAIL = 2;
 
@@ -473,9 +475,13 @@ function isWaterPoint(point: MapPointMm): boolean {
   return waterSurfaceAt(point.x / MM, point.z / MM) !== null || isInSpawnPond(point);
 }
 
+/** Grass runs onto the river bank shelf this far past the boundary polygon. */
+const GRASS_RIM_OVERHANG_MM = 4_000;
+
 export function sampleGrassworksGrassPoints(seed: number): readonly MapPointMm[] {
   return sampleGroundLattice(GRASS_SPACING_METERS, createRandomStream(seed ^ GRASS_SEED_SALT), {
     roadVergeMm: GRASS_ROAD_VERGE_MM,
+    rimOverhangMm: GRASS_RIM_OVERHANG_MM,
     landmarkClearanceScale: 0.5,
     exclusionZones: mapBuildingClearanceZones(),
     jitter: GRASS_JITTER,
@@ -1130,6 +1136,7 @@ function prepareTreeMaterial(
   source: THREE.Material,
   lod: 'high' | 'low',
   isLeaf: boolean,
+  hasVertexColour: boolean,
 ): THREE.Material {
   const material = source.clone();
   material.name = `grassworks-${lod}-${source.name || 'material'}`;
@@ -1158,12 +1165,17 @@ function prepareTreeMaterial(
   );
   if (material instanceof THREE.MeshStandardMaterial) {
     // The baked crown occlusion lives in the vertex colour of the high LOD;
-    // billboards are one quad and would only darken at their centre.
-    material.vertexColors = lod === 'high';
+    // billboards are one quad and would only darken at their centre. Only
+    // meshes that actually carry a colour attribute may enable it: with
+    // `vertexColors` on and no attribute, WebGL feeds the shader the zero
+    // default and the whole tree — bark, branches and crown — renders black.
+    material.vertexColors = lod === 'high' && hasVertexColour;
     material.roughness = Math.max(material.roughness, isLeaf ? 0.72 : 0.88);
     material.metalness = Math.min(material.metalness, 0.03);
     if (!isLeaf) {
-      material.color.multiplyScalar(lod === 'low' ? 0.62 : 0.72);
+      // Bark used to be darkened here and again per instance, which with the
+      // overcast key light left every trunk a black pole. One gentle step.
+      material.color.multiplyScalar(lod === 'low' ? 0.7 : 0.9);
     }
     if (isLeaf) {
       // Autumn colour is supplied per instance below. Applying the same tint
@@ -1227,7 +1239,12 @@ function extractTreeTemplates(scene: THREE.Group): Map<string, TreeTemplate> {
             /leaf|leaves|billboard/i.test(`${object.name} ${sourceMaterial.name}`);
           parts.push({
             geometry,
-            material: prepareTreeMaterial(sourceMaterial, lod, isLeaf),
+            material: prepareTreeMaterial(
+              sourceMaterial,
+              lod,
+              isLeaf,
+              Boolean(geometry.getAttribute('color')),
+            ),
             isLeaf,
             triangles: Math.floor(group.count / 3),
           });
@@ -1240,6 +1257,13 @@ function extractTreeTemplates(scene: THREE.Group): Map<string, TreeTemplate> {
       // Same bare-trunk correction as the near-camera flora: the wood has to
       // show trunks under the canopy from the chase lens.
       exposeTreeTrunk(parts, 0.34);
+      if (lod === 'low') {
+        for (const part of parts) {
+          part.geometry.translate(0, -TREE_BILLBOARD_BURY_FRACTION, 0);
+          part.geometry.computeBoundingBox();
+          part.geometry.computeBoundingSphere();
+        }
+      }
       templates.set(`${variant}:${lod}`, { variant, lod, parts });
     }
   }
@@ -1306,13 +1330,14 @@ function treeGroundMeters(x: number, z: number): number {
   const surfaceAt = (px: number, pz: number): number =>
     dressingSurfaceMeters({ x: Math.round(px * MM), z: Math.round(pz * MM) });
   const centre = surfaceAt(x, z);
-  const fall = Math.max(
-    0,
-    centre - surfaceAt(x + 1, z),
-    centre - surfaceAt(x - 1, z),
-    centre - surfaceAt(x, z + 1),
-    centre - surfaceAt(x, z - 1),
-  );
+  // Probe 1.5 m out in eight directions: a crown-wide card or a buttressed
+  // trunk spans more than the metre the old four probes covered, and from a
+  // low angle the downhill side of the base showed daylight underneath.
+  let fall = 0;
+  for (let step = 0; step < 8; step += 1) {
+    const angle = (step * Math.PI) / 4;
+    fall = Math.max(fall, centre - surfaceAt(x + Math.cos(angle) * 1.5, z + Math.sin(angle) * 1.5));
+  }
   return centre - Math.min(TREE_SLOPE_SINK_MAX_METERS, fall);
 }
 
@@ -1396,7 +1421,7 @@ function buildTreeContent(
           const region = regionAt(placement.x, placement.z);
           const colour = part.isLeaf
             ? canopyTintAt(placement.x, placement.z, placement.upland)
-            : new THREE.Color(region.groundAlt).lerp(new THREE.Color(0x2a2218), 0.38);
+            : new THREE.Color(0x8c7a62).lerp(new THREE.Color(region.groundAlt), 0.3);
           mesh.setColorAt(index, colour);
           targetParts.get(placement.id)?.push({
             id: part.isLeaf ? 'canopy' : 'trunk',
@@ -1526,6 +1551,7 @@ export function buildGrassworksVegetationLayer(
     return treePlacements;
   };
   const visibilityReference = new THREE.Vector3();
+  const focusReference = new THREE.Vector3();
   const failedAssets = new Set<string>();
   const loadedAssets = new Set<string>();
 
@@ -1579,7 +1605,14 @@ export function buildGrassworksVegetationLayer(
     }
   };
 
-  const updateTreeVisibility = (reference: THREE.Vector3): void => {
+  /**
+   * Tree LOD. The low/hidden cull follows the camera as before, but the high
+   * LOD is chosen by distance to the *focus* (the player). The chase rig keeps
+   * the camera 25–30 m behind the hero, so measuring from the camera meant the
+   * trees the player stands among were always outside the 26 m high band and
+   * the wood was only ever drawn as billboards.
+   */
+  const updateTreeVisibility = (reference: THREE.Vector3, focus: THREE.Vector3): void => {
     visibleTreeInstances = 0;
     visibleHighTreeInstances = 0;
     visibleLowTreeInstances = 0;
@@ -1599,29 +1632,18 @@ export function buildGrassworksVegetationLayer(
       const lowDistance =
         tier === 'balanced' ? BALANCED_TREE_LOW_DISTANCE : REDUCED_TREE_LOW_DISTANCE;
       const distance = Math.sqrt(distanceSquared);
+      const focusDistance = Math.sqrt(
+        squaredDistanceToBounds(focus, chunk.minX, chunk.maxX, chunk.minZ, chunk.maxZ, 8),
+      );
       const highEnterDistance = Math.max(0, BALANCED_TREE_HIGH_DISTANCE - TREE_HIGH_HYSTERESIS);
       const highExitDistance = BALANCED_TREE_HIGH_DISTANCE + TREE_HIGH_HYSTERESIS;
       const lowEnterDistance = Math.max(0, lowDistance - TREE_LOW_HYSTERESIS);
       const lowExitDistance = lowDistance + TREE_LOW_HYSTERESIS;
-      let lod: TreeChunk['lod'];
-      if (tier === 'balanced' && chunk.lod === 'high') {
-        lod =
-          distance <= highExitDistance ? 'high' : distance <= lowExitDistance ? 'low' : 'hidden';
-      } else if (chunk.lod === 'low') {
-        lod =
-          tier === 'balanced' && distance <= highEnterDistance
-            ? 'high'
-            : distance <= lowExitDistance
-              ? 'low'
-              : 'hidden';
-      } else {
-        lod =
-          tier === 'balanced' && distance <= highEnterDistance
-            ? 'high'
-            : distance <= lowEnterDistance
-              ? 'low'
-              : 'hidden';
-      }
+      const wantsHigh =
+        tier === 'balanced' &&
+        focusDistance <= (chunk.lod === 'high' ? highExitDistance : highEnterDistance);
+      const withinLow = distance <= (chunk.lod === 'hidden' ? lowEnterDistance : lowExitDistance);
+      const lod: TreeChunk['lod'] = wantsHigh ? 'high' : withinLow ? 'low' : 'hidden';
       chunk.lod = lod;
       const visible = group.visible && lod !== 'hidden';
       chunk.group.visible = visible;
@@ -1653,7 +1675,7 @@ export function buildGrassworksVegetationLayer(
     occlusion.setEnabled(tier === 'balanced');
     treeReady = true;
     updateGrassVisibility(visibilityReference);
-    updateTreeVisibility(visibilityReference);
+    updateTreeVisibility(visibilityReference, focusReference);
     refreshStatus();
   };
 
@@ -1746,7 +1768,7 @@ export function buildGrassworksVegetationLayer(
       understory?.setGraphicsTier(tier);
       rebuildTrees();
       updateGrassVisibility(visibilityReference);
-      updateTreeVisibility(visibilityReference);
+      updateTreeVisibility(visibilityReference, focusReference);
     },
     update(cameraPosition, focusPosition): void {
       if (disposed) {
@@ -1754,6 +1776,7 @@ export function buildGrassworksVegetationLayer(
       }
       setWindCameraPosition(cameraPosition);
       visibilityReference.copy(cameraPosition);
+      focusReference.copy(focusPosition);
       understory?.update(cameraPosition);
       grassFrame = (grassFrame + 1) % GRASS_VISIBILITY_UPDATE_INTERVAL;
       treeFrame = (treeFrame + 1) % TREE_VISIBILITY_UPDATE_INTERVAL;
@@ -1761,7 +1784,7 @@ export function buildGrassworksVegetationLayer(
         updateGrassVisibility(visibilityReference);
       }
       if (treeFrame === 0) {
-        updateTreeVisibility(visibilityReference);
+        updateTreeVisibility(visibilityReference, focusReference);
       }
       occlusion.update(cameraPosition, focusPosition);
     },

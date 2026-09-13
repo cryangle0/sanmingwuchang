@@ -80,6 +80,8 @@ export interface CanonicalMapDocument {
     readonly zone: string;
     readonly facing_deg: number;
     readonly pos: readonly [number, number];
+    /** Route node the authored 出口节点 leads to; the inward nudge heads there. */
+    readonly exit?: string;
   }[];
   readonly rocks: readonly {
     readonly id: string;

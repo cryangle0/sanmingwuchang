@@ -1,6 +1,6 @@
-import { MAP_BOUNDARY, MAP_GEOMETRY_HASH, MAP_SPAWN_POINTS, MAP_WALL_PIECES } from '@jwgb/content';
+import { MAP_SPAWN_POINTS } from '@jwgb/content';
 import { type Vec2Mm, vec2Mm } from '@jwgb/core';
-import { MapCollisionField } from '@jwgb/sim';
+import { createMapCollisionField, type MapCollisionField } from '@jwgb/sim';
 
 /**
  * Keeps the `?spawn=` debug override on ground a character can stand on.
@@ -25,7 +25,7 @@ let field: MapCollisionField | null = null;
 
 function collisionField(): MapCollisionField {
   if (!field) {
-    field = new MapCollisionField(MAP_GEOMETRY_HASH, MAP_BOUNDARY, MAP_WALL_PIECES);
+    field = createMapCollisionField();
   }
   return field;
 }

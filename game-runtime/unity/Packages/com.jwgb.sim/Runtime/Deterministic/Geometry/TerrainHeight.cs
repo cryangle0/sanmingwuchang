@@ -536,38 +536,6 @@ namespace Jwgb.Sim.Deterministic
                 }
             }
 
-            var spawnBases = new int[MapGeometryCatalog.SpawnPoints.Length];
-            for (var index = 0; index < MapGeometryCatalog.SpawnPoints.Length; index += 1)
-            {
-                var spawn = MapGeometryCatalog.SpawnPoints[index];
-                spawnBases[index] = ApplyHillStamps(
-                    BaseHeightMm((int)spawn.Position.X, (int)spawn.Position.Z),
-                    (int)spawn.Position.X,
-                    (int)spawn.Position.Z,
-                    hills);
-            }
-
-            var spawnMedianMm = MedianOf(spawnBases);
-            var spawnPads = new CircleStamp[MapGeometryCatalog.SpawnPoints.Length];
-            for (var index = 0; index < MapGeometryCatalog.SpawnPoints.Length; index += 1)
-            {
-                var spawn = MapGeometryCatalog.SpawnPoints[index];
-                var groundMm = spawnBases[index];
-
-                // Nobody starts the match looking down on the other 29. The
-                // approach is only as long as the correction needs at road
-                // grade: a fixed long skirt made every pad a 47 m radius
-                // terrain modifier that swamped the graded corridors past it.
-                var targetMm = ClampToBand(groundMm, spawnMedianMm, SpawnFairnessBandMm);
-                var rampMm = (int)((Math.Abs((long)targetMm - groundMm) * 1_000) / RoadMaxGradePerMille);
-                spawnPads[index] = new CircleStamp(
-                    (int)spawn.Position.X,
-                    (int)spawn.Position.Z,
-                    PadRadiusMm,
-                    Math.Min(SpawnPadMaxEdgeMm, BandLimitEdge(rampMm)),
-                    targetMm);
-            }
-
             var shopPads = new CircleStamp[MapGeometryCatalog.Shops.Length];
             for (var index = 0; index < MapGeometryCatalog.Shops.Length; index += 1)
             {
@@ -583,6 +551,58 @@ namespace Jwgb.Sim.Deterministic
                         (int)shop.Position.Z,
                         hills));
             }
+
+            // Spawn bases are read after the road grade, mirroring the
+            // TypeScript oracle: a start authored on a route corridor keeps
+            // the corridor's graded height instead of a pad lifted off it.
+            var roadDraft = new StampIndex(
+                hills,
+                roads,
+                roadCells,
+                Array.Empty<PolyStamp>(),
+                Array.Empty<PolyStamp>(),
+                shopPads,
+                Array.Empty<CircleStamp>(),
+                Array.Empty<CircleStamp>(),
+                Array.Empty<CircleStamp>(),
+                Array.Empty<CircleStamp>());
+            var spawnBases = new int[MapGeometryCatalog.SpawnPoints.Length];
+            var spawnOnRoad = new bool[MapGeometryCatalog.SpawnPoints.Length];
+            for (var index = 0; index < MapGeometryCatalog.SpawnPoints.Length; index += 1)
+            {
+                var spawn = MapGeometryCatalog.SpawnPoints[index];
+                var x = (int)spawn.Position.X;
+                var z = (int)spawn.Position.Z;
+                var hillMm = ApplyHillStamps(BaseHeightMm(x, z), x, z, hills);
+                var shopMm = ApplyCircleStamps(hillMm, x, z, shopPads);
+                var roadMm = ApplyRoadStamps(shopMm, x, z, roadDraft);
+                spawnBases[index] = roadMm;
+                spawnOnRoad[index] = roadMm != shopMm;
+            }
+
+            var spawnMedianMm = MedianOf(spawnBases);
+            var spawnPads = new CircleStamp[MapGeometryCatalog.SpawnPoints.Length];
+            for (var index = 0; index < MapGeometryCatalog.SpawnPoints.Length; index += 1)
+            {
+                var spawn = MapGeometryCatalog.SpawnPoints[index];
+                var groundMm = spawnBases[index];
+
+                // Nobody starts the match looking down on the other 29. The
+                // approach is only as long as the correction needs at road
+                // grade: a fixed long skirt made every pad a 47 m radius
+                // terrain modifier that swamped the graded corridors past it.
+                var targetMm = spawnOnRoad[index]
+                    ? groundMm
+                    : ClampToBand(groundMm, spawnMedianMm, SpawnFairnessBandMm);
+                var rampMm = (int)((Math.Abs((long)targetMm - groundMm) * 1_000) / RoadMaxGradePerMille);
+                spawnPads[index] = new CircleStamp(
+                    (int)spawn.Position.X,
+                    (int)spawn.Position.Z,
+                    PadRadiusMm,
+                    Math.Min(SpawnPadMaxEdgeMm, BandLimitEdge(rampMm)),
+                    targetMm);
+            }
+
 
             var courts = new PolyStamp[MapGeometryCatalog.Courts.Length];
             for (var index = 0; index < MapGeometryCatalog.Courts.Length; index += 1)

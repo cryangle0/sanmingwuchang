@@ -1,3 +1,4 @@
+export * from './geometry/create-map-collision-field';
 export * from './geometry/integer-geometry';
 export * from './geometry/map-collision-field';
 export * from './geometry/spatial-grid';

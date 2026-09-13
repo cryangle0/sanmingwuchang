@@ -39,6 +39,12 @@ namespace Jwgb.Content
             new Int2Mm(88_033, -18_712)
         };
 
+        /// <summary>
+        /// Players a room seats. The authored map carries 80 spawn markers so a
+        /// 30-player match starts everyone well inside the rim; room size is a
+        /// rule, not a count of markers. Mirrors MATCH_PLAYER_CAPACITY.
+        /// </summary>
+        public const int MatchPlayerCapacity = 30;
         public const int PlayerLives = 3;
         public const int PlayerCapsuleRadiusMm = 450;
         public const int ArenaRadiusMm = 120_000;

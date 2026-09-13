@@ -59,7 +59,8 @@ describe('web map occlusion', () => {
     expect(blocked.active).toBe(true);
     expect(blocked.activeOccluderIds).toEqual(['near']);
     expect(blocked.roofIntersections).toBe(1);
-    expect(blocked.roofOpacity).toBeLessThan(0.25);
+    expect(blocked.roofOpacity).toBeLessThan(0.6);
+    expect(blocked.roofOpacity).toBeGreaterThan(0.3);
     expect(material.transparent).toBe(false);
     expect(batch.mesh.castShadow).toBe(true);
 

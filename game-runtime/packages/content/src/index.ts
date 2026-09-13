@@ -6,6 +6,7 @@ export * from './hero';
 export * from './map.generated';
 export * from './map-geometry.generated';
 export * from './map-geometry-types';
+export * from './map-structures.generated';
 export * from './passive';
 export * from './rules';
 export * from './scripted-active';

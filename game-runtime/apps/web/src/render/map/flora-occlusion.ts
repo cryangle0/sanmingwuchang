@@ -30,27 +30,86 @@ export interface FloraOcclusionDiagnostics {
 }
 
 const OCCLUSION_CHECK_INTERVAL_FRAMES = 3;
-const OCCLUDED_TREE_OPACITY = 0.3;
-const FADE_OUT_FACTOR = 0.22;
-const FADE_IN_FACTOR = 0.16;
+/**
+ * A crown between the lens and the player thins to this; it stays a tree.
+ * Walking past a wood used to dissolve every crown around the hero to a few
+ * percent, which read as the forest vanishing rather than the fight showing.
+ */
+const OCCLUDED_TREE_OPACITY = 0.38;
+/**
+ * Exponential fade rates per second. The fade used to lerp by a fixed factor
+ * per frame, so on a slow device (or a 2 fps headless capture) a crown took
+ * many seconds to clear while a 120 Hz screen snapped it away; time-based
+ * rates make both reach the same opacity after the same wall-clock time.
+ */
+const FADE_OUT_PER_SECOND = 12;
+const FADE_IN_PER_SECOND = 8;
+const MAX_FADE_STEP_SECONDS = 0.25;
 const OPACITY_EPSILON = 0.006;
 const BOUNDS_PADDING = 0.12;
 /** Plan distance from the camera within which a tall tree fades out of the frame. */
-const NEAR_CAMERA_FADE_METERS = 16;
-/** A tree this far below the lens is a bush in the foreground, not a curtain. */
-const NEAR_CAMERA_FADE_DROP_METERS = 4;
+const NEAR_CAMERA_FADE_METERS = 6;
+/**
+ * Slope of the chase view, rise over plan distance (tan of the ~32° standard
+ * pitch). A crown beside the lens crowds the frame when its top reaches above
+ * the view line at its own plan distance from the camera. The old rule asked
+ * for a top within 4 m of the lens height, but the camera sits ~21 m up and
+ * looks down through 12–20 m crowns whose tops are 5–10 m below it: those
+ * filled the frame and never faded.
+ */
+const NEAR_CAMERA_VIEW_SLOPE = 0.62;
+/**
+ * Plan margin added to a crown's box for the blocker test. The line from the
+ * camera to the player is one ray; the frame around the player is ~8 m wide
+ * at that distance, so crowns beside the ray still hide the fight.
+ */
+const BLOCKER_FRAME_MARGIN_METERS = 3;
+/**
+ * The fight is not a point. Besides the ray to the player, rays to the ground
+ * this far around them are tested too, so the canopy over the whole melee
+ * clears rather than a single keyhole onto the hero.
+ */
+const BLOCKER_FOCUS_RADIUS_METERS = 5;
+/**
+ * Canopy dome around the player. From the 32° chase pitch every crown within
+ * this plan radius of the hero whose top stands above their head hangs over
+ * the fight, whether or not it crosses the ray to the lens; in a dense grove
+ * that is most of the frame. They fade like blockers and share the same
+ * opacity budget, so the dome opens without the wood turning into a bald patch.
+ */
+const CANOPY_DOME_RADIUS_METERS = 4;
+const CANOPY_DOME_ABOVE_FOCUS_METERS = 3;
+const BLOCKER_FOCUS_OFFSETS: readonly (readonly [number, number])[] = [
+  [0, 0],
+  [1, 0],
+  [-1, 0],
+  [0, 1],
+  [0, -1],
+  [0.7, 0.7],
+  [0.7, -0.7],
+  [-0.7, 0.7],
+  [-0.7, -0.7],
+];
 /**
  * A crown beside the lens is not a landmark the player needs to keep reading,
  * so unlike a blocker between camera and player it fades almost all the way
  * out; layered leaves at 30 % still add up to a wall.
  */
-const NEAR_CAMERA_TREE_OPACITY = 0.04;
+const NEAR_CAMERA_TREE_OPACITY = 0.1;
 /**
  * Summed opacity the stacked blockers between camera and player may reach.
  * Two crowns keep the full 30 %; ten share 6 % each, which still veils the
  * player by about half instead of hiding them behind a solid canopy.
  */
 const STACKED_BLOCKER_OPACITY_BUDGET = 0.6;
+/**
+ * Floor for a shared blocker's opacity. Under the canopy dome sixty crowns can
+ * fade at once; splitting the budget sixty ways erased the wood to bare poles
+ * from the tactical lens. A few percent each still lets the fight through
+ * (crowns only stack three or four deep on any pixel) while the grove keeps
+ * reading as a grove.
+ */
+const STACKED_BLOCKER_OPACITY_FLOOR = 0.2;
 
 interface SourcePartState {
   readonly source: FloraTreeOccluderPart;
@@ -64,7 +123,11 @@ interface TreeOccluderState {
   occluded: boolean;
   /** Opacity the ghost settles at while occluded; blockers stay readable, camera crowders vanish. */
   occludedOpacity: number;
+  /** The lens is inside or beside this crown, so its branches go with the leaves. */
+  crowdsCamera: boolean;
   sourceHidden: boolean;
+  /** Whether the trunk part is currently collapsed along with the crown. */
+  trunkHidden: boolean;
   alpha: number;
 }
 
@@ -112,8 +175,14 @@ export class FloraOcclusionController {
   private readonly changedMeshes = new Set<THREE.InstancedMesh>();
   private frameCounter = OCCLUSION_CHECK_INTERVAL_FRAMES - 1;
   private enabled = true;
+  private lastUpdateMs = Number.NaN;
+  private readonly now: () => number;
 
-  constructor(targets: readonly FloraTreeOccluderTarget[]) {
+  constructor(
+    targets: readonly FloraTreeOccluderTarget[],
+    now: () => number = () => performance.now(),
+  ) {
+    this.now = now;
     const seenIds = new Set<string>();
     this.states = targets.map((target) => {
       if (seenIds.has(target.id)) {
@@ -122,19 +191,20 @@ export class FloraOcclusionController {
       seenIds.add(target.id);
       return {
         target,
-        // Trunks are stable world geometry and must never change opacity as a
-        // player approaches. Only crowns and ground shadows participate in
-        // camera occlusion so the character remains visible in dense woods.
-        parts: target.parts
-          .filter((source) => source.id !== 'trunk')
-          .map((source) => ({
-            source,
-            hiddenMatrix: collapsedInstanceMatrix(source.matrix),
-            ghost: null,
-          })),
+        // Trunks are stable world geometry and must not flicker as a player
+        // approaches: a mid-field blocker fades only its crown and shadow.
+        // The one exception is a crown the lens itself is inside or beside,
+        // where the branch mesh crossing the frame goes with the leaves.
+        parts: target.parts.map((source) => ({
+          source,
+          hiddenMatrix: collapsedInstanceMatrix(source.matrix),
+          ghost: null,
+        })),
         occluded: false,
         occludedOpacity: OCCLUDED_TREE_OPACITY,
+        crowdsCamera: false,
         sourceHidden: false,
+        trunkHidden: false,
         alpha: 1,
       };
     });
@@ -167,12 +237,19 @@ export class FloraOcclusionController {
     if (this.frameCounter === 0) {
       this.detectOcclusion(cameraPosition, focusPosition);
     }
+    const nowMs = this.now();
+    const elapsedSeconds = Number.isFinite(this.lastUpdateMs)
+      ? Math.min(MAX_FADE_STEP_SECONDS, Math.max(0, (nowMs - this.lastUpdateMs) / 1000))
+      : MAX_FADE_STEP_SECONDS;
+    this.lastUpdateMs = nowMs;
+    const fadeOut = 1 - Math.exp(-FADE_OUT_PER_SECOND * elapsedSeconds);
+    const fadeIn = 1 - Math.exp(-FADE_IN_PER_SECOND * elapsedSeconds);
 
     this.changedMeshes.clear();
     for (const state of this.states) {
       if (state.occluded) {
         this.hideSource(state);
-        state.alpha = THREE.MathUtils.lerp(state.alpha, state.occludedOpacity, FADE_OUT_FACTOR);
+        state.alpha = THREE.MathUtils.lerp(state.alpha, state.occludedOpacity, fadeOut);
         this.applyGhostAlpha(state);
         continue;
       }
@@ -180,7 +257,7 @@ export class FloraOcclusionController {
         state.alpha = 1;
         continue;
       }
-      state.alpha = THREE.MathUtils.lerp(state.alpha, 1, FADE_IN_FACTOR);
+      state.alpha = THREE.MathUtils.lerp(state.alpha, 1, fadeIn);
       if (1 - state.alpha <= OPACITY_EPSILON) {
         state.alpha = 1;
         this.restoreSource(state);
@@ -242,7 +319,7 @@ export class FloraOcclusionController {
       const dx = target.x - focusPosition.x;
       const dz = target.z - focusPosition.z;
       const radius = Math.hypot(target.halfWidth, target.halfDepth);
-      const span = reach + radius;
+      const span = reach + radius + BLOCKER_FOCUS_RADIUS_METERS + BLOCKER_FRAME_MARGIN_METERS;
       // A crown right beside the camera fills the edge of the frame even when
       // it never crosses the line to the player. Trees stand taller than the
       // chase camera, so a tree next to the lens — or one the lens is inside —
@@ -257,24 +334,33 @@ export class FloraOcclusionController {
         Math.abs(cameraDz) <= target.halfDepth;
       const crowdsCamera =
         insideCrown ||
-        (target.topY >= cameraPosition.y - NEAR_CAMERA_FADE_DROP_METERS &&
-          cameraPlanDistanceSquared <= nearCameraSpan * nearCameraSpan);
+        (cameraPlanDistanceSquared <= nearCameraSpan * nearCameraSpan &&
+          target.topY >=
+            cameraPosition.y - Math.sqrt(cameraPlanDistanceSquared) * NEAR_CAMERA_VIEW_SLOPE);
       state.occludedOpacity = crowdsCamera ? NEAR_CAMERA_TREE_OPACITY : OCCLUDED_TREE_OPACITY;
+      state.crowdsCamera = crowdsCamera;
+      const domeReach = CANOPY_DOME_RADIUS_METERS + radius;
+      const underDome =
+        target.topY >= focusPosition.y + CANOPY_DOME_ABOVE_FOCUS_METERS &&
+        dx * dx + dz * dz <= domeReach * domeReach;
       state.occluded =
         crowdsCamera ||
+        underDome ||
         (dx * dx + dz * dz <= span * span &&
-          occluderSegmentHitsBox(
-            target.x,
-            target.z,
-            target.halfWidth,
-            target.halfDepth,
-            target.topY,
-            focusPosition.x,
-            focusPosition.y,
-            focusPosition.z,
-            cameraPosition.x,
-            cameraPosition.y,
-            cameraPosition.z,
+          BLOCKER_FOCUS_OFFSETS.some(([ox, oz]) =>
+            occluderSegmentHitsBox(
+              target.x,
+              target.z,
+              target.halfWidth + BLOCKER_FRAME_MARGIN_METERS,
+              target.halfDepth + BLOCKER_FRAME_MARGIN_METERS,
+              target.topY,
+              focusPosition.x + ox * BLOCKER_FOCUS_RADIUS_METERS,
+              focusPosition.y,
+              focusPosition.z + oz * BLOCKER_FOCUS_RADIUS_METERS,
+              cameraPosition.x,
+              cameraPosition.y,
+              cameraPosition.z,
+            ),
           ));
     }
 
@@ -288,7 +374,10 @@ export class FloraOcclusionController {
       }
     }
     if (blockers > 0) {
-      const shared = Math.min(OCCLUDED_TREE_OPACITY, STACKED_BLOCKER_OPACITY_BUDGET / blockers);
+      const shared = Math.max(
+        STACKED_BLOCKER_OPACITY_FLOOR,
+        Math.min(OCCLUDED_TREE_OPACITY, STACKED_BLOCKER_OPACITY_BUDGET / blockers),
+      );
       for (const state of this.states) {
         if (state.occluded && state.occludedOpacity === OCCLUDED_TREE_OPACITY) {
           state.occludedOpacity = shared;
@@ -300,28 +389,57 @@ export class FloraOcclusionController {
   private hideSource(state: TreeOccluderState): void {
     if (!state.sourceHidden) {
       for (const part of state.parts) {
-        const ghost = this.ensureGhost(state, part);
-        ghost.visible = true;
-        part.source.mesh.setMatrixAt(part.source.instanceIndex, part.hiddenMatrix);
-        this.changedMeshes.add(part.source.mesh);
+        if (part.source.id === 'trunk' && !state.crowdsCamera) {
+          continue;
+        }
+        this.hidePart(state, part);
       }
       state.sourceHidden = true;
+      state.trunkHidden = state.crowdsCamera;
       return;
     }
+    if (state.trunkHidden !== state.crowdsCamera) {
+      for (const part of state.parts) {
+        if (part.source.id !== 'trunk') {
+          continue;
+        }
+        if (state.crowdsCamera) {
+          this.hidePart(state, part);
+        } else {
+          this.restorePart(part);
+        }
+      }
+      state.trunkHidden = state.crowdsCamera;
+    }
     for (const part of state.parts) {
+      if (part.source.id === 'trunk' && !state.trunkHidden) {
+        continue;
+      }
       this.ensureGhost(state, part).visible = true;
+    }
+  }
+
+  private hidePart(state: TreeOccluderState, part: SourcePartState): void {
+    const ghost = this.ensureGhost(state, part);
+    ghost.visible = true;
+    part.source.mesh.setMatrixAt(part.source.instanceIndex, part.hiddenMatrix);
+    this.changedMeshes.add(part.source.mesh);
+  }
+
+  private restorePart(part: SourcePartState): void {
+    part.source.mesh.setMatrixAt(part.source.instanceIndex, part.source.matrix);
+    this.changedMeshes.add(part.source.mesh);
+    if (part.ghost) {
+      part.ghost.visible = false;
     }
   }
 
   private restoreSource(state: TreeOccluderState): void {
     for (const part of state.parts) {
-      part.source.mesh.setMatrixAt(part.source.instanceIndex, part.source.matrix);
-      this.changedMeshes.add(part.source.mesh);
-      if (part.ghost) {
-        part.ghost.visible = false;
-      }
+      this.restorePart(part);
     }
     state.sourceHidden = false;
+    state.trunkHidden = false;
   }
 
   private ensureGhost(state: TreeOccluderState, part: SourcePartState): THREE.InstancedMesh {
@@ -336,6 +454,11 @@ export class FloraOcclusionController {
       material.name = `flora-occlusion-ghost-${state.target.id}-${part.source.id}`;
       material.transparent = true;
       material.depthWrite = false;
+      // The source leaf material uses alpha-to-coverage for its cutout edges.
+      // On a multisampled canvas that turns alpha into a sample count instead
+      // of a blend factor, so a ghost at 4 % opacity was still drawn as a
+      // solid crown and the wood never opened up. Ghosts blend normally.
+      material.alphaToCoverage = false;
       material.onBeforeCompile = sourceMaterial.onBeforeCompile;
       material.customProgramCacheKey = sourceMaterial.customProgramCacheKey;
       material.needsUpdate = true;
@@ -366,6 +489,9 @@ export class FloraOcclusionController {
 
   private applyGhostAlpha(state: TreeOccluderState): void {
     for (const part of state.parts) {
+      if (part.source.id === 'trunk' && !state.trunkHidden) {
+        continue;
+      }
       const ghost = this.ensureGhost(state, part);
       const sourceMaterials = Array.isArray(part.source.mesh.material)
         ? part.source.mesh.material

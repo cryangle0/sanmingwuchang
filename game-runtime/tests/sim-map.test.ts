@@ -111,7 +111,7 @@ describe('map collision field', () => {
 });
 
 describe('map-enabled simulation', () => {
-  it('spawns 30 players on distinct authoritative map spawn points', () => {
+  it('spawns 30 players on distinct interior authoritative map spawn points', () => {
     const simulation = new GameSimulation({ rootSeed: 20_260_725, map: { enabled: true } });
     for (let index = 0; index < 30; index += 1) {
       simulation.addPlayer({
@@ -134,6 +134,28 @@ describe('map-enabled simulation', () => {
     expect(() =>
       simulation.addPlayer({ playerId: playerId('p30'), heroId: HERO_IDS.sunWukong }),
     ).toThrow(/capacity/);
+    // 80 authored markers, 30 seats: every start should be well inside the rim.
+    for (const player of snapshot.players) {
+      let nearest = Number.POSITIVE_INFINITY;
+      for (let index = 0; index < MAP_BOUNDARY.length; index += 1) {
+        const a = MAP_BOUNDARY[index] as (typeof MAP_BOUNDARY)[number];
+        const b = MAP_BOUNDARY[(index + 1) % MAP_BOUNDARY.length] as (typeof MAP_BOUNDARY)[number];
+        const dx = b.x - a.x;
+        const dz = b.z - a.z;
+        const t = Math.max(
+          0,
+          Math.min(
+            1,
+            ((player.position.x - a.x) * dx + (player.position.z - a.z) * dz) / (dx * dx + dz * dz),
+          ),
+        );
+        nearest = Math.min(
+          nearest,
+          Math.hypot(player.position.x - a.x - t * dx, player.position.z - a.z - t * dz),
+        );
+      }
+      expect(nearest).toBeGreaterThan(24_000);
+    }
   });
 
   it('keeps a moving player out of walls and inside the boundary', () => {

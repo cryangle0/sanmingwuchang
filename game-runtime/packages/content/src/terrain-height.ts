@@ -626,32 +626,6 @@ function stampIndex(): StampIndex {
     }
   });
 
-  const spawnBases = MAP_SPAWN_POINTS.map((spawn) =>
-    applyHillStamps(
-      baseHeightMm(spawn.position.x, spawn.position.z),
-      spawn.position.x,
-      spawn.position.z,
-      hills,
-    ),
-  );
-  const spawnMedianMm = medianOf(spawnBases);
-  const spawnPads = MAP_SPAWN_POINTS.map((spawn, index) => {
-    const groundMm = spawnBases[index] as number;
-    // Nobody starts the match looking down on the other 29, so pads are
-    // pulled into a narrow band around the median spawn elevation. The
-    // approach is only as long as the correction needs at road grade: a
-    // fixed long skirt would have made every pad a 47 m radius terrain
-    // modifier that swamped the graded road corridors running past it.
-    const targetMm = clampToBand(groundMm, spawnMedianMm, SPAWN_FAIRNESS_BAND_MM);
-    const rampMm = Math.trunc((Math.abs(targetMm - groundMm) * 1_000) / ROAD_MAX_GRADE_PER_MILLE);
-    return {
-      x: spawn.position.x,
-      z: spawn.position.z,
-      radiusMm: PAD_RADIUS_MM,
-      edgeMm: Math.min(SPAWN_PAD_MAX_EDGE_MM, bandLimitEdge(rampMm)),
-      targetMm,
-    };
-  });
   const shopPads = MAP_SHOPS.map((shop) => ({
     x: shop.position.x,
     z: shop.position.z,
@@ -664,6 +638,57 @@ function stampIndex(): StampIndex {
       hills,
     ),
   }));
+  // Spawn bases are read *after* the road grade. The pad is stamped over the
+  // road, so a start authored beside a MAIN corridor must target the graded
+  // road surface, not the raw hillside under it: measured from the hill, a
+  // pad on a cut road stood 1.8 m proud of the corridor and broke line of
+  // sight along it between its own nodes.
+  const roadDraft: StampIndex = {
+    hills,
+    roads,
+    roadCells,
+    courts: [],
+    highlands: [],
+    shopPads,
+    spawnPads: [],
+    arenaStamps: [],
+    features: [],
+    bowls: [],
+  };
+  const spawnBases = MAP_SPAWN_POINTS.map((spawn) => {
+    const hillMm = applyHillStamps(
+      baseHeightMm(spawn.position.x, spawn.position.z),
+      spawn.position.x,
+      spawn.position.z,
+      hills,
+    );
+    const shopMm = applyCircleStamps(hillMm, spawn.position.x, spawn.position.z, shopPads);
+    const roadMm = applyRoadStamps(shopMm, spawn.position.x, spawn.position.z, roadDraft);
+    return { groundMm: roadMm, onRoad: roadMm !== shopMm };
+  });
+  const spawnMedianMm = medianOf(spawnBases.map((base) => base.groundMm));
+  const spawnPads = MAP_SPAWN_POINTS.map((spawn, index) => {
+    const { groundMm, onRoad } = spawnBases[index] as { groundMm: number; onRoad: boolean };
+    // Nobody starts the match looking down on the other 29, so pads are
+    // pulled into a narrow band around the median spawn elevation. The
+    // approach is only as long as the correction needs at road grade: a
+    // fixed long skirt would have made every pad a 47 m radius terrain
+    // modifier that swamped the graded road corridors running past it.
+    // A start on a route corridor keeps the corridor's graded height: the
+    // road is already grade-limited and continuous, and a pad lifted off it
+    // would put a crest in the middle of the corridor's sightline.
+    const targetMm = onRoad
+      ? groundMm
+      : clampToBand(groundMm, spawnMedianMm, SPAWN_FAIRNESS_BAND_MM);
+    const rampMm = Math.trunc((Math.abs(targetMm - groundMm) * 1_000) / ROAD_MAX_GRADE_PER_MILLE);
+    return {
+      x: spawn.position.x,
+      z: spawn.position.z,
+      radiusMm: PAD_RADIUS_MM,
+      edgeMm: Math.min(SPAWN_PAD_MAX_EDGE_MM, bandLimitEdge(rampMm)),
+      targetMm,
+    };
+  });
   const draft: StampIndex = {
     hills,
     roads,

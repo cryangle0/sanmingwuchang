@@ -11,7 +11,7 @@ import {
   MAP_GEOMETRY_HASH,
   MAP_INITIAL_SAFE_RADIUS_MM,
   MAP_SPAWN_POINTS,
-  MAP_WALL_PIECES,
+  MATCH_PLAYER_CAPACITY,
 } from '@jwgb/content';
 import {
   assertSafeInteger,
@@ -25,8 +25,8 @@ import {
   type Vec2Mm,
   vec2Mm,
 } from '@jwgb/core';
+import { createMapCollisionField } from './geometry/create-map-collision-field';
 import { distanceSquaredToSegment } from './geometry/integer-geometry';
-import { MapCollisionField } from './geometry/map-collision-field';
 import { initialStormZone } from './systems/storm-zone';
 import type {
   AddPlayerOptions,
@@ -115,9 +115,7 @@ export function createSimulationState(
     pveEnabled: pve.enabled,
     pvePopulation: pve.population ?? 'demo',
     staticSolids: normalizeStaticSolids(staticSolids),
-    mapField: map.enabled
-      ? new MapCollisionField(MAP_GEOMETRY_HASH, MAP_BOUNDARY, MAP_WALL_PIECES)
-      : null,
+    mapField: map.enabled ? createMapCollisionField() : null,
     mapGeometryHash: map.enabled ? MAP_GEOMETRY_HASH : null,
     entityIdByPlayerId: new Map(),
     random,
@@ -157,7 +155,9 @@ interface SpawnSelection {
 }
 
 function spawnCapacity(state: MutableSimulationState): number {
-  return state.mapField ? MAP_SPAWN_POINTS.length : M0_SPAWN_POINTS.length;
+  return state.mapField
+    ? Math.min(MATCH_PLAYER_CAPACITY, MAP_SPAWN_POINTS.length)
+    : M0_SPAWN_POINTS.length;
 }
 
 /**
@@ -207,8 +207,10 @@ function takeInitialSpawn(state: MutableSimulationState): SpawnSelection {
   const capacity = spawnCapacity(state);
   invariant(state.initialSpawnIndices.size < capacity, 'spawn capacity exhausted');
 
+  // Every authored marker is a candidate; capacity only caps how many are used.
+  const markerCount = state.mapField ? MAP_SPAWN_POINTS.length : M0_SPAWN_POINTS.length;
   const availableIndices: number[] = [];
-  for (let index = 0; index < capacity; index += 1) {
+  for (let index = 0; index < markerCount; index += 1) {
     if (!state.initialSpawnIndices.has(index)) {
       availableIndices.push(index);
     }

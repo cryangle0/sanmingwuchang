@@ -51,7 +51,7 @@ const EXPECTED_COUNTS = {
   walls: 42,
   highlands: 3,
   shops: 48,
-  spawnPoints: 30,
+  spawnPoints: 80,
   courts: 3,
   pigs: 12,
   dragons: 5,
@@ -284,6 +284,7 @@ const highlands = canonical.highlands.map((highland) => {
 const spawnPoints = canonical.spawn_micro.map((spawn) => {
   const radians = (spawn.facing_deg * Math.PI) / 180;
   return {
+    exit: spawn.exit,
     id: spawn.id,
     zone: spawn.zone,
     facingMillidegrees: degreesToMillidegrees(spawn.facing_deg),
@@ -301,7 +302,14 @@ const spawnPoints = canonical.spawn_micro.map((spawn) => {
  */
 const PLAYER_RADIUS_MM = 450;
 const SPAWN_NUDGE_STEP_MM = 100;
-const SPAWN_NUDGE_LIMIT = 40;
+/**
+ * The engineering source authors spawns against its own 47-wall table; the
+ * runtime still carries the 42-wall candidate set, so two authored positions
+ * fall inside a candidate massif. Each spawn names its 出口节点, so an illegal
+ * start walks toward that node until it stands on open ground — up to 30 m,
+ * enough to leave any massif in the set.
+ */
+const SPAWN_NUDGE_LIMIT = 300;
 
 const provisionalField = new MapCollisionField('compile', boundary, wallPieces);
 const spawnAdjustments: string[] = [];
@@ -309,15 +317,22 @@ for (let index = 0; index < spawnPoints.length; index += 1) {
   const spawn = spawnPoints[index] as (typeof spawnPoints)[number];
   let { x, z } = spawn.position;
   let nudges = 0;
+  const exitNode = spawn.exit ? routeNodes.find((node) => node.id === spawn.exit) : undefined;
+  if (spawn.exit && !exitNode) {
+    fail(`spawn ${spawn.id}: unknown exit node ${spawn.exit}`);
+  }
+  // Deterministic nudge toward the authored exit node, else toward the origin.
+  const target = exitNode?.position ?? { x: 0, z: 0 };
   while (
     (!provisionalField.isCircleInsideBoundary({ x, z }, PLAYER_RADIUS_MM) ||
       provisionalField.circleTouchesWall({ x, z }, PLAYER_RADIUS_MM)) &&
     nudges < SPAWN_NUDGE_LIMIT
   ) {
-    // Deterministic inward nudge toward the map origin.
-    const length = Math.max(1, Math.round(Math.sqrt(x * x + z * z)));
-    x -= Math.round((x * SPAWN_NUDGE_STEP_MM) / length);
-    z -= Math.round((z * SPAWN_NUDGE_STEP_MM) / length);
+    const dx = target.x - x;
+    const dz = target.z - z;
+    const length = Math.max(1, Math.round(Math.sqrt(dx * dx + dz * dz)));
+    x += Math.round((dx * SPAWN_NUDGE_STEP_MM) / length);
+    z += Math.round((dz * SPAWN_NUDGE_STEP_MM) / length);
     nudges += 1;
   }
   if (
@@ -327,9 +342,16 @@ for (let index = 0; index < spawnPoints.length; index += 1) {
     fail(`spawn ${spawn.id} illegal even after ${SPAWN_NUDGE_LIMIT} inward nudges`);
   }
   if (nudges > 0) {
-    spawnAdjustments.push(`${spawn.id}: nudged ${nudges * SPAWN_NUDGE_STEP_MM} mm inward`);
+    spawnAdjustments.push(
+      `${spawn.id}: nudged ${nudges * SPAWN_NUDGE_STEP_MM} mm toward ${spawn.exit ?? 'origin'}`,
+    );
     spawnPoints[index] = { ...spawn, position: { x, z } };
   }
+}
+// `exit` is compile-time guidance only; the runtime record keeps its schema.
+for (let index = 0; index < spawnPoints.length; index += 1) {
+  const { exit: _exit, ...record } = spawnPoints[index] as (typeof spawnPoints)[number];
+  spawnPoints[index] = { ...record, exit: undefined } as (typeof spawnPoints)[number];
 }
 
 for (const spawn of spawnPoints) {
@@ -337,7 +359,9 @@ for (const spawn of spawnPoints) {
     fail(`spawn ${spawn.id} outside boundary`);
   }
   for (const piece of wallPieces) {
-    if (convexContainsPoint(piece.vertices, spawn.position)) {
+    // VAULT pieces are walkable hill footprints carried by the heightfield,
+    // not solids; a start on a hillside is legal ground (see wall-traversal).
+    if (piece.wallClass !== 'VAULT' && convexContainsPoint(piece.vertices, spawn.position)) {
       fail(`spawn ${spawn.id} inside wall piece ${piece.pieceId}`);
     }
   }

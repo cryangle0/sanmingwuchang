@@ -1,6 +1,7 @@
 import {
   MAP_CHESTS,
   MAP_HIGHLANDS,
+  MAP_MONSTER_SLOTS,
   MAP_SPAWN_POINTS,
   type MapPointMm,
   terrainHeightMeters,
@@ -641,17 +642,19 @@ const DISTRICT_BUILDING_TARGETS: Readonly<Record<RegionId, number>> = {
   santing: 6,
 };
 
-const BUILDING_SPACING_METERS = 26;
+const BUILDING_SPACING_METERS = 30;
 /** Imported landmarks are authored scenic anchors; keep buildings off them. */
 const BUILDING_LANDMARK_CLEAR_METERS = 30;
 /** Radius the vegetation layers keep clear around each building site, mm. */
-const BUILDING_CLEARING_MM = 13_000;
+const BUILDING_CLEARING_MM = 16_000;
 /**
  * Clearances are measured from the site anchor, so they must cover the largest
  * footprint (a 14 m gate tower at up to +8% scale) plus room to walk past it.
  */
-const BUILDING_ROAD_VERGE_MM = 9_000;
+const BUILDING_ROAD_VERGE_MM = 11_000;
 const BUILDING_CHEST_CLEAR_MM = 9_000;
+/** Monster slots need their footprint radius plus the largest building half-extent. */
+const BUILDING_SLOT_CLEAR_MM = 12_000;
 const BUILDING_SPAWN_CLEAR_MM = 15_000;
 
 function buildingSites(
@@ -722,14 +725,14 @@ function buildingSites(
 }
 
 /** Largest footprint half-extent in the family (the 14 m gate tower). */
-const BUILDING_FOOTPRINT_HALF_METERS = 7.2;
+const BUILDING_FOOTPRINT_HALF_METERS = 9.4;
 /**
  * Terrain step a footprint may span, metres. Buildings are grounded on their
  * lowest corner, so this is how deep the uphill side may bury: past ~1.5 m a
  * hall still reads as built into the slope, which is why steeper sites are
  * dropped rather than sunk.
  */
-const BUILDING_MAX_FOOTPRINT_STEP_METERS = 1.5;
+const BUILDING_MAX_FOOTPRINT_STEP_METERS = 2.2;
 
 /**
  * Ground height for a building centred here, or null when the footprint is too
@@ -767,6 +770,13 @@ function footprintGroundMeters(
 }
 
 function nearBuildingBlocker(xMm: number, zMm: number): boolean {
+  for (const slot of MAP_MONSTER_SLOTS) {
+    const dx = slot.position.x - xMm;
+    const dz = slot.position.z - zMm;
+    if (dx * dx + dz * dz < BUILDING_SLOT_CLEAR_MM * BUILDING_SLOT_CLEAR_MM) {
+      return true;
+    }
+  }
   for (const chest of MAP_CHESTS) {
     const dx = chest.position.x - xMm;
     const dz = chest.position.z - zMm;
@@ -977,7 +987,23 @@ function assetUrl(assetId: string): string {
 function copyMaterial(source: THREE.Material, assetId: string): THREE.Material {
   const material = source.clone();
   material.name = `${assetId}-${source.name || 'material'}`;
-  material.side = THREE.FrontSide;
+  // Converted buildings are single shells with open eaves and unmodelled
+  // undersides; from a low or reverse angle a front-face-only shell showed
+  // holes where the far wall should be. Both sides draw.
+  material.side = catalogEntry(assetId).kind === 'rock' ? THREE.FrontSide : THREE.DoubleSide;
+  if (
+    material instanceof THREE.MeshStandardMaterial &&
+    catalogEntry(assetId).kind === 'structure'
+  ) {
+    // The 唐宋 family carries its palette in vertex colour with no texture, so
+    // under the storm sky the walls came out flat and muddy. A faint
+    // self-light keeps the vermilion pillars and pale plaster legible from
+    // the chase lens without washing out the roof tiles.
+    material.emissive.set(0x3a2f26);
+    material.emissiveIntensity = 0.28;
+    material.roughness = Math.min(material.roughness, 0.8);
+    material.needsUpdate = true;
+  }
   if (
     material instanceof THREE.MeshStandardMaterial &&
     (assetId === 'lowpoly-asian-house' || assetId === 'lowpoly-torii') &&
@@ -1147,12 +1173,114 @@ function extractTemplate(assetId: string, scene: THREE.Group): AssetTemplate {
   if (parts.length === 0) {
     throw new Error(`map assets: ${assetId} has no renderable parts`);
   }
+  const entry = catalogEntry(assetId);
+  if (entry.kind === 'structure' || SOLID_LANDMARK_ASSETS.has(assetId)) {
+    parts.push(structurePlinthPart(parts));
+  }
   return {
     id: assetId,
     path: assetUrl(assetId),
     parts,
     triangles: parts.reduce((sum, part) => sum + part.triangles, 0),
   };
+}
+
+/** Where a landmark stands: the lowest terrain under its footprint and the step across it. */
+function landmarkFooting(
+  template: AssetTemplate,
+  placement: MapAssetPlacement,
+): { readonly groundY: number; readonly stepMeters: number } {
+  const bounds = templateBounds(template);
+  const cos = Math.cos(placement.yaw);
+  const sin = Math.sin(placement.yaw);
+  let lowest = Number.POSITIVE_INFINITY;
+  let highest = Number.NEGATIVE_INFINITY;
+  const steps = 4;
+  for (let i = 0; i <= steps; i += 1) {
+    for (let j = 0; j <= steps; j += 1) {
+      const lx = THREE.MathUtils.lerp(bounds.min.x, bounds.max.x, i / steps) * placement.scale;
+      const lz = THREE.MathUtils.lerp(bounds.min.z, bounds.max.z, j / steps) * placement.scale;
+      const height = terrainHeightMeters(
+        placement.x + lx * cos + lz * sin,
+        placement.z + -lx * sin + lz * cos,
+      );
+      lowest = Math.min(lowest, height);
+      highest = Math.max(highest, height);
+    }
+  }
+  return { groundY: lowest, stepMeters: highest - lowest };
+}
+
+function templateBounds(template: AssetTemplate): THREE.Box3 {
+  const bounds = new THREE.Box3().makeEmpty();
+  for (const part of template.parts) {
+    if (part.geometry.boundingBox) {
+      bounds.union(part.geometry.boundingBox);
+    }
+  }
+  return bounds;
+}
+
+function landmarkPlinthGeometry(template: AssetTemplate, depthModel: number): THREE.BufferGeometry {
+  const bounds = templateBounds(template);
+  const width = bounds.max.x - bounds.min.x + STRUCTURE_PLINTH_MARGIN_METERS * 2;
+  const depth = bounds.max.z - bounds.min.z + STRUCTURE_PLINTH_MARGIN_METERS * 2;
+  const height = depthModel + 0.6;
+  const geometry = new THREE.BoxGeometry(width, height, depth);
+  geometry.translate(
+    (bounds.min.x + bounds.max.x) / 2,
+    STRUCTURE_PLINTH_LIP_METERS - height / 2,
+    (bounds.min.z + bounds.max.z) / 2,
+  );
+  return geometry;
+}
+
+function structurePlinthMaterial(): THREE.MeshStandardMaterial {
+  plinthMaterial ??= new THREE.MeshStandardMaterial({
+    name: 'structure-plinth',
+    color: 0x7d776b,
+    roughness: 0.92,
+    metalness: 0.02,
+    // A touch of self-light so the step under a hall reads as pale masonry
+    // under the overcast key instead of a dark slab.
+    emissive: 0x2b2824,
+    emissiveIntensity: 0.35,
+  });
+  return plinthMaterial;
+}
+
+/** Depth the plinth reaches below the building base, model metres. */
+const STRUCTURE_PLINTH_DEPTH_METERS = 3;
+/** Height of the plinth lip above the building base, model metres. */
+const STRUCTURE_PLINTH_LIP_METERS = 0.16;
+let plinthMaterial: THREE.MeshStandardMaterial | null = null;
+
+/**
+ * Stone base under a building. Buildings are grounded on their lowest corner,
+ * so on any slope the uphill side buries and the downhill side would show a
+ * flat-bottomed mesh hanging over the grass; the plinth fills that gap with a
+ * masonry step and doubles as the visible edge of the solid footprint the
+ * simulation uses (same margin, same rectangle).
+ */
+function structurePlinthPart(parts: readonly AssetPart[]): AssetPart {
+  const bounds = new THREE.Box3().makeEmpty();
+  for (const part of parts) {
+    if (part.geometry.boundingBox) {
+      bounds.union(part.geometry.boundingBox);
+    }
+  }
+  const width = bounds.max.x - bounds.min.x + STRUCTURE_PLINTH_MARGIN_METERS * 2;
+  const depth = bounds.max.z - bounds.min.z + STRUCTURE_PLINTH_MARGIN_METERS * 2;
+  const height = STRUCTURE_PLINTH_DEPTH_METERS + STRUCTURE_PLINTH_LIP_METERS;
+  const geometry = new THREE.BoxGeometry(width, height, depth);
+  geometry.translate(
+    (bounds.min.x + bounds.max.x) / 2,
+    STRUCTURE_PLINTH_LIP_METERS - height / 2,
+    (bounds.min.z + bounds.max.z) / 2,
+  );
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+  return { geometry, material: structurePlinthMaterial(), triangles: 12 };
 }
 
 async function loadTemplate(loader: GLTFLoader, assetId: string): Promise<AssetTemplate> {
@@ -1193,10 +1321,92 @@ function colorForRock(placement: MapAssetPlacement): THREE.Color {
   return tempColour.clone();
 }
 
+/**
+ * Final yaw a building is drawn at: the site yaw plus a tiny deterministic
+ * jitter so repeated models do not line up. Exported so the collision
+ * footprint table is cut from the same angle the mesh is rendered at.
+ */
+export function structureWorldYaw(placement: MapAssetPlacement): number {
+  return placement.yaw + (hashAt(placement.x, placement.z, 61, 1) - 0.5) * 0.14;
+}
+
+/**
+ * Plinth margin around a building footprint, metres. The stone base drawn
+ * under every structure extends this far past the mesh, and the simulation's
+ * solid footprint is the same rectangle, so what looks like a wall is one.
+ */
+export const STRUCTURE_PLINTH_MARGIN_METERS = 0.7;
+/** Assets outside the procedural family that are compact enough to be solid. */
+const SOLID_LANDMARK_ASSETS: ReadonlySet<string> = new Set([
+  'lowpoly-asia-house',
+  'free-stone-cart',
+  'free-stone-lion',
+]);
+
+export interface StructureCollisionFootprint {
+  readonly id: string;
+  readonly assetId: string;
+  /** World-space plinth corners, metres, in mesh order (not yet oriented). */
+  readonly vertices: readonly { readonly x: number; readonly z: number }[];
+  readonly heightMeters: number;
+}
+
+/**
+ * Solid footprints for the placed buildings, in metres, from the same
+ * placement plan the renderer draws. `boundsById` is the converter manifest's
+ * normalized bounds per asset (min xyz, max xyz at the catalog target height),
+ * which the runtime never loads; the drift test feeds it in from disk and the
+ * generated table in `@jwgb/content` is what the simulation actually uses.
+ */
+export function structureCollisionFootprints(
+  seed: number,
+  boundsById: ReadonlyMap<string, readonly number[]>,
+): readonly StructureCollisionFootprint[] {
+  const footprints: StructureCollisionFootprint[] = [];
+  for (const placement of createMapAssetPlacementPlan(seed)) {
+    const solid =
+      placement.kind === 'structure' ||
+      (placement.kind === 'landmark' && SOLID_LANDMARK_ASSETS.has(placement.assetId));
+    if (!solid) {
+      continue;
+    }
+    const bounds = boundsById.get(placement.assetId);
+    if (!bounds || bounds.length < 6) {
+      throw new Error(`map assets: no normalized bounds for ${placement.assetId}`);
+    }
+    const margin = STRUCTURE_PLINTH_MARGIN_METERS / placement.scale;
+    const minX = (bounds[0] as number) - margin;
+    const minZ = (bounds[2] as number) - margin;
+    const maxX = (bounds[3] as number) + margin;
+    const maxZ = (bounds[5] as number) + margin;
+    const yaw = structureWorldYaw(placement);
+    const cos = Math.cos(yaw);
+    const sin = Math.sin(yaw);
+    const corners: readonly (readonly [number, number])[] = [
+      [minX, minZ],
+      [maxX, minZ],
+      [maxX, maxZ],
+      [minX, maxZ],
+    ];
+    footprints.push({
+      id: placement.id,
+      assetId: placement.assetId,
+      // Same rotation three.js applies for a Y-axis euler: x' = x cos + z sin,
+      // z' = -x sin + z cos, then the uniform placement scale and translation.
+      vertices: corners.map(([x, z]) => ({
+        x: placement.x + (x * cos + z * sin) * placement.scale,
+        z: placement.z + (-x * sin + z * cos) * placement.scale,
+      })),
+      heightMeters: catalogEntry(placement.assetId).targetHeight * placement.scale,
+    });
+  }
+  return footprints;
+}
+
 function makeStructureMatrix(placement: MapAssetPlacement): THREE.Matrix4 {
   // Buildings stay upright: only a tiny deterministic yaw jitter so repeated
   // models do not line up, never a tilt that would lift a corner off the ground.
-  tempEuler.set(0, placement.yaw + (hashAt(placement.x, placement.z, 61, 1) - 0.5) * 0.14, 0);
+  tempEuler.set(0, structureWorldYaw(placement), 0);
   tempQuaternion.setFromEuler(tempEuler);
   tempScale.setScalar(placement.scale);
   tempPosition.set(placement.x, placement.y, placement.z);
@@ -1353,7 +1563,12 @@ export function buildMapAssetLayer(
       }
       const instanceGroup = new THREE.Group();
       instanceGroup.name = placement.id;
-      instanceGroup.position.set(placement.x, placement.y, placement.z);
+      // Landmarks were placed at the terrain height under their centre. A
+      // 40 m village on a slope then hung its downhill half in the air. Sit
+      // the group on the lowest terrain under its footprint and fill the gap
+      // with a plinth sized to the actual step.
+      const footing = landmarkFooting(template, placement);
+      instanceGroup.position.set(placement.x, footing.groundY + 0.08, placement.z);
       instanceGroup.rotation.y = placement.yaw;
       instanceGroup.scale.setScalar(placement.scale);
       instanceGroup.userData.mapAssetId = placement.assetId;
@@ -1363,6 +1578,15 @@ export function buildMapAssetLayer(
         mesh.castShadow = false;
         mesh.receiveShadow = true;
         instanceGroup.add(mesh);
+      }
+      if (footing.stepMeters > 0.25) {
+        const plinth = new THREE.Mesh(
+          landmarkPlinthGeometry(template, footing.stepMeters / placement.scale),
+          structurePlinthMaterial(),
+        );
+        plinth.name = `${placement.id}-plinth`;
+        plinth.receiveShadow = true;
+        instanceGroup.add(plinth);
       }
       landmarkGroup.add(instanceGroup);
       instanceGroup.updateMatrixWorld(true);

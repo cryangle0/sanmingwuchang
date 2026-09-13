@@ -6,6 +6,7 @@ import {
   terrainHeightMeters,
 } from '@jwgb/content';
 import * as THREE from 'three';
+import { GROUND_METERS_PER_TILE } from './ground-surface';
 import { regionBlendAt } from './map-regions';
 import { convexContains, ringContains } from './map-sampling';
 import { climateSplatAt, localReliefMeters } from './region-climate';
@@ -31,7 +32,6 @@ const MM = 1_000;
 export const GROUND_CELL_METERS = TERRAIN_LATTICE_MM / MM;
 /** Sit characters on the rendered triangles, not under bilinear ramps. */
 export const GROUND_FOOTING_BIAS_METERS = 0.05;
-const GROUND_METERS_PER_TILE = 15;
 /** Matches the sim's 450 mm player radius, with a little margin for the model. */
 const CHARACTER_FOOTPRINT_METERS = 0.55;
 const FOOTPRINT_SAMPLES = 4;

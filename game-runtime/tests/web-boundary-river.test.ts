@@ -1,4 +1,4 @@
-import { MAP_BOUNDARY, MAP_SPAWN_POINTS } from '@jwgb/content';
+import { MAP_BOUNDARY, MAP_COURTS, MAP_SPAWN_POINTS } from '@jwgb/content';
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import {
@@ -8,6 +8,7 @@ import {
   RIVER_WIDTH_METERS,
   sampleRim,
 } from '../apps/web/src/render/map/boundary-river';
+import { convexContains } from '../apps/web/src/render/map/map-polygons';
 import { ringContains } from '../apps/web/src/render/map/map-sampling';
 import { buildOcean } from '../apps/web/src/render/map/ocean';
 import { isInSpawnPond, spawnPonds } from '../apps/web/src/render/map/spawn-ponds';
@@ -102,7 +103,12 @@ describe('sea beyond the falls', () => {
 describe('spawn ponds', () => {
   it('lays a pool beside every spawn, inside the map and off the spawn pad', () => {
     const ponds = spawnPonds();
-    expect(ponds).toHaveLength(MAP_SPAWN_POINTS.length);
+    // Court-floor revive starts get no pool; every open-ground spawn does.
+    const openSpawns = MAP_SPAWN_POINTS.filter(
+      (spawn) => !MAP_COURTS.some((court) => convexContains(court.hexVertices, spawn.position)),
+    );
+    expect(openSpawns.length).toBeGreaterThan(70);
+    expect(ponds).toHaveLength(openSpawns.length);
     for (const pond of ponds) {
       const spawn = MAP_SPAWN_POINTS.find((record) => record.id === pond.spawnId);
       expect(spawn).toBeDefined();

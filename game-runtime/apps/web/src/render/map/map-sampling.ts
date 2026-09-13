@@ -166,6 +166,13 @@ export interface SampleOptions {
    * the wood dissolves into the shore apron.
    */
   readonly rimThinningMm?: number;
+  /**
+   * Accept points up to this far *outside* the boundary polygon, in
+   * millimetres. The river bank shelf runs a few metres past the polygon and
+   * used to stand bare between the last grass and the rock, which drew the
+   * map edge as a line; ground cover overhangs onto the shelf instead.
+   */
+  readonly rimOverhangMm?: number;
 }
 
 export interface ExclusionZone {
@@ -229,7 +236,7 @@ export function isOpenGround(point: MapPointMm, options: SampleOptions = {}): bo
   const roadVergeMm = options.roadVergeMm ?? 1_500;
   const landmarkClearanceScale = Math.max(0, options.landmarkClearanceScale ?? 1);
   return (
-    ringContains(MAP_BOUNDARY, point) &&
+    (ringContains(MAP_BOUNDARY, point) || withinRimOverhang(point, options.rimOverhangMm)) &&
     (options.includeBoundMassifs === true || !isInsideBoundWall(point)) &&
     !MAP_COURTS.some((court) => convexContains(court.hexVertices, point)) &&
     !isNearLandmark(point, landmarkClearanceScale) &&
@@ -237,6 +244,13 @@ export function isOpenGround(point: MapPointMm, options: SampleOptions = {}): bo
     !insideExclusionZone(point, options.exclusionZones) &&
     survivesRimThinning(point, options.rimThinningMm)
   );
+}
+
+function withinRimOverhang(point: MapPointMm, overhangMm: number | undefined): boolean {
+  if (!overhangMm || overhangMm <= 0) {
+    return false;
+  }
+  return rimDistanceMeters(point.x, point.z) * MM <= overhangMm;
 }
 
 /**
@@ -427,8 +441,9 @@ export function sampleGroundLattice(
   const spacingMm = Math.max(1, Math.round(spacingMeters * MM));
   const jitter = options.jitter ?? 0.85;
   const points: MapPointMm[] = [];
-  for (let z = BOUNDS.minZ; z <= BOUNDS.maxZ; z += spacingMm) {
-    for (let x = BOUNDS.minX; x <= BOUNDS.maxX; x += spacingMm) {
+  const pad = Math.max(0, options.rimOverhangMm ?? 0);
+  for (let z = BOUNDS.minZ - pad; z <= BOUNDS.maxZ + pad; z += spacingMm) {
+    for (let x = BOUNDS.minX - pad; x <= BOUNDS.maxX + pad; x += spacingMm) {
       const point: MapPointMm = {
         x: Math.round(x + (nextRandom() - 0.5) * spacingMm * jitter),
         z: Math.round(z + (nextRandom() - 0.5) * spacingMm * jitter),

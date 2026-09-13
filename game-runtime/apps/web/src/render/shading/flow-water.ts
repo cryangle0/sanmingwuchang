@@ -95,20 +95,25 @@ void main() {
 #else
   // River surface: long streaks pulled along the rim, fine ripples across it,
   // foam brushing the bank and whitening again as the water tips over the lip.
-  vec2 rp = vec2(vFlow.x * 0.085 - t * 0.5, vFlow.y * 2.4);
-  float warp = fwFbm(rp * 0.6 + vec2(t * 0.07, 0.0));
-  float streak = fwFbm(rp + vec2(0.0, warp * 0.5));
-  float ripple = fwNoise(vec2(vFlow.x * 0.55 - t * 1.2, vFlow.y * 7.0 + t * 0.35));
+  // The sheet runs *outward*: streaks are long across the strip and travel
+  // toward the lip, accelerating as they go, so the water visibly leaves the
+  // map instead of circling it.
+  float pull = 0.35 + vFlow.y * 0.9;
+  vec2 rp = vec2(vFlow.x * 0.16, vFlow.y * 1.6 - t * pull);
+  float warp = fwFbm(rp * 0.6 + vec2(t * 0.05, 0.0));
+  float streak = fwFbm(rp + vec2(warp * 0.35, 0.0));
+  float ripple = fwNoise(vec2(vFlow.x * 0.7 + t * 0.2, vFlow.y * 5.0 - t * 1.6));
   vec3 river = mix(uDeep, uShallow, smoothstep(0.32, 0.76, streak) * 0.8 + ripple * 0.2);
   float shoreFoam =
-    (1.0 - smoothstep(0.0, 0.2, vFlow.y)) *
-    smoothstep(0.42, 0.8, fwFbm(vec2(vFlow.x * 0.5 - t * 0.7, vFlow.y * 9.0)));
+    (1.0 - smoothstep(0.0, 0.18, vFlow.y)) *
+    smoothstep(0.42, 0.8, fwFbm(vec2(vFlow.x * 0.5 - t * 0.5, vFlow.y * 9.0)));
   float lipFoam =
-    smoothstep(0.76, 1.0, vFlow.y) *
-    smoothstep(0.3, 0.72, fwFbm(vec2(vFlow.x * 0.7 + t * 0.15, vFlow.y * 6.0 - t * 1.5)));
-  river = mix(river, uFoam, clamp(shoreFoam * 0.7 + lipFoam * 0.85, 0.0, 1.0));
-  river += smoothstep(0.66, 0.82, streak) * 0.2;
-  float riverAlpha = mix(0.66, 0.92, smoothstep(0.0, 0.3, vFlow.y));
+    smoothstep(0.6, 1.0, vFlow.y) *
+    smoothstep(0.28, 0.7, fwFbm(vec2(vFlow.x * 0.7 + t * 0.1, vFlow.y * 5.0 - t * 2.2)));
+  river = mix(river, uFoam, clamp(shoreFoam * 0.6 + lipFoam * 0.9, 0.0, 1.0));
+  river += smoothstep(0.62, 0.8, streak) * 0.22;
+  // Shallow and glassy over the grass, opaque by the lip.
+  float riverAlpha = mix(0.5, 0.94, smoothstep(0.0, 0.45, vFlow.y));
 
   // Waterfall face: separate vertical streams over dark rock. Streaks are
   // long in y and fine in x, so the sheet tears into ropes of water with

@@ -280,6 +280,17 @@ export class MapCollisionField {
     if (slideZ.z !== from.z && !this.isCircleBlocked(slideZ, radiusMm, traversal)) {
       return slideZ;
     }
+    // Rejection can only keep a legal position legal; it cannot free a mover
+    // that is already embedded in a piece (a building footprint that went live
+    // under a standing player, or a spawn override inside a wall). Rather than
+    // soft-locking them, let an embedded mover take any step that stays in the
+    // playfield, so they can walk out.
+    if (
+      this.circleTouchesWall(from, radiusMm, traversal) &&
+      this.isCircleInsideBoundary(to, radiusMm)
+    ) {
+      return to;
+    }
     return from;
   }
 

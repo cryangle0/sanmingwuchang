@@ -34,7 +34,9 @@ describe('web flora occlusion', () => {
     const canopies = new THREE.InstancedMesh(canopyGeometry, canopyMaterial, 2);
     parent.add(trunks, canopies);
 
-    const targets = [0, 20].map((x, treeIndex) => {
+    // The far tree stands outside the canopy dome around the player as well
+    // as off the camera ray, so only the near crown may fade.
+    const targets = [0, 80].map((x, treeIndex) => {
       const trunkMatrix = new THREE.Matrix4().makeTranslation(x, 0, 3);
       const canopyMatrix = new THREE.Matrix4().makeTranslation(x, 4, 3);
       const colour = new THREE.Color(treeIndex === 0 ? 0x668844 : 0x886644);
@@ -70,7 +72,12 @@ describe('web flora occlusion', () => {
     const farTrunkOriginal = matrixAt(trunks, 1);
     const farCanopyOriginal = matrixAt(canopies, 1);
     const nearCanopyColour = new THREE.Color(0x668844);
-    const controller = new FloraOcclusionController(targets);
+    // Fixed 60 Hz clock so the time-based fade is deterministic here.
+    let clockMs = 0;
+    const controller = new FloraOcclusionController(targets, () => {
+      clockMs += 1000 / 60;
+      return clockMs;
+    });
 
     controller.update(new THREE.Vector3(0, 10, 10), new THREE.Vector3(0, 0.9, 0));
     const blocked = controller.diagnostics();
@@ -103,7 +110,7 @@ describe('web flora occlusion', () => {
     for (let frame = 0; frame < 40; frame += 1) {
       controller.update(new THREE.Vector3(0, 10, 10), new THREE.Vector3(0, 0.9, 0));
     }
-    expect(controller.diagnostics().treeOpacity).toBeCloseTo(0.3, 3);
+    expect(controller.diagnostics().treeOpacity).toBeCloseTo(0.38, 3);
 
     for (let frame = 0; frame < 60; frame += 1) {
       controller.update(new THREE.Vector3(40, 10, 10), new THREE.Vector3(40, 0.9, 0));

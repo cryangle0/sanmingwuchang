@@ -20,6 +20,13 @@ export const M0_RULES = {
   voidAbortCultivationCompensation: 20,
 } as const;
 
+/**
+ * Players a room seats. The authored map now carries 80 spawn micro-positions
+ * (40 macro zones × 2) so a 30-player match can start everyone well inside the
+ * rim; the room size itself is a rule, not a count of spawn markers.
+ */
+export const MATCH_PLAYER_CAPACITY = 30;
+
 export const M0_SPAWN_POINTS: readonly Vec2Mm[] = [
   vec2Mm(90_000, 0),
   vec2Mm(88_033, 18_712),

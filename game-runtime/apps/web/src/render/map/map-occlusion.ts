@@ -43,7 +43,12 @@ export interface MapRoofOcclusionBatch {
 }
 
 const OCCLUSION_CHECK_INTERVAL_FRAMES = 3;
-const OCCLUDED_ROOF_OPACITY = 0.18;
+/**
+ * A roof between the lens and the player thins to this. It used to drop to
+ * 18 %, which made every shop and gate the hero walked past look like a
+ * see-through model; half opacity keeps the building while the fight reads.
+ */
+const OCCLUDED_ROOF_OPACITY = 0.5;
 const FADE_IN_FACTOR = 0.18;
 const OPACITY_EPSILON = 0.006;
 const BOUNDS_PADDING = 0.18;

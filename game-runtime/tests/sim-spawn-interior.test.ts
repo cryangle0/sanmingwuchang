@@ -1,4 +1,4 @@
-import { MAP_BOUNDARY, MAP_SPAWN_POINTS } from '@jwgb/content';
+import { MAP_BOUNDARY, MAP_SPAWN_POINTS, MATCH_PLAYER_CAPACITY } from '@jwgb/content';
 import { heroId, playerId } from '@jwgb/core';
 import { describe, expect, it } from 'vitest';
 import { addPlayerToState, createSimulationState } from '../packages/sim/src/state';
@@ -42,16 +42,20 @@ describe('map spawn selection', () => {
     expect(Math.min(...distances)).toBeGreaterThanOrEqual(25_000);
   });
 
-  it('still fills every authored position when the room is full', () => {
+  it('seats a full room on distinct interior positions and then refuses more', () => {
     const state = mapState();
     const used = new Set<string>();
-    for (let index = 0; index < MAP_SPAWN_POINTS.length; index += 1) {
+    for (let index = 0; index < MATCH_PLAYER_CAPACITY; index += 1) {
       const player = addPlayerToState(state, {
         playerId: playerId(`p${index}`),
         heroId: heroId('H001'),
       });
       used.add(`${player.position.x},${player.position.z}`);
     }
-    expect(used.size).toBe(MAP_SPAWN_POINTS.length);
+    expect(used.size).toBe(MATCH_PLAYER_CAPACITY);
+    expect(MAP_SPAWN_POINTS.length).toBeGreaterThan(MATCH_PLAYER_CAPACITY);
+    expect(() =>
+      addPlayerToState(state, { playerId: playerId('overflow'), heroId: heroId('H001') }),
+    ).toThrow(/capacity/);
   });
 });

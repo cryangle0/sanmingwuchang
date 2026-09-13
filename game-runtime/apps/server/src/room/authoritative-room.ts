@@ -1,6 +1,6 @@
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
-import { AUTHORITATIVE_HEROES, M0_SPAWN_POINTS, RULESET_VERSION } from '@jwgb/content';
+import { AUTHORITATIVE_HEROES, MATCH_PLAYER_CAPACITY, RULESET_VERSION } from '@jwgb/content';
 import {
   assertSafeInteger,
   createPlayerIntent,
@@ -443,7 +443,7 @@ export class AuthoritativeRoom {
   canAcceptJoin(): boolean {
     return (
       !this.disposed &&
-      this.simulation.playerCount + this.joinReservations.size < M0_SPAWN_POINTS.length &&
+      this.simulation.playerCount + this.joinReservations.size < MATCH_PLAYER_CAPACITY &&
       (!this.enableBots || !this.lobbyComplete)
     );
   }
@@ -451,7 +451,7 @@ export class AuthoritativeRoom {
   canReserveJoin(): boolean {
     return (
       !this.disposed &&
-      this.simulation.playerCount + this.joinReservations.size < M0_SPAWN_POINTS.length &&
+      this.simulation.playerCount + this.joinReservations.size < MATCH_PLAYER_CAPACITY &&
       (!this.enableBots || !this.lobbyComplete)
     );
   }
@@ -700,8 +700,8 @@ export class AuthoritativeRoom {
       this.sendError(session, 'MATCH_TICKET_REJECTED', 'the match reservation is missing');
       return;
     }
-    if (this.simulation.playerCount >= M0_SPAWN_POINTS.length) {
-      this.sendError(session, 'ROOM_FULL', `room capacity is ${M0_SPAWN_POINTS.length}`);
+    if (this.simulation.playerCount >= MATCH_PLAYER_CAPACITY) {
+      this.sendError(session, 'ROOM_FULL', `room capacity is ${MATCH_PLAYER_CAPACITY}`);
       return;
     }
     if (this.enableBots && this.lobbyComplete && reservation === undefined) {
@@ -750,7 +750,7 @@ export class AuthoritativeRoom {
     }
     if (
       this.enableBots &&
-      this.simulation.playerCount + this.joinReservations.size >= M0_SPAWN_POINTS.length
+      this.simulation.playerCount + this.joinReservations.size >= MATCH_PLAYER_CAPACITY
     ) {
       this.completeLobbyWithBots();
     }
@@ -1581,7 +1581,7 @@ export class AuthoritativeRoom {
       clearTimeout(this.lobbyFillTimer);
       this.lobbyFillTimer = null;
     }
-    while (this.simulation.playerCount + this.joinReservations.size < M0_SPAWN_POINTS.length) {
+    while (this.simulation.playerCount + this.joinReservations.size < MATCH_PLAYER_CAPACITY) {
       const heroRecord = AUTHORITATIVE_HEROES[this.nextBotIndex % AUTHORITATIVE_HEROES.length];
       const botPlayerId = playerId(`__jwgb_bot_${this.nextBotIndex + 1}`);
       this.nextBotIndex += 1;

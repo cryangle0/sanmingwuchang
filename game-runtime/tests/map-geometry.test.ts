@@ -111,7 +111,7 @@ describe('generated map geometry', () => {
     expect(MAP_BOUNDARY.length).toBeGreaterThanOrEqual(3);
     expect(new Set(MAP_WALL_PIECES.map((piece) => piece.wallId)).size).toBe(42);
     expect(MAP_HIGHLANDS).toHaveLength(3);
-    expect(MAP_SPAWN_POINTS).toHaveLength(30);
+    expect(MAP_SPAWN_POINTS).toHaveLength(80);
     expect(MAP_COURTS).toHaveLength(3);
     expect(MAP_PIGS).toHaveLength(12);
     expect(MAP_DRAGONS).toHaveLength(5);
@@ -138,9 +138,10 @@ describe('generated map geometry', () => {
     }
   });
 
-  it('keeps every spawn point outside all wall pieces', () => {
+  it('keeps every spawn point outside all solid wall pieces', () => {
     for (const spawn of MAP_SPAWN_POINTS) {
-      for (const piece of MAP_WALL_PIECES) {
+      // VAULT pieces are walkable hill footprints on the heightfield, not solids.
+      for (const piece of MAP_WALL_PIECES.filter((item) => item.wallClass !== 'VAULT')) {
         const inside = piece.vertices.every((vertex, index) => {
           const next = piece.vertices[(index + 1) % piece.vertices.length] as MapPointMm;
           return crossOrientation(vertex, next, spawn.position) >= 0;
@@ -152,8 +153,8 @@ describe('generated map geometry', () => {
 
   it('keeps spawn ids and zones unique per macro zone pairing', () => {
     const ids = new Set(MAP_SPAWN_POINTS.map((spawn) => spawn.id));
-    expect(ids.size).toBe(30);
+    expect(ids.size).toBe(80);
     const zones = new Set(MAP_SPAWN_POINTS.map((spawn) => spawn.zone));
-    expect(zones.size).toBe(15);
+    expect(zones.size).toBe(40);
   });
 });

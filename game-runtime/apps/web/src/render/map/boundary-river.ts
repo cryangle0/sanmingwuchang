@@ -2,6 +2,7 @@ import { MAP_BOUNDARY, type MapPointMm, terrainHeightMeters } from '@jwgb/conten
 import * as THREE from 'three';
 import { createFlowWaterMaterial } from '../shading/flow-water';
 import { hash2 } from '../shading/noise';
+import { GROUND_METERS_PER_TILE } from './ground-surface';
 import type { MapMaterialLibrary } from './map-palette';
 import { regionBlendAt } from './map-regions';
 
@@ -36,10 +37,12 @@ import { regionBlendAt } from './map-regions';
 
 const MM = 1_000;
 const RIM_STEP_METERS = 4;
+/** Shore apron sits this far above the ground triangles so it reads as a decal. */
+const APRON_LIFT_METERS = 0.06;
 /** Bank from the polygon outward to the water's edge. */
 export const BANK_WIDTH_METERS = 4.6;
 /** River width out to the lip. Kept short so the fall sits in the rim view. */
-export const RIVER_WIDTH_METERS = 5.4;
+export const RIVER_WIDTH_METERS = 7.2;
 /** Waterfall drop at the lowest point of the rim; taller columns fall further. */
 /**
  * Drop from the river lip to the sea, metres.
@@ -51,8 +54,15 @@ export const RIVER_WIDTH_METERS = 5.4;
 export const FALL_DROP_METERS = 22;
 /** Fall face leans back outward as it descends. Small so the curtain stays readable. */
 export const FALL_LEAN_METERS = 2.4;
-export const RIVER_SURFACE_BELOW_BANK = 0.9;
-const BANK_HEIGHT_ABOVE_GROUND = 0.55;
+/**
+ * River surface below the bank crest. It used to sit 0.9 m down a rock face,
+ * so from the chase lens the edge read as ground, then a moat, then a fall.
+ * Nearly level with the shelf, the water sheets off the grass and over the
+ * lip: the map itself pours off its edge.
+ */
+export const RIVER_SURFACE_BELOW_BANK = 0.28;
+/** Lip the bank crest keeps above the ground so the river edge never shows through. */
+const BANK_LIP_METERS = 0.12;
 const BANK_CREST_OFFSET_METERS = BANK_WIDTH_METERS - 0.2;
 const NEUTRAL_LIGHT = new THREE.Color(0xeee9d7);
 
@@ -209,12 +219,13 @@ function buildShoreApron(
   levels: Float32Array,
 ): void {
   const offsets = [-26, -18, -12, -7, -3.4, -2.2];
-  const gravel = new THREE.Color(0x776f60);
-  const wetSand = new THREE.Color(0x59523f);
+  const gravel = new THREE.Color(0x9a9282);
+  const wetSand = new THREE.Color(0x7e7662);
   const primary = new THREE.Color();
   const secondary = new THREE.Color();
   const colour = new THREE.Color();
   const positions: number[] = [];
+  const apronUvs: number[] = [];
   const vertexColours: number[] = [];
   const indices: number[] = [];
   const count = rim.length;
@@ -230,11 +241,21 @@ function buildShoreApron(
       primary.setHex(blend.primary.ground);
       secondary.setHex(blend.secondary.ground);
       colour.copy(primary).lerp(secondary, blend.mix).lerp(NEUTRAL_LIGHT, 0.38);
-      const mix = Math.max(0, (ring - 1) / (ringCount - 2));
-      colour.lerp(gravel, mix * 0.78).lerp(wetSand, mix * mix * 0.6);
+      // Gravel only in the last few metres; further in the apron is ground.
+      const mix = Math.max(0, (ring - 3) / (ringCount - 4));
+      colour.lerp(gravel, mix * 0.55).lerp(wetSand, mix * mix * 0.35);
       const shelfY = Math.max(sample.groundY, level);
-      const y = ring >= ringCount - 2 ? shelfY - 0.1 : sample.groundY - 0.12 + jitter * 0.02;
-      positions.push(sample.x + sample.outX * offset, y, sample.z + sample.outZ * offset);
+      const px = sample.x + sample.outX * offset;
+      const pz = sample.z + sample.outZ * offset;
+      // Inland rings hug the terrain under them. `sample.groundY` is the
+      // height at the rim itself; a 26 m band laid flat at that height floated
+      // above every hollow and vanished into every rise along the bank.
+      const y =
+        ring >= ringCount - 2
+          ? shelfY - 0.1
+          : terrainHeightMeters(px, pz) + APRON_LIFT_METERS + jitter * 0.02;
+      positions.push(px, y, pz);
+      apronUvs.push(px / GROUND_METERS_PER_TILE, pz / GROUND_METERS_PER_TILE);
       vertexColours.push(colour.r, colour.g, colour.b);
     }
   }
@@ -247,18 +268,14 @@ function buildShoreApron(
   }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('uv', new THREE.Float32BufferAttribute(apronUvs, 2));
   geometry.setAttribute('color', new THREE.Float32BufferAttribute(vertexColours, 3));
   geometry.setIndex(indices);
   geometry.computeVertexNormals();
   geometry.computeBoundingSphere();
-  const mesh = new THREE.Mesh(
-    track(geometry),
-    new THREE.MeshStandardMaterial({
-      vertexColors: true,
-      roughness: 0.95,
-      metalness: 0.02,
-    }),
-  );
+  // Same textured grass as the bank shelf, so the apron is ground, not a
+  // flat-painted band under the blades.
+  const mesh = new THREE.Mesh(track(geometry), materials.riverBank ?? materials.boundaryCliffFace);
   mesh.name = 'boundary-shore-apron';
   mesh.receiveShadow = true;
   group.add(mesh);
@@ -286,11 +303,11 @@ function buildShoreScatter(
       const along = (hash2(index, item, 0x31) - 0.5) * 5.5;
       const out = -(3 + hash2(index, item, 0x41) * 21);
       const size = 0.5 + hash2(index, item, 0x51) * 1.7;
-      dummy.position.set(
-        sample.x + sample.outX * out - sample.outZ * along,
-        sample.groundY + size * 0.22,
-        sample.z + sample.outZ * out + sample.outX * along,
-      );
+      const px = sample.x + sample.outX * out - sample.outZ * along;
+      const pz = sample.z + sample.outZ * out + sample.outX * along;
+      // Sit on the ground at the item's own position, not at the rim sample
+      // it was scattered from: 3–24 m inland the terrain is a different height.
+      dummy.position.set(px, terrainHeightMeters(px, pz) + size * 0.22, pz);
       const kind = hash2(index, item, 0x61);
       if (kind < 0.55) {
         dummy.rotation.set(
@@ -319,7 +336,10 @@ function buildShoreScatter(
   }
   const mesh = new THREE.InstancedMesh(
     track(new THREE.IcosahedronGeometry(1, 1)),
-    new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, metalness: 0.02 }),
+    // Colour comes from the per-instance attribute only. The icosahedron has
+    // no vertex colour attribute, so `vertexColors: true` multiplied every
+    // instance by the zero default and drew the whole scatter black.
+    new THREE.MeshStandardMaterial({ roughness: 0.85, metalness: 0.02 }),
     matrices.length,
   );
   mesh.name = 'boundary-shore-scatter';
@@ -346,20 +366,22 @@ function buildBankTop(
   const primary = new THREE.Color();
   const secondary = new THREE.Color();
   const colour = new THREE.Color();
+  // The shelf used to stand 0.3–0.55 m proud of the ground on a 15 m texture
+  // tile with darkened vertex colour, so it read as a dark kerb between the
+  // last grass and the rock. It now hugs the terrain under each vertex, takes
+  // the ground's tint and tiling, and the grass lattice overhangs onto it.
+  const terrainAt = (sample: RimSample, offset: number): number =>
+    terrainHeightMeters(sample.x + sample.outX * offset, sample.z + sample.outZ * offset);
   const geometry = ringGeometry(
     rim,
     (sample, index) => {
       const level = levels[index] as number;
-      const shelfY = Math.max(sample.groundY, level);
+      const crestY = Math.max(terrainAt(sample, BANK_CREST_OFFSET_METERS), level) + BANK_LIP_METERS;
       return [
-        { offset: -2.2, y: sample.groundY - 0.35, shade: 0.92, v: 0 },
-        { offset: 1.6, y: shelfY + 0.28, shade: 1, v: 0.4 },
-        {
-          offset: BANK_CREST_OFFSET_METERS,
-          y: shelfY + BANK_HEIGHT_ABOVE_GROUND,
-          shade: 0.9,
-          v: 1,
-        },
+        { offset: -2.2, y: terrainAt(sample, -2.2) - 0.35, shade: 1, v: 0 },
+        { offset: 0, y: terrainAt(sample, 0) + 0.03, shade: 1, v: 0.3 },
+        { offset: 2.4, y: terrainAt(sample, 2.4) + 0.05, shade: 0.98, v: 0.6 },
+        { offset: BANK_CREST_OFFSET_METERS, y: crestY, shade: 0.94, v: 1 },
       ];
     },
     (sample, step) => {
@@ -369,7 +391,7 @@ function buildBankTop(
       colour.copy(primary).lerp(secondary, blend.mix).lerp(NEUTRAL_LIGHT, 0.38);
       return colour.multiplyScalar(step.shade);
     },
-    (_sample, _step, x, z) => [x / 15, z / 15],
+    (_sample, _step, x, z) => [x / GROUND_METERS_PER_TILE, z / GROUND_METERS_PER_TILE],
   );
   const mesh = new THREE.Mesh(track(geometry), materials.riverBank ?? materials.boundaryCliffFace);
   mesh.name = 'boundary-river-bank-top';
@@ -390,13 +412,20 @@ function buildBankFace(
     rim,
     (sample, index) => {
       const level = levels[index] as number;
-      const crestY = Math.max(sample.groundY, level) + BANK_HEIGHT_ABOVE_GROUND;
-      const bedY = level - RIVER_SURFACE_BELOW_BANK - 1.2;
+      const crestY =
+        Math.max(
+          terrainHeightMeters(
+            sample.x + sample.outX * BANK_CREST_OFFSET_METERS,
+            sample.z + sample.outZ * BANK_CREST_OFFSET_METERS,
+          ),
+          level,
+        ) + BANK_LIP_METERS;
+      const bedY = level - RIVER_SURFACE_BELOW_BANK - 0.9;
       return [
         { offset: BANK_CREST_OFFSET_METERS, y: crestY, shade: 0.95, v: 0 },
-        { offset: BANK_CREST_OFFSET_METERS + 0.35, y: crestY - 0.6, shade: 0.8, v: 0.25 },
-        { offset: BANK_WIDTH_METERS + 0.3, y: bedY, shade: 0.6, v: 0.8 },
-        { offset: BANK_WIDTH_METERS + 1.6, y: bedY - 0.5, shade: 0.5, v: 1 },
+        { offset: BANK_CREST_OFFSET_METERS + 0.6, y: crestY - 0.25, shade: 0.85, v: 0.25 },
+        { offset: BANK_WIDTH_METERS + 0.6, y: bedY, shade: 0.62, v: 0.8 },
+        { offset: BANK_WIDTH_METERS + 2.2, y: bedY - 0.4, shade: 0.5, v: 1 },
       ];
     },
     (_sample, step) => colour.setRGB(step.shade, step.shade * 0.98, step.shade * 0.94),
@@ -506,18 +535,19 @@ function buildRiverAndFall(
     const surface = surfaces[index] as number;
     const drop = surface - sea;
     return [
-      { offset: BANK_WIDTH_METERS - 0.2, y: surface, flowY: 0, kind: 0 },
+      { offset: BANK_CREST_OFFSET_METERS - 0.3, y: surface + 0.02, flowY: 0, kind: 0 },
       {
-        offset: BANK_WIDTH_METERS + RIVER_WIDTH_METERS * 0.45,
-        y: surface - 0.08,
-        flowY: 0.45,
+        offset: BANK_WIDTH_METERS + RIVER_WIDTH_METERS * 0.4,
+        y: surface - 0.05,
+        flowY: 0.4,
         kind: 0,
       },
-      { offset: lip, y: surface - 0.35, flowY: 1, kind: 0 },
-      { offset: lip + 0.35, y: surface - 1.1, flowY: 0, kind: 1 },
-      { offset: lip + 0.8, y: surface - 5.5, flowY: 0.12, kind: 1 },
-      { offset: lip + FALL_LEAN_METERS * 0.45, y: surface - drop * 0.48, flowY: 0.5, kind: 1 },
-      { offset: lip + FALL_LEAN_METERS, y: sea, flowY: 1, kind: 1 },
+      { offset: lip - 1.2, y: surface - 0.16, flowY: 0.8, kind: 0 },
+      { offset: lip, y: surface - 0.45, flowY: 1, kind: 0 },
+      { offset: lip + 0.5, y: surface - 1.4, flowY: 0, kind: 1 },
+      { offset: lip + 1.0, y: surface - 5.5, flowY: 0.12, kind: 1 },
+      { offset: lip + FALL_LEAN_METERS * 0.5, y: surface - drop * 0.48, flowY: 0.5, kind: 1 },
+      { offset: lip + FALL_LEAN_METERS + 0.4, y: sea, flowY: 1, kind: 1 },
     ];
   });
   const mesh = new THREE.Mesh(track(geometry), createFlowWaterMaterial());

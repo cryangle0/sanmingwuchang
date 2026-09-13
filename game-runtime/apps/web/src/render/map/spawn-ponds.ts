@@ -1,6 +1,7 @@
-import { MAP_SPAWN_POINTS, type MapPointMm, terrainHeightMeters } from '@jwgb/content';
+import { MAP_COURTS, MAP_SPAWN_POINTS, type MapPointMm, terrainHeightMeters } from '@jwgb/content';
 import * as THREE from 'three';
 import type { MapMaterialLibrary } from './map-palette';
+import { convexContains } from './map-polygons';
 import { isOpenGround } from './map-sampling';
 
 /**
@@ -61,6 +62,11 @@ export function spawnPonds(): readonly SpawnPond[] {
   }
   const ponds: SpawnPond[] = [];
   for (const spawn of MAP_SPAWN_POINTS) {
+    // The 万劫三庭 carry their own revive starts on a paved court floor; a
+    // pool has no ground to sit in there, and the court dressing owns the look.
+    if (MAP_COURTS.some((court) => convexContains(court.hexVertices, spawn.position))) {
+      continue;
+    }
     const sx = spawn.position.x / MM;
     const sz = spawn.position.z / MM;
     const fx = spawn.facing.x / 1_000;

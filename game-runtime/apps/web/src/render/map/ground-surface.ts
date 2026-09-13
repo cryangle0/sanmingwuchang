@@ -3,6 +3,9 @@ import { ringContains } from './map-polygons';
 
 const MM_PER_METER = 1_000;
 
+/** World metres per repeat of the ground albedo; the bank and apron tile at the same rate. */
+export const GROUND_METERS_PER_TILE = 15;
+
 /**
  * Top surface of the plateau a point stands on, or null on open terrain.
  *

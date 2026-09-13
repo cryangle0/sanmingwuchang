@@ -227,6 +227,15 @@ namespace Jwgb.Sim.Deterministic
         {
             return state.MapField == null
                 ? GameplayRules.SpawnPoints.Count
+                : System.Math.Min(
+                    GameplayRules.MatchPlayerCapacity,
+                    MapGeometryCatalog.SpawnPoints.Length);
+        }
+
+        private static int SpawnMarkerCount(SimulationState state)
+        {
+            return state.MapField == null
+                ? GameplayRules.SpawnPoints.Count
                 : MapGeometryCatalog.SpawnPoints.Length;
         }
 
@@ -282,8 +291,15 @@ namespace Jwgb.Sim.Deterministic
             SimulationState state)
         {
             var capacity = SpawnCapacity(state);
-            var available = new List<int>(capacity);
-            for (var index = 0; index < capacity; index += 1)
+            if (state.InitialSpawnIndices.Count >= capacity)
+            {
+                throw new InvalidOperationException("Spawn capacity exhausted.");
+            }
+
+            // Every authored marker is a candidate; capacity only caps how many are used.
+            var markerCount = SpawnMarkerCount(state);
+            var available = new List<int>(markerCount);
+            for (var index = 0; index < markerCount; index += 1)
             {
                 if (!state.InitialSpawnIndices.Contains(index))
                 {

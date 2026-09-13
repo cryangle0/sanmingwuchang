@@ -60,13 +60,21 @@ export function exposeTreeTrunk(
   }
   const height = maxY - minY;
   const boleY = minY + height * TREE_BOLE_FRACTION;
-  if (!Number.isFinite(firstLeafY)) {
+  // A leaf part whose lowest vertex is at the very base of the model is a
+  // single baked mesh (trunk and crown in one), not a real first-leaf height.
+  if (!Number.isFinite(firstLeafY) || firstLeafY <= minY + height * 0.05) {
     firstLeafY = minY + height * fallbackFirstLeafFraction;
   }
   if (firstLeafY >= boleY - height * 0.01) {
     return { minY, maxY, boleY };
   }
-  const scale = (maxY - boleY) / (maxY - firstLeafY);
+  // Piecewise-linear remap over the whole tree: [minY, firstLeafY] stretches
+  // onto [minY, boleY] and [firstLeafY, maxY] compresses onto [boleY, maxY].
+  // Both pieces meet at firstLeafY, so every part stays continuous. Moving only
+  // the vertices above the first leaf left the ones exactly at that height
+  // behind and stretched a sliver of every crown down to the old leaf line.
+  const lowerScale = (boleY - minY) / (firstLeafY - minY);
+  const upperScale = (maxY - boleY) / (maxY - firstLeafY);
   for (const part of parts) {
     const position = part.geometry.getAttribute('position');
     if (!(position instanceof THREE.BufferAttribute)) {
@@ -74,10 +82,10 @@ export function exposeTreeTrunk(
     }
     for (let index = 0; index < position.count; index += 1) {
       const y = position.getY(index);
-      if (y <= firstLeafY) {
-        continue;
-      }
-      position.setY(index, boleY + (y - firstLeafY) * scale);
+      position.setY(
+        index,
+        y <= firstLeafY ? minY + (y - minY) * lowerScale : boleY + (y - firstLeafY) * upperScale,
+      );
     }
     position.needsUpdate = true;
     part.geometry.computeBoundingBox();
