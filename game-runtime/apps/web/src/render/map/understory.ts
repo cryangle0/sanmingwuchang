@@ -166,7 +166,7 @@ function pickModel(roll: number, upland: boolean): UnderstoryModel {
 }
 
 const FOREST_TINT = new THREE.Color(0x4f7a3a);
-const UPLAND_TINT = new THREE.Color(0x3f6a34);
+const UPLAND_TINT = new THREE.Color(0x4f8a3c);
 
 /**
  * Deterministic shrub and fern positions around every anchor tree. One to
@@ -180,8 +180,10 @@ export function sampleUnderstoryPlacements(
   for (const anchor of anchors) {
     const first = hashAt(anchor.x, anchor.z, 0x1a2b3c);
     const second = hashAt(anchor.x, anchor.z, 0x2b3c4d);
+    // Uplands are the lushest ground on the map: ferns and shrubs crowd every
+    // trunk so the ranges read as overgrown, not as rock with trees stuck in.
     const count = anchor.upland
-      ? 2 + (first < 0.4 ? 1 : 0)
+      ? 3 + (first < 0.6 ? 1 : 0) + (second < 0.35 ? 1 : 0)
       : 2 + (first < 0.55 ? 1 : 0) + (second < 0.22 ? 1 : 0);
     for (let index = 0; index < count; index += 1) {
       const salt = 0x3c4d5e + index * 0x1013;

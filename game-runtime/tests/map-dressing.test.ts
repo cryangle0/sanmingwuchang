@@ -121,7 +121,9 @@ describe('district dressing', () => {
     // The 48 monster lairs were rebuilt as full set pieces (boulder mouths,
     // stepped altars, roost spires) in the same bags, which is what took this
     // from ~368k to ~388k vertices while the draw-call count stayed put.
-    expect(totalVertices).toBeLessThanOrEqual(392_000);
+    // 2026-09-13: the melee dens became rock-arch lairs with megaliths,
+    // banners and a bone throne, which added another ~20k.
+    expect(totalVertices).toBeLessThanOrEqual(415_000);
 
     dispose(built);
   });

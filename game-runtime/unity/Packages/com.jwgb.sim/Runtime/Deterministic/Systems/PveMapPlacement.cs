@@ -96,24 +96,30 @@ namespace Jwgb.Sim.Deterministic
             var code = kind == MonsterKind.GroundMelee
                 ? "MEL"
                 : kind == MonsterKind.GroundRanged ? "RNG" : "FLY";
-            var seen = 0;
+            var slots = new System.Collections.Generic.List<MapMonsterSlotGeometryRecord>();
             foreach (var slot in MapGeometryCatalog.MonsterSlots)
             {
-                if (slot.Kind != code)
+                if (slot.Kind == code)
                 {
-                    continue;
+                    slots.Add(slot);
                 }
-
-                if (seen == requestedIndex)
-                {
-                    return Point(slot.Position);
-                }
-
-                seen += 1;
             }
 
-            throw new System.ArgumentOutOfRangeException(
-                nameof(requestedIndex));
+            if (slots.Count == 0)
+            {
+                throw new System.ArgumentOutOfRangeException(nameof(requestedIndex));
+            }
+
+            // Index wraps over the slot table; later occupants of a slot start
+            // on its migration points so they never spawn stacked. Mirrors pve.ts.
+            var chosen = slots[requestedIndex % slots.Count];
+            var occupant = requestedIndex / slots.Count;
+            if (occupant == 0 || chosen.Migration.Length == 0)
+            {
+                return Point(chosen.Position);
+            }
+
+            return Point(chosen.Migration[(occupant - 1) % chosen.Migration.Length]);
         }
 
         private static int CandidateIndex(

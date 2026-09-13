@@ -49,7 +49,7 @@ describe('authoritative content compilation', () => {
       skillsTotal: 101,
       equipment: 44,
     });
-    expect(manifest.pve.simultaneousPopulation).toBe(123);
+    expect(manifest.pve.simultaneousPopulation).toBe(193);
     expect(manifest.runtimeCoverage).toEqual({
       heroActivesImplemented: 3,
       genericActivesImplemented: 7,
@@ -73,6 +73,6 @@ describe('authoritative content compilation', () => {
         runtimeStatus: 'definition-only',
       },
     });
-    expect(AUTHORITATIVE_WORLD_SUMMARY.pve.simultaneousPopulation).toBe(123);
+    expect(AUTHORITATIVE_WORLD_SUMMARY.pve.simultaneousPopulation).toBe(193);
   });
 });

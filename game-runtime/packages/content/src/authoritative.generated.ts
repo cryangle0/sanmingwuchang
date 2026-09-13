@@ -1482,10 +1482,10 @@ export const AUTHORITATIVE_EQUIPMENT = [
 
 export const AUTHORITATIVE_WORLD_SUMMARY = {
   pve: {
-    simultaneousPopulation: 123,
-    melee: 58,
-    ranged: 38,
-    flying: 12,
+    simultaneousPopulation: 193,
+    melee: 96,
+    ranged: 60,
+    flying: 22,
     pigsActive: 8,
     elites: 4,
     dragonsActive: 2,

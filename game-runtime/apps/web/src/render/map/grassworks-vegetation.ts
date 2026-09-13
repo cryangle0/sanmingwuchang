@@ -56,11 +56,11 @@ const GRASS_SEED_SALT = 0x4f1bbcdc;
  * range should read as continuously wooded from foot to crest, not as a few
  * copses on bare rock.
  */
-const MASSIF_TREE_SPACING_METERS = 3.5;
+const MASSIF_TREE_SPACING_METERS = 2.6;
 const MASSIF_TREE_JITTER = 0.9;
 const MASSIF_TREE_KEEP = 0.96;
 const MASSIF_TREE_SEED_SALT = 0x2f6b1d93;
-const HILL_TREE_SPACING_METERS = 5.0;
+const HILL_TREE_SPACING_METERS = 3.6;
 const HILL_TREE_JITTER = 0.88;
 const HILL_TREE_KEEP = 0.92;
 const HILL_TREE_SEED_SALT = 0x5a1c4e27;
@@ -370,7 +370,7 @@ const tempScale = new THREE.Vector3();
 const tempPosition = new THREE.Vector3();
 const grassTintTarget = new THREE.Color(0x687a3d);
 const FOREST_FLOOR = new THREE.Color(0x3f5a2c);
-const MASSIF_GRASS = new THREE.Color(0x4a7a36);
+const MASSIF_GRASS = new THREE.Color(0x5a9440);
 
 /**
  * Canopy colour per district. The whole forest used to share one amber tint,
@@ -923,7 +923,7 @@ function buildGrassChunks(
       Math.floor(hashAt(x, z, 29) * GRASS_ATLAS_RECTS.length),
     );
     const atlasRect = GRASS_ATLAS_RECTS[atlasIndex] ?? GRASS_ATLAS_RECTS[0];
-    const heightScale = onMassif ? 1.3 : 1 - shade * 0.18;
+    const heightScale = onMassif ? 1.55 : 1 - shade * 0.18;
     const grassPoint: GrassPoint = {
       x,
       y: dressingSurfaceMeters(point) + 0.014,
@@ -1063,7 +1063,7 @@ function autumnGrassColour(
     .lerp(grassTintTarget, 0.14)
     .multiplyScalar(0.96 + hashAt(x, z, 0xf0b1cd33) * 0.1);
   if (onMassif) {
-    colour.lerp(MASSIF_GRASS, 0.3);
+    colour.lerp(MASSIF_GRASS, 0.55);
   }
   return colour;
 }

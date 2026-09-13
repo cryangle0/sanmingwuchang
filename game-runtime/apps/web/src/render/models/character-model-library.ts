@@ -120,10 +120,7 @@ async function waitForObjectTextures(root: THREE.Object3D): Promise<void> {
   throw new Error(`only ${ready}/${textures.length} model textures became ready`);
 }
 
-function renderableBounds(
-  root: THREE.Group,
-  include: (child: THREE.Mesh) => boolean,
-): THREE.Box3 {
+function renderableBounds(root: THREE.Group, include: (child: THREE.Mesh) => boolean): THREE.Box3 {
   root.updateMatrixWorld(true);
   const bounds = new THREE.Box3().makeEmpty();
   root.traverse((child) => {
@@ -266,6 +263,11 @@ function disposeObjectMaterials(root: THREE.Object3D): void {
   for (const texture of textures) {
     texture.dispose();
   }
+}
+
+/** A fresh skinned copy of a loaded template for standalone previews. */
+export function cloneCharacterTemplate(root: THREE.Group): THREE.Group {
+  return cloneTemplate(root, false, false).root;
 }
 
 function cloneTemplate(

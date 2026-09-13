@@ -95,9 +95,9 @@ namespace Jwgb.Sim.Deterministic
 
             return kind switch
             {
-                MonsterKind.GroundMelee => 58,
-                MonsterKind.GroundRanged => 38,
-                MonsterKind.Flying => 12,
+                MonsterKind.GroundMelee => 96,
+                MonsterKind.GroundRanged => 60,
+                MonsterKind.Flying => 22,
                 MonsterKind.Pig => 8,
                 MonsterKind.EliteTank => 2,
                 MonsterKind.EliteRanged => 2,
@@ -114,25 +114,26 @@ namespace Jwgb.Sim.Deterministic
         {
             if (mapEnabled)
             {
+                // Index wraps over the slot table (two occupants per slot).
                 if (kind == MonsterKind.GroundMelee)
                 {
-                    return index < 30
+                    var slot = index % 58;
+                    return slot < 30
                         ? MonsterRing.Outer
-                        : index < 48 ? MonsterRing.Middle : MonsterRing.Inner;
+                        : slot < 48 ? MonsterRing.Middle : MonsterRing.Inner;
                 }
 
                 if (kind == MonsterKind.GroundRanged)
                 {
-                    return index < 20
+                    var slot = index % 38;
+                    return slot < 20
                         ? MonsterRing.Outer
-                        : index < 32 ? MonsterRing.Middle : MonsterRing.Inner;
+                        : slot < 32 ? MonsterRing.Middle : MonsterRing.Inner;
                 }
 
                 if (kind == MonsterKind.Flying)
                 {
-                    return index < 8
-                        ? MonsterRing.Middle
-                        : MonsterRing.Outer;
+                    return index % 12 < 8 ? MonsterRing.Middle : MonsterRing.Outer;
                 }
             }
 

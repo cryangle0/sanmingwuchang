@@ -181,9 +181,12 @@ const PVE_COUNTS: Readonly<Record<'demo' | 'full', Readonly<Record<MonsterKind, 
     'core-boss': 0,
   },
   full: {
-    'ground-melee': 58,
-    'ground-ranged': 38,
-    flying: 12,
+    // Two wild monsters share each authored slot (the second stands on the
+    // slot's first migration point), so the wood reads as infested rather
+    // than one guard per den.
+    'ground-melee': 96,
+    'ground-ranged': 60,
+    flying: 22,
     pig: 8,
     'elite-tank': 2,
     'elite-ranged': 2,
@@ -205,14 +208,18 @@ const MONSTER_KINDS: readonly MonsterKind[] = [
 
 function ringFor(kind: MonsterKind, index: number, mapEnabled: boolean): MonsterRing {
   if (mapEnabled) {
+    // Index wraps over the slot table, so ring bands are per slot, not per
+    // monster: the second occupant of a slot sits in the same ring.
     if (kind === 'ground-melee') {
-      return index < 30 ? 'outer' : index < 48 ? 'middle' : 'inner';
+      const slot = index % 58;
+      return slot < 30 ? 'outer' : slot < 48 ? 'middle' : 'inner';
     }
     if (kind === 'ground-ranged') {
-      return index < 20 ? 'outer' : index < 32 ? 'middle' : 'inner';
+      const slot = index % 38;
+      return slot < 20 ? 'outer' : slot < 32 ? 'middle' : 'inner';
     }
     if (kind === 'flying') {
-      return index < 8 ? 'middle' : 'outer';
+      return index % 12 < 8 ? 'middle' : 'outer';
     }
   }
 
@@ -260,11 +267,19 @@ function homeFor(
 function mapHome(rootSeed: number, kind: MonsterKind, index: number): Vec2Mm {
   if (kind === 'ground-melee' || kind === 'ground-ranged' || kind === 'flying') {
     const code = kind === 'ground-melee' ? 'MEL' : kind === 'ground-ranged' ? 'RNG' : 'FLY';
-    const slot = MAP_MONSTER_SLOTS.filter((candidate) => candidate.kind === code)[index];
+    const slots = MAP_MONSTER_SLOTS.filter((candidate) => candidate.kind === code);
+    const slot = slots[index % slots.length];
     if (!slot) {
       throw new Error(`map monster slot ${code}:${index} is missing`);
     }
-    return vec2Mm(slot.position.x, slot.position.z);
+    // Later occupants of a slot start on its migration points so they never
+    // spawn stacked on the first.
+    const occupant = Math.trunc(index / slots.length);
+    if (occupant === 0) {
+      return vec2Mm(slot.position.x, slot.position.z);
+    }
+    const point = slot.migration[(occupant - 1) % slot.migration.length] ?? slot.position;
+    return vec2Mm(point.x, point.z);
   }
   if (kind === 'pig') {
     const candidate = MAP_PIGS[candidateIndex(rootSeed, 'pve-pigs', index)];

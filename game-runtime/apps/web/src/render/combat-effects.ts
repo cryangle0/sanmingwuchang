@@ -266,16 +266,105 @@ export function effectColorForElement(element: FiveElement): number {
   return ELEMENT_EFFECT_COLORS[element];
 }
 
+/**
+ * Basic-attack silhouettes. Thirty-eight heroes on two swing shapes read as
+ * one hero; the skill motif each hero already owns picks a weapon family, and
+ * that family changes the geometry of the strike, not just its tint:
+ *
+ * - `blade`  a single long crescent (staffs, glaives, fans)
+ * - `claw`   three short parallel rakes (beasts, spiders, demons)
+ * - `heavy`  a ground slam with a shock ring and debris (hammers, rakes, stone)
+ * - `mystic` a rotating sigil ring with a sparkle (monks, sages, spirits)
+ * - `bolt`   a straight bright dart (arrows, needles)
+ * - `orb`    a swelling sphere that bursts into motes (spells, gourds, seals)
+ * - `wave`   a wide fan/crescent that fans out (fans, gales, water)
+ * - `flame`  a rising flicker of tongues (fire, furnaces)
+ */
+export type BasicAttackStyle =
+  | 'blade'
+  | 'claw'
+  | 'heavy'
+  | 'mystic'
+  | 'bolt'
+  | 'orb'
+  | 'wave'
+  | 'flame';
+
+const MELEE_STYLE_BY_MOTIF: Readonly<Record<string, BasicAttackStyle>> = {
+  'golden-staff': 'blade',
+  'nine-tooth-rake': 'heavy',
+  'fire-wheels': 'blade',
+  'demon-cyclone': 'claw',
+  'spider-web': 'claw',
+  'venom-stinger': 'claw',
+  'nine-head-miasma': 'claw',
+  'lion-roar': 'claw',
+  'black-wind': 'claw',
+  'ram-spirit': 'heavy',
+  'stone-arhat': 'heavy',
+  'five-element-mountain': 'heavy',
+  'elephant-bind': 'heavy',
+  'vajra-ring': 'mystic',
+  'golden-kasaya': 'mystic',
+  'wisdom-seal': 'mystic',
+  'vow-lotus': 'mystic',
+  'bone-soul': 'mystic',
+  'mirror-clones': 'blade',
+  'golden-wings': 'blade',
+  'white-dragon': 'blade',
+  'tiger-arrow': 'blade',
+  'deer-blood': 'claw',
+  'heavenly-pagoda': 'heavy',
+  'moon-chains': 'mystic',
+};
+
+const RANGED_STYLE_BY_MOTIF: Readonly<Record<string, BasicAttackStyle>> = {
+  'fan-gale': 'wave',
+  'divine-gale': 'wave',
+  'frozen-river': 'wave',
+  'willow-dew': 'wave',
+  'samadhi-flame': 'flame',
+  'trigram-furnace': 'flame',
+  'purple-smoke': 'flame',
+  'thousand-eyes': 'orb',
+  'celestial-eye': 'orb',
+  'purple-gourd': 'orb',
+  'coin-storm': 'orb',
+  'universe-sleeve': 'orb',
+  quicksand: 'orb',
+  'mirror-clones': 'orb',
+  'tiger-arrow': 'bolt',
+  'moon-chains': 'bolt',
+  'venom-stinger': 'bolt',
+  'white-dragon': 'bolt',
+};
+
+export function basicAttackStyleForHero(heroId: HeroId): BasicAttackStyle {
+  const hero = getHeroDefinition(heroId);
+  const motif = heroSkillVfxProfile(heroId)?.motif ?? '';
+  if (hero.basicAttackKind === 'melee') {
+    return MELEE_STYLE_BY_MOTIF[motif] ?? 'blade';
+  }
+  return RANGED_STYLE_BY_MOTIF[motif] ?? 'bolt';
+}
+
 export function combatEffectProfileForHero(heroId: HeroId): {
   readonly heroId: HeroId;
   readonly attackKind: 'melee' | 'ranged-projectile';
   readonly color: number;
+  readonly secondary: number;
+  readonly style: BasicAttackStyle;
 } {
   const hero = getHeroDefinition(heroId);
+  const skill = heroSkillVfxProfile(heroId);
   return {
     heroId,
     attackKind: hero.basicAttackKind,
-    color: effectColorForElement(hero.element),
+    // The hero's own skill palette carries over to the basic strike so the
+    // whole kit reads as one character; element colour is the fallback.
+    color: skill?.primary ?? effectColorForElement(hero.element),
+    secondary: skill?.secondary ?? 0xfff6dc,
+    style: basicAttackStyleForHero(heroId),
   };
 }
 
@@ -1189,7 +1278,19 @@ export class CombatEffectsLayer {
     this.basicAttackEffectsSpawned += 1;
     this.lastAttackHeroId = player.heroId;
     if (profile.attackKind === 'ranged-projectile') {
-      this.spawnMuzzleEffect(player, profile.color, elapsedSeconds);
+      this.spawnMuzzleEffect(player, profile, elapsedSeconds);
+      return;
+    }
+    if (profile.style === 'claw') {
+      this.spawnClawEffect(player, profile, elapsedSeconds);
+      return;
+    }
+    if (profile.style === 'heavy') {
+      this.spawnHeavyEffect(player, profile, elapsedSeconds);
+      return;
+    }
+    if (profile.style === 'mystic') {
+      this.spawnMysticEffect(player, profile, elapsedSeconds);
       return;
     }
 
@@ -1252,34 +1353,230 @@ export class CombatEffectsLayer {
     );
   }
 
-  private spawnMuzzleEffect(player: PlayerSnapshot, color: number, elapsedSeconds: number): void {
+  private spawnMuzzleEffect(
+    player: PlayerSnapshot,
+    profile: ReturnType<typeof combatEffectProfileForHero>,
+    elapsedSeconds: number,
+  ): void {
+    const { color, secondary, style } = profile;
     const group = new THREE.Group();
-    group.name = `ranged-muzzle-${player.heroId}`;
+    group.name = `ranged-muzzle-${player.heroId}-${style}`;
     const x = worldMeters(player.position.x);
     const z = worldMeters(player.position.z);
     group.position.set(x, this.surfaceHeightAt(x, z) + 1.05, z);
     group.rotation.y = Math.atan2(player.facing.x, player.facing.z);
     const coreMaterial = createGlowMaterial(color, 0.95);
-    const flareMaterial = createGlowMaterial(0xffe5ad, 0.7);
+    const flareMaterial = createGlowMaterial(secondary, 0.75);
     const flashMaterial = createGlowMaterial(0xfff4dc, 0.85, softDisc());
-    const core = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 8), coreMaterial);
-    core.position.z = 0.95;
-    const flare = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.8, 10), flareMaterial);
-    flare.rotation.x = Math.PI / 2;
-    flare.position.z = 1.22;
-    // Crossed soft cards so the flash reads from any camera angle.
-    const flashA = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 1.3), flashMaterial);
-    flashA.position.z = 0.95;
-    const flashB = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 1.3), flashMaterial);
-    flashB.position.z = 0.95;
-    flashB.rotation.y = Math.PI / 2;
-    group.add(core, flare, flashA, flashB);
+    const materials: THREE.MeshBasicMaterial[] = [coreMaterial, flareMaterial, flashMaterial];
+    if (style === 'wave') {
+      // A fan of air: a wide flat crescent that leaves the hand and widens.
+      const fan = new THREE.Mesh(
+        new THREE.RingGeometry(0.3, 1.4, 20, 1, -Math.PI * 0.32, Math.PI * 0.64),
+        createGlowMaterial(color, 0.8, softRing()),
+      );
+      fan.rotation.x = -Math.PI / 2 + 0.25;
+      fan.rotation.z = Math.PI / 2;
+      fan.position.z = 1.0;
+      const edge = new THREE.Mesh(
+        new THREE.RingGeometry(1.3, 1.45, 20, 1, -Math.PI * 0.3, Math.PI * 0.6),
+        createGlowMaterial(secondary, 1),
+      );
+      edge.rotation.copy(fan.rotation);
+      edge.position.z = 1.0;
+      group.userData.spreadZ = 1.2;
+      group.add(fan, edge);
+      materials.push(
+        fan.material as THREE.MeshBasicMaterial,
+        edge.material as THREE.MeshBasicMaterial,
+      );
+    } else if (style === 'flame') {
+      // Tongues of fire leaping forward from the palm.
+      for (let index = 0; index < 4; index += 1) {
+        const tongue = new THREE.Mesh(
+          new THREE.ConeGeometry(0.16 - index * 0.02, 0.9 + index * 0.25, 7),
+          createGlowMaterial(index % 2 === 0 ? color : secondary, 0.85),
+        );
+        tongue.rotation.x = Math.PI / 2;
+        tongue.rotation.z = (index - 1.5) * 0.35;
+        tongue.position.set((index - 1.5) * 0.18, 0.1 + index * 0.08, 1.0 + index * 0.15);
+        group.add(tongue);
+        materials.push(tongue.material as THREE.MeshBasicMaterial);
+      }
+      group.userData.riseY = 0.6;
+      const glow = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1.6), flashMaterial);
+      glow.position.z = 1.0;
+      group.add(glow);
+    } else if (style === 'orb') {
+      // A charged sphere that swells and sheds motes.
+      const orb = new THREE.Mesh(new THREE.SphereGeometry(0.34, 14, 10), coreMaterial);
+      orb.position.z = 0.95;
+      const halo = new THREE.Mesh(
+        new THREE.RingGeometry(0.42, 0.62, 24),
+        createGlowMaterial(secondary, 0.9, softRing()),
+      );
+      halo.position.z = 0.95;
+      group.add(orb, halo);
+      materials.push(halo.material as THREE.MeshBasicMaterial);
+      for (let index = 0; index < 6; index += 1) {
+        const mote = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 5), flareMaterial);
+        const angle = (index / 6) * Math.PI * 2;
+        mote.position.set(Math.cos(angle) * 0.5, Math.sin(angle) * 0.5, 0.95);
+        mote.userData.driftX = Math.cos(angle) * 0.6;
+        mote.userData.driftY = Math.sin(angle) * 0.6;
+        group.add(mote);
+      }
+      group.userData.swell = 1.6;
+    } else {
+      // Bolt: a straight bright dart with a tight flash.
+      const core = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8), coreMaterial);
+      core.position.z = 0.95;
+      const dart = new THREE.Mesh(new THREE.ConeGeometry(0.12, 1.4, 8), flareMaterial);
+      dart.rotation.x = Math.PI / 2;
+      dart.position.z = 1.5;
+      const flashA = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 1.1), flashMaterial);
+      flashA.position.z = 0.95;
+      const flashB = flashA.clone();
+      flashB.rotation.y = Math.PI / 2;
+      group.add(core, dart, flashA, flashB);
+    }
+    this.addTransientEffect('muzzle', group, materials, elapsedSeconds, 0.22);
+  }
+
+  /** Three parallel rakes: a beast's swipe, not a sword's arc. */
+  private spawnClawEffect(
+    player: PlayerSnapshot,
+    profile: ReturnType<typeof combatEffectProfileForHero>,
+    elapsedSeconds: number,
+  ): void {
+    const group = new THREE.Group();
+    group.name = `melee-claw-${player.heroId}`;
+    const x = worldMeters(player.position.x);
+    const z = worldMeters(player.position.z);
+    group.position.set(x, this.surfaceHeightAt(x, z) + 1.2, z);
+    const yaw = Math.atan2(player.facing.x, player.facing.z);
+    group.rotation.y = yaw;
+    group.userData.baseYaw = yaw;
+    group.userData.swingRadians = 0.55;
+    const reach = Math.min(2.6, Math.max(1.4, worldMeters(player.attackRangeMm) * 0.42));
+    const materials: THREE.MeshBasicMaterial[] = [];
+    for (let index = 0; index < 3; index += 1) {
+      const material = createGlowMaterial(index === 1 ? 0xfff6dc : profile.color, 0.95);
+      materials.push(material);
+      const rake = new THREE.Mesh(
+        new THREE.RingGeometry(reach * 0.55, reach, 18, 1, -Math.PI * 0.3, Math.PI * 0.6),
+        material,
+      );
+      rake.rotation.x = -Math.PI / 2 + 0.75;
+      rake.rotation.z = 0.35;
+      rake.position.set((index - 1) * 0.28, (index - 1) * 0.22, 0.4);
+      rake.scale.set(1, 0.35, 1);
+      group.add(rake);
+    }
+    const spray = createGlowMaterial(profile.secondary, 0.8, softDisc());
+    materials.push(spray);
+    for (let index = 0; index < 5; index += 1) {
+      const drop = new THREE.Mesh(new THREE.PlaneGeometry(0.22, 0.22), spray);
+      drop.position.set((index - 2) * 0.3, 0.2, reach * 0.8);
+      drop.userData.driftX = (index - 2) * 0.5;
+      drop.userData.driftY = 0.9 - Math.abs(index - 2) * 0.2;
+      group.add(drop);
+    }
+    this.addTransientEffect('melee-sweep', group, materials, elapsedSeconds, 0.3);
+  }
+
+  /** Ground slam: shock ring, dust dome and thrown debris. */
+  private spawnHeavyEffect(
+    player: PlayerSnapshot,
+    profile: ReturnType<typeof combatEffectProfileForHero>,
+    elapsedSeconds: number,
+  ): void {
+    const group = new THREE.Group();
+    group.name = `melee-heavy-${player.heroId}`;
+    const x = worldMeters(player.position.x);
+    const z = worldMeters(player.position.z);
+    const yaw = Math.atan2(player.facing.x, player.facing.z);
+    const reach = Math.min(2.4, Math.max(1.2, worldMeters(player.attackRangeMm) * 0.4));
+    group.position.set(
+      x + Math.sin(yaw) * reach * 0.8,
+      this.surfaceHeightAt(x, z) + 0.08,
+      z + Math.cos(yaw) * reach * 0.8,
+    );
+    const ringMaterial = createGlowMaterial(profile.color, 0.9, softRing());
+    const domeMaterial = createGlowMaterial(profile.secondary, 0.55);
+    const debrisMaterial = createGlowMaterial(0xd9c9a8, 0.9);
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.2, 1.1, 28), ringMaterial);
+    ring.rotation.x = -Math.PI / 2;
+    ring.userData.swell = 2.2;
+    const dome = new THREE.Mesh(
+      new THREE.SphereGeometry(0.7, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+      domeMaterial,
+    );
+    dome.userData.swell = 1.5;
+    group.add(ring, dome);
+    for (let index = 0; index < 7; index += 1) {
+      const chip = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.1, 0.18), debrisMaterial);
+      const angle = (index / 7) * Math.PI * 2 + 0.3;
+      chip.position.set(Math.cos(angle) * 0.3, 0.1, Math.sin(angle) * 0.3);
+      chip.userData.driftX = Math.cos(angle) * 1.6;
+      chip.userData.driftY = 1.4 + (index % 3) * 0.4;
+      chip.userData.driftZ = Math.sin(angle) * 1.6;
+      chip.rotation.set(angle, angle * 0.7, 0);
+      group.add(chip);
+    }
     this.addTransientEffect(
-      'muzzle',
+      'melee-sweep',
       group,
-      [coreMaterial, flareMaterial, flashMaterial],
+      [ringMaterial, domeMaterial, debrisMaterial],
       elapsedSeconds,
-      0.2,
+      0.42,
+    );
+  }
+
+  /** Sigil strike: a spinning rune ring at the target with a sparkle. */
+  private spawnMysticEffect(
+    player: PlayerSnapshot,
+    profile: ReturnType<typeof combatEffectProfileForHero>,
+    elapsedSeconds: number,
+  ): void {
+    const group = new THREE.Group();
+    group.name = `melee-mystic-${player.heroId}`;
+    const x = worldMeters(player.position.x);
+    const z = worldMeters(player.position.z);
+    const yaw = Math.atan2(player.facing.x, player.facing.z);
+    const reach = Math.min(2.4, Math.max(1.2, worldMeters(player.attackRangeMm) * 0.4));
+    group.position.set(
+      x + Math.sin(yaw) * reach * 0.7,
+      this.surfaceHeightAt(x, z) + 1.0,
+      z + Math.cos(yaw) * reach * 0.7,
+    );
+    const ringMaterial = createGlowMaterial(profile.color, 0.95, softRing());
+    const runeMaterial = createGlowMaterial(profile.secondary, 0.9);
+    const sparkMaterial = createGlowMaterial(0xfff8e0, 1, softDisc());
+    const outer = new THREE.Mesh(new THREE.RingGeometry(0.6, 0.85, 32), ringMaterial);
+    const inner = new THREE.Mesh(new THREE.RingGeometry(0.28, 0.38, 24), ringMaterial);
+    inner.rotation.z = 0.5;
+    outer.userData.spinZ = 4;
+    inner.userData.spinZ = -6;
+    group.add(outer, inner);
+    for (let index = 0; index < 6; index += 1) {
+      const rune = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.26, 0.02), runeMaterial);
+      const angle = (index / 6) * Math.PI * 2;
+      rune.position.set(Math.cos(angle) * 0.72, Math.sin(angle) * 0.72, 0.02);
+      rune.rotation.z = angle;
+      outer.add(rune);
+    }
+    const spark = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 1.4), sparkMaterial);
+    spark.userData.swell = 1.8;
+    group.add(spark);
+    // Face the camera side (billboard about Y toward the facing direction).
+    group.rotation.y = yaw;
+    this.addTransientEffect(
+      'melee-sweep',
+      group,
+      [ringMaterial, runeMaterial, sparkMaterial],
+      elapsedSeconds,
+      0.38,
     );
   }
 
@@ -1532,6 +1829,36 @@ export class CombatEffectsLayer {
         // committed by the time the event arrives, so the trail decelerates.
         const eased = 1 - (1 - progress) ** 2.2;
         effect.group.rotation.y = baseYaw - swing * 0.5 + swing * eased;
+      }
+      // Per-part motion tags set by the style builders: drifting motes and
+      // debris, swelling rings, spinning sigils, rising tongues, spreading fans.
+      const eased = 1 - (1 - progress) ** 2;
+      effect.group.traverse((child) => {
+        const data = child.userData;
+        if (typeof data.driftX === 'number' || typeof data.driftY === 'number') {
+          if (data.baseX === undefined) {
+            data.baseX = child.position.x;
+            data.baseY = child.position.y;
+            data.baseZ = child.position.z;
+          }
+          child.position.set(
+            Number(data.baseX) + Number(data.driftX ?? 0) * eased,
+            Number(data.baseY) + Number(data.driftY ?? 0) * eased - progress * progress * 0.8,
+            Number(data.baseZ) + Number(data.driftZ ?? 0) * eased,
+          );
+        }
+        if (typeof data.swell === 'number') {
+          child.scale.setScalar(1 + (Number(data.swell) - 1) * eased);
+        }
+        if (typeof data.spinZ === 'number') {
+          child.rotation.z += Number(data.spinZ) * 0.016;
+        }
+      });
+      if (typeof effect.group.userData.riseY === 'number') {
+        effect.group.position.y += Number(effect.group.userData.riseY) * 0.016;
+      }
+      if (typeof effect.group.userData.spreadZ === 'number') {
+        effect.group.translateZ(Number(effect.group.userData.spreadZ) * 0.016 * 4);
       }
       for (const material of effect.materials) {
         const baseOpacity =

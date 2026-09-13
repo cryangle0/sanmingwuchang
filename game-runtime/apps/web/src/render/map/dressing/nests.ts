@@ -83,35 +83,6 @@ function addTrampledGround(
   }
 }
 
-/** Boulder arc: the ring that makes a den read as a mouth, not a pile. */
-function addBoulderArc(
-  bags: DressingBags,
-  site: Site,
-  radius: number,
-  count: number,
-  height: (index: number) => number,
-  nextRandom: () => number,
-): void {
-  for (let index = 0; index < count; index += 1) {
-    const angle = Math.PI * (0.16 + (index / (count - 1)) * 1.68);
-    const wobble = (nextRandom() - 0.5) * 0.22;
-    const x = Math.sin(angle) * radius * (1 + wobble);
-    const z = Math.cos(angle) * radius * (1 + wobble);
-    const size = height(index);
-    addDodecahedron(
-      bags.rock,
-      site,
-      x,
-      size * 0.34,
-      z,
-      size * (0.68 + nextRandom() * 0.3),
-      size * (0.62 + nextRandom() * 0.32),
-      size * (0.6 + nextRandom() * 0.3),
-      nextRandom() * Math.PI,
-    );
-  }
-}
-
 /** Hanging bone wind-chime under a lintel or branch. */
 function addBoneChime(
   bags: DressingBags,
@@ -278,127 +249,225 @@ function addMeleeDen(
   scale: number,
   nextRandom: () => number,
 ): void {
-  addTrampledGround(bags, site, 5.2 * scale, nextRandom, 4);
-  addBoulderArc(
-    bags,
-    site,
-    4.3 * scale,
-    9,
-    (index) => {
-      const edge = Math.abs(index - 4) / 4;
-      return (2.9 - edge * 1.35) * scale;
-    },
-    nextRandom,
-  );
+  // 妖洞: a stone gate cut into a rock arch, flanked by megaliths hung with
+  // trophies, a hide awning, war banners and a big fire. The old version was
+  // two soil mounds with a hole, which read as a grave. Nothing here is a
+  // mound: every mass is upright stone or timber.
+  addTrampledGround(bags, site, 5.6 * scale, nextRandom, 4);
 
-  // Cave mouth: a dark recess behind the arc, ringed by a lighter lip.
-  addHemisphere(bags.charred, site, 0, -0.1, -1.5 * scale, 3.0 * scale, 2.0 * scale, 2.4 * scale);
-  addHemisphere(bags.soil, site, 0, -0.25, -2.9 * scale, 4.2 * scale, 1.7 * scale, 2.8 * scale);
-
-  // Timber door frame across the mouth, with a pelt and a bone chime.
-  for (const x of [-1.5, 1.5]) {
-    addCylinder(
-      bags.timber,
-      site,
-      x * scale,
-      1.25 * scale,
-      1.35 * scale,
-      0.13,
-      0.16,
-      2.5 * scale,
-      6,
-    );
-    addBox(
-      bags.stone,
-      site,
-      x * scale,
-      0.14 * scale,
-      1.35 * scale,
-      0.5 * scale,
-      0.28 * scale,
-      0.5 * scale,
-    );
+  // Rock arch: two thick pillars leaning inward and a keystone slab, all
+  // rough dodecahedra so the silhouette is a crag, not a box.
+  for (const side of [-1, 1]) {
+    for (let tier = 0; tier < 4; tier += 1) {
+      const y = (0.55 + tier * 1.05) * scale;
+      const lean = side * (2.4 - tier * 0.28) * scale;
+      addDodecahedron(
+        bags.rock,
+        site,
+        lean,
+        y,
+        -1.4 * scale,
+        (1.35 - tier * 0.12) * scale,
+        (1.1 - tier * 0.08) * scale,
+        (1.2 - tier * 0.1) * scale,
+        nextRandom() * Math.PI,
+      );
+    }
   }
-  addBox(bags.timber, site, 0, 2.6 * scale, 1.35 * scale, 3.9 * scale, 0.24 * scale, 0.3 * scale);
-  addBox(
-    bags.lacquer,
+  addDodecahedron(
+    bags.rock,
     site,
     0,
-    2.82 * scale,
-    1.35 * scale,
-    3.4 * scale,
-    0.16 * scale,
-    0.34 * scale,
+    4.7 * scale,
+    -1.4 * scale,
+    3.2 * scale,
+    1.2 * scale,
+    1.4 * scale,
+    0.2,
   );
-  addBox(
-    bags.cloth,
+  addDodecahedron(
+    bags.rock,
     site,
-    -0.55 * scale,
-    1.75 * scale,
-    1.5 * scale,
-    1.5 * scale,
-    1.7 * scale,
-    0.06,
+    0.3 * scale,
+    5.5 * scale,
+    -1.5 * scale,
+    1.6 * scale,
+    0.9 * scale,
+    1.1 * scale,
+    1.1,
   );
-  addBox(bags.bone, site, 0.72 * scale, 2.2 * scale, 1.5 * scale, 0.9 * scale, 0.55 * scale, 0.05);
-  addBoneChime(bags, site, 0.72 * scale, 1.9 * scale, 1.55 * scale, 0.24 * scale, nextRandom);
-  // Trophy horns over the lintel.
-  for (const x of [-1.15, 1.15]) {
-    addCone(bags.bone, site, x * scale, 3.15 * scale, 1.3 * scale, 0.16 * scale, 0.62 * scale, 5);
+  // Dark mouth behind the arch: a black slab set back so the gate reads deep.
+  addBox(bags.charred, site, 0, 1.9 * scale, -2.3 * scale, 3.3 * scale, 3.8 * scale, 0.3 * scale);
+  // Cave floor spills out as a stone threshold.
+  addBox(bags.stone, site, 0, 0.12 * scale, -0.2 * scale, 4.2 * scale, 0.24 * scale, 2.6 * scale);
+
+  // Hide awning over the mouth on two timber poles.
+  for (const x of [-2.1, 2.1]) {
+    addCylinder(bags.timber, site, x * scale, 1.9 * scale, 1.3 * scale, 0.12, 0.15, 3.8 * scale, 6);
+  }
+  addBox(bags.timber, site, 0, 3.75 * scale, 1.3 * scale, 4.6 * scale, 0.18 * scale, 0.18 * scale);
+  addBox(bags.cloth, site, 0, 3.6 * scale, 0.1 * scale, 4.4 * scale, 0.08, 2.6 * scale);
+  addBoneChime(bags, site, 1.4 * scale, 3.5 * scale, 1.5 * scale, 0.3 * scale, nextRandom);
+
+  // Megaliths either side, each with a trophy skull and a banner.
+  for (const side of [-1, 1]) {
+    const x = side * 4.2 * scale;
+    const height = (2.6 + nextRandom() * 0.8) * scale;
+    addDodecahedron(
+      bags.rock,
+      site,
+      x,
+      height * 0.5,
+      0.6 * scale,
+      0.9 * scale,
+      height,
+      0.8 * scale,
+      nextRandom() * Math.PI,
+    );
+    addDodecahedron(
+      bags.bone,
+      site,
+      x,
+      height + 0.25 * scale,
+      0.6 * scale,
+      0.42 * scale,
+      0.36 * scale,
+      0.4 * scale,
+      side * 0.4,
+    );
     addCone(
       bags.bone,
       site,
-      x * scale + 0.22 * scale,
-      3.0 * scale,
-      1.3 * scale,
-      0.12 * scale,
-      0.44 * scale,
-      5,
+      x - side * 0.22 * scale,
+      height + 0.5 * scale,
+      0.6 * scale,
+      0.08 * scale,
+      0.5 * scale,
+      4,
     );
-  }
-
-  addFirePit(bags, site, 0.9 * scale, 3.3 * scale, 0.85 * scale, nextRandom);
-
-  // Meat rack beside the mouth.
-  for (const x of [-3.3, -1.5]) {
-    addCylinder(bags.timber, site, x * scale, 1.05 * scale, 3.0 * scale, 0.1, 0.13, 2.1 * scale, 6);
-  }
-  addBox(
-    bags.timber,
-    site,
-    -2.4 * scale,
-    2.1 * scale,
-    3.0 * scale,
-    2.2 * scale,
-    0.14 * scale,
-    0.16 * scale,
-  );
-  for (const x of [-2.9, -2.4, -1.9]) {
-    addBox(
+    addCone(
+      bags.bone,
+      site,
+      x + side * 0.22 * scale,
+      height + 0.5 * scale,
+      0.6 * scale,
+      0.08 * scale,
+      0.5 * scale,
+      4,
+    );
+    // War banner: lacquer pole with a ragged cloth.
+    addCylinder(
       bags.lacquer,
       site,
-      x * scale,
-      1.55 * scale,
-      3.0 * scale,
-      0.36 * scale,
+      x + side * 1.1 * scale,
+      2.2 * scale,
+      1.8 * scale,
+      0.06,
+      0.08,
+      4.4 * scale,
+      5,
+    );
+    addBox(
+      bags.cloth,
+      site,
+      x + side * 1.1 * scale + side * 0.45 * scale,
+      3.5 * scale,
+      1.8 * scale,
       0.9 * scale,
+      1.5 * scale,
+      0.05,
+      0,
+    );
+    addBox(
+      bags.charred,
+      site,
+      x + side * 1.1 * scale + side * 0.45 * scale,
+      3.5 * scale,
+      1.82 * scale,
       0.3 * scale,
+      0.3 * scale,
+      0.02,
+      0,
     );
   }
 
-  addBoneScatter(bags, site, 4.6 * scale, 7, nextRandom);
-  // Claw marks scratched into the near ground.
+  // Bone throne facing the fire, and the fire itself.
+  addBox(
+    bags.bone,
+    site,
+    -2.6 * scale,
+    0.45 * scale,
+    3.4 * scale,
+    1.2 * scale,
+    0.5 * scale,
+    1.0 * scale,
+    0.5,
+  );
+  addBox(
+    bags.bone,
+    site,
+    -3.0 * scale,
+    1.1 * scale,
+    3.8 * scale,
+    1.2 * scale,
+    1.3 * scale,
+    0.22 * scale,
+    0.5,
+  );
+  for (const dx of [-0.5, 0.5]) {
+    addCone(
+      bags.bone,
+      site,
+      -3.0 * scale + dx * scale,
+      1.95 * scale,
+      3.8 * scale,
+      0.1 * scale,
+      0.6 * scale,
+      4,
+    );
+  }
+  addFirePit(bags, site, 1.1 * scale, 3.6 * scale, 1.0 * scale, nextRandom);
+
+  // Iron cage with a rack of blades, and a spit over the fire.
+  for (const [x, z] of [
+    [3.1, 3.2],
+    [3.9, 3.2],
+    [3.1, 4.0],
+    [3.9, 4.0],
+  ] as const) {
+    addCylinder(bags.iron, site, x * scale, 0.9 * scale, z * scale, 0.04, 0.04, 1.8 * scale, 4);
+  }
+  addBox(bags.iron, site, 3.5 * scale, 1.8 * scale, 3.6 * scale, 0.95 * scale, 0.06, 0.95 * scale);
+  addBox(bags.iron, site, 3.5 * scale, 0.05, 3.6 * scale, 0.95 * scale, 0.06, 0.95 * scale);
+  for (const x of [0.2, 2.0]) {
+    addCylinder(bags.timber, site, x * scale, 0.7 * scale, 3.6 * scale, 0.06, 0.08, 1.4 * scale, 5);
+  }
+  addBox(bags.timber, site, 1.1 * scale, 1.4 * scale, 3.6 * scale, 2.1 * scale, 0.08, 0.08);
+  addEllipsoid(
+    bags.lacquer,
+    site,
+    1.1 * scale,
+    1.2 * scale,
+    3.6 * scale,
+    0.5 * scale,
+    0.28 * scale,
+    0.26 * scale,
+    0,
+  );
+
+  addBoneScatter(bags, site, 5.0 * scale, 8, nextRandom);
+  // Claw marks scratched into the threshold.
   for (let index = 0; index < 3; index += 1) {
     addBox(
       bags.charred,
       site,
-      (1.6 + index * 0.42) * scale,
-      0.035,
-      2.1 * scale,
-      0.12,
+      (-1.2 + index * 0.42) * scale,
+      0.26 * scale,
+      0.4 * scale,
+      0.1,
       0.02,
-      (1.5 - index * 0.22) * scale,
-      0.5,
+      (1.4 - index * 0.2) * scale,
+      0.4,
     );
   }
 }

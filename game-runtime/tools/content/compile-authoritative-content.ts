@@ -410,10 +410,10 @@ const manifest = {
   passives,
   equipment,
   pve: {
-    simultaneousPopulation: 123,
-    melee: 58,
-    ranged: 38,
-    flying: 12,
+    simultaneousPopulation: 193,
+    melee: 96,
+    ranged: 60,
+    flying: 22,
     pigsActive: 8,
     elites: 4,
     dragonsActive: 2,
@@ -901,7 +901,7 @@ const report = `# Authoritative Content Compilation
 - Heroes: ${manifest.counts.heroes}/38
 - Skills: ${manifest.counts.skillsTotal}/101
 - Equipment: ${manifest.counts.equipment}/44
-- PVE simultaneous population: ${manifest.pve.simultaneousPopulation}/123
+- PVE simultaneous population: ${manifest.pve.simultaneousPopulation}/193
 
 ## Runtime Coverage
 

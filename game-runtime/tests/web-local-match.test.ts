@@ -87,9 +87,9 @@ describe('local MAP match', () => {
     expect(scenario.pve).toEqual({ enabled: true, population: 'full' });
     expect(tape.pve).toEqual({ enabled: true, population: 'full' });
     expect(localSnapshot.players).toHaveLength(7);
-    expect(localSnapshot.monsters).toHaveLength(123);
+    expect(localSnapshot.monsters).toHaveLength(193);
     expect(authoritative.players).toHaveLength(7);
-    expect(authoritative.monsters).toHaveLength(123);
+    expect(authoritative.monsters).toHaveLength(193);
     expect(new Set(authoritative.players.map((player) => player.playerId)).size).toBe(7);
   });
 

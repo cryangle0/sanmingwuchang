@@ -91,10 +91,11 @@ class FacetBuilder {
 
     // Turf takes the gentler facets, thins toward the crags at the crest, and
     // breaks up into patches so no contour line shows where rock ends.
-    const gentle = smoothstep(0.26, 0.7, flatness);
-    const crest = 1 - 0.42 * smoothstep(0.78, 1, climb);
-    const patch = 0.52 + 0.48 * noise2(point.x * 0.09 + 3.1, point.z * 0.09 + 7.7, 0x5eed);
-    const vegetation = Math.max(0, Math.min(1, gentle * crest * patch * 1.48));
+    // Turf climbs most of the slope now; only the steepest crags stay bare.
+    const gentle = smoothstep(0.12, 0.55, flatness);
+    const crest = 1 - 0.3 * smoothstep(0.82, 1, climb);
+    const patch = 0.62 + 0.38 * noise2(point.x * 0.09 + 3.1, point.z * 0.09 + 7.7, 0x5eed);
+    const vegetation = Math.max(0, Math.min(1, gentle * crest * patch * 1.7));
     this.vegetation.push(vegetation);
 
     this.colour.copy(SLOPE_LOW).lerp(SLOPE_HIGH, climb ** 0.7);

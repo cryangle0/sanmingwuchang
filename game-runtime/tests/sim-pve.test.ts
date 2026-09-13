@@ -35,10 +35,10 @@ describe('PVE runtime', () => {
       pve: { enabled: true, population: 'full' },
     });
 
-    expect(simulation.getSnapshot().monsters).toHaveLength(123);
+    expect(simulation.getSnapshot().monsters).toHaveLength(193);
     expect(
       simulation.drainEvents().filter((event) => event.type === 'monster-spawned'),
-    ).toHaveLength(123);
+    ).toHaveLength(193);
   });
 
   it('binds each active map dragon to the element of its selected palace', () => {

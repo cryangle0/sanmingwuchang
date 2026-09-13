@@ -237,7 +237,7 @@ describe('web model catalog', () => {
         pve: { enabled: true, population: 'full' },
       });
       const snapshot = simulation.getSnapshot();
-      expect(snapshot.monsters, `root seed ${rootSeed}`).toHaveLength(123);
+      expect(snapshot.monsters, `root seed ${rootSeed}`).toHaveLength(193);
       for (const monster of snapshot.monsters) {
         const definition = monsterModelDefinition(
           monster.kind,

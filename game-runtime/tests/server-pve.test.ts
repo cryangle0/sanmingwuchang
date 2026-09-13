@@ -75,7 +75,7 @@ describe('production PVE room wiring', () => {
     const authoritativeMonsterIds = new Set(
       server.room.getSnapshot().monsters.map((monster) => monster.entityId),
     );
-    expect(authoritativeMonsterIds.size).toBe(123);
+    expect(authoritativeMonsterIds.size).toBe(193);
     const port = await server.listen(0);
     const first = await connect(`ws://127.0.0.1:${port}/match`);
     const second = await connect(`ws://127.0.0.1:${port}/match`);

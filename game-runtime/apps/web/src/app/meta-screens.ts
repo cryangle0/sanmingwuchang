@@ -6,6 +6,7 @@ import {
 import { type PlayerId, TICKS_PER_SECOND } from '@jwgb/core';
 import { equipmentIconUrl, heroPortraitUrl, passiveIconUrl } from '../runtime/asset-url';
 import { CULTIVATION_REALMS, CULTIVATION_TRACK, rewardMark } from './cultivation-track';
+import { mountHeroShowcase } from './hero-showcase';
 import { type MatchRecord, playerTag, summariseHistory } from './lobby-session';
 
 /**
@@ -329,6 +330,7 @@ function openDetail(host: HTMLElement, key: string): void {
         </div>
         <button class="codex-detail-close" type="button" aria-label="关闭">✕</button>
       </header>
+      ${kind === 'hero' ? '<div class="codex-detail-stage"><span class="codex-stage-note">待机 · 普攻 · 技能</span></div>' : ''}
       <dl>
         ${detail.rows
           .map((row) => `<div><dt>${escapeHtml(row[0])}</dt><dd>${escapeHtml(row[1])}</dd></div>`)
@@ -336,7 +338,12 @@ function openDetail(host: HTMLElement, key: string): void {
       </dl>
     </section>
   `;
-  const close = (): void => layer.remove();
+  const stage = layer.querySelector<HTMLElement>('.codex-detail-stage');
+  const showcase = kind === 'hero' && stage ? mountHeroShowcase(stage, id ?? '') : null;
+  const close = (): void => {
+    showcase?.dispose();
+    layer.remove();
+  };
   layer.querySelector('.codex-detail-backdrop')?.addEventListener('click', close);
   layer.querySelector('.codex-detail-close')?.addEventListener('click', close);
   layer.addEventListener('keydown', (event) => {
